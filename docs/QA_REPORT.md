@@ -3,7 +3,7 @@
 Date de la passe locale : **22 août 2026**
 Moteur : **Godot 4.7.2 stable officiel**
 Surface principale : **Godot 3D Web**, 1280 × 720
-Empreinte source de l'export : `89733407256952290424b5364fd8e06aa80154af07d84561b6b22030ec1cbc89`
+Empreinte source de l'export : `512776528e73433587d91206a4b140b7ecdd3748c716e64b3d361c53f9089a91`
 
 ## Règle de preuve
 
@@ -17,7 +17,7 @@ Un test présent dans le dépôt n'est pas une preuve de succès. Un gate n'est 
 | Validation structurelle Godot | **PASS** — 10 châssis, 5 divisions, 8 circuits, 9 modules, 6 championnats, TPS/FPS, sauvegarde v3 |
 | Smoke Godot | **PASS** — catalogue, divisions, modules, caméras, reprise Grand Prix, pilote et audio |
 | Flux runtime Godot | **PASS** — menu, roster par division, modules, cockpit, mouvement, DNF, résultats, coupe dédiée et Open |
-| Export Web | **PASS** — WASM 39 514 754 octets, PCK 10 078 424 octets, empreintes alignées à `build.json` |
+| Export Web | **PASS** — WASM 39 514 754 octets, PCK 10 078 472 octets, empreintes alignées à `build.json` |
 | Chargement direct du PCK | **PASS** — Godot ouvre le paquet exporté, code 0 |
 | Chromium local | **PASS** — 5 écrans distincts, ressources JS/WASM/PCK chargées, aucune erreur |
 | `git diff --check` | **PASS** — aucune erreur d'espace ou de fin de ligne |

@@ -130,4 +130,4 @@ static func _default_prop_set(track_id: String) -> String:
 		"tempest", "megacity": return "urban"
 		"abyss": return "abyss"
 		"caldera", "volcano", "reactor": return "volcanic"
-		_: return "industrial"\n
+		_: return "industrial"
