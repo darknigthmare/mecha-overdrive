@@ -639,9 +639,12 @@ func _loadout_for_class(value: Variant, chassis_id: String, performance_class_id
 	if String(performance_class.get("module_policy", "all")) == "defaults_only":
 		return defaults
 	var source: Dictionary = value if value is Dictionary else {}
+	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", ""))
+	var max_tier := int(performance_class.get("max_module_tier", 1))
 	for slot_id: String in defaults.keys():
 		var option_id := String(source.get(slot_id, defaults[slot_id]))
-		if not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+		var option := GameDatabase.get_module_option(slot_id, option_id)
+		if not option.is_empty() and int(option.get("tier", 0)) <= max_tier and GameDatabase.is_module_allowed_for_division(option_id, division_id):
 			defaults[slot_id] = option_id
 	return defaults
 

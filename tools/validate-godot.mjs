@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -11,7 +11,13 @@ const files = {
   raceController: 'godot/scripts/race/race_controller.gd',
   mechaFactory: 'godot/scripts/mecha/mecha_factory.gd',
   visualModules: 'godot/scripts/visual/mecha_visual_modules.gd',
+  materialLibrary: 'godot/scripts/visual/material_library.gd',
   mainMenu: 'godot/scripts/ui/main_menu.gd',
+  garage: 'godot/scripts/ui/garage.gd',
+  garagePreview: 'godot/scripts/ui/garage_preview.gd',
+  garageScene: 'godot/scenes/garage.tscn',
+  garagePreviewScene: 'godot/scenes/components/garage_preview.tscn',
+  manifest: 'godot/assets/textures/openai/manifest.json',
   smoke: 'godot/tests/smoke_test.gd',
 };
 
@@ -50,26 +56,75 @@ check(verticalities.every((value) => value >= 4 && value <= 30), 'circuits: vert
 check(new Set(verticalities).size === 8, 'circuits: huit reliefs distincts requis');
 
 check(source.database.includes('static var CHASSIS:'), 'catalogue: initialisation CHASSIS doit être parse-safe');
-check(source.save.includes('const SAVE_VERSION := 3'), 'sauvegarde: version 3 absente');
+check(source.save.includes('const SAVE_VERSION := 4'), 'sauvegarde: version 4 absente');
+check(!source.save.includes('`t'), 'sauvegarde: séquence littérale `t invalide détectée');
 check(source.save.includes('"loadouts": loadouts'), 'sauvegarde: loadouts modulaires absents');
+check(source.save.includes('"owned_modules": HISTORIC_MODULE_IDS.duplicate()'), 'sauvegarde: propriété des modules historiques absente');
 check(source.save.includes('"camera_view": "tps"'), 'sauvegarde: préférence caméra absente');
+check(source.save.includes('func purchase_and_apply_garage('), 'sauvegarde: transaction garage atomique absente');
+check(source.save.includes('var snapshot := profile.duplicate(true)') && source.save.includes('profile = snapshot'), 'sauvegarde: rollback atomique absent');
+check(source.save.includes('not counted.has(module_id)'), 'sauvegarde: protection anti-débit double absente');
+check(source.save.includes('source_version < CHAMPIONSHIP_SCHEMA_VERSION'), 'sauvegarde: migration championnat v3 absente');
+check(source.save.includes('definition.get("track_ids"'), 'sauvegarde: canonicalisation des circuits de championnat absente');
 for (const divisionId of ['command', 'stabilized', 'swarm', 'ground', 'experimental']) {
   check(source.database.includes(`"id": "${divisionId}"`), `division absente: ${divisionId}`);
 }
 for (const cupId of ['command_cup', 'stabilized_cup', 'swarm_cup', 'ground_cup', 'experimental_cup', 'nexus_open']) {
   check(source.database.includes(`"id": "${cupId}"`), `championnat absent: ${cupId}`);
 }
-for (const moduleId of ['core_balanced', 'core_overdrive', 'core_bastion', 'mobility_vector', 'mobility_sprint', 'mobility_adaptive', 'utility_coolant', 'utility_aegis', 'utility_scanner']) {
+const modulesBySlot = {
+  core: ['core_balanced', 'core_overdrive', 'core_bastion', 'core_tactical_relay', 'core_hive_capacitor', 'core_phase_lattice'],
+  mobility: ['mobility_vector', 'mobility_sprint', 'mobility_adaptive', 'mobility_gyro_rail', 'mobility_multileg', 'mobility_phase_skates'],
+  utility: ['utility_coolant', 'utility_aegis', 'utility_scanner', 'utility_command_uplink', 'utility_impact_ram', 'utility_phase_sink'],
+};
+const moduleIds = Object.values(modulesBySlot).flat();
+for (const moduleId of moduleIds) {
   check(source.database.includes(`"id": "${moduleId}"`), `module absent: ${moduleId}`);
+  check(source.visualModules.includes(`"${moduleId}"`), `silhouette module absente: ${moduleId}`);
+}
+check(moduleIds.length === 18 && new Set(moduleIds).size === 18, 'catalogue: exactement 18 modules uniques requis');
+const declaredModuleIds = [...source.database.matchAll(/"id": "((?:core|mobility|utility)_[a-z_]+)"/g)].map((match) => match[1]);
+check(declaredModuleIds.length === 18 && new Set(declaredModuleIds).size === 18, 'catalogue: 18 déclarations de modules uniques requises');
+for (const [slotId, expectedIds] of Object.entries(modulesBySlot)) {
+  check(declaredModuleIds.filter((id) => id.startsWith(`${slotId}_`)).length === 6, `catalogue: 6 modules requis pour ${slotId}`);
+  check(expectedIds.every((id) => declaredModuleIds.includes(id)), `catalogue: contrat incomplet pour ${slotId}`);
 }
 check(source.session.includes('return "mixed" if value == "mixed" else "division"'), 'session: grille fail-closed absente');
 check(source.raceController.includes('switch_camera_view'), 'course: bascule TPS/FPS absente');
-check(source.mechaFactory.includes('MaterialLibrary.mecha'), 'méchas: matériau OpenAI non branché');
+check(source.mechaFactory.includes('MaterialLibrary.mecha_for'), 'méchas: matériau OpenAI v2.2 non branché');
 check(source.visualModules.includes('"CameraTPS"') && source.visualModules.includes('"CameraFPS"'), 'méchas: ancres caméra absentes');
+check(!source.visualModules.includes('.contains('), 'méchas: dispatch module par sous-chaîne encore présent');
+check((source.visualModules.match(/MaterialLibrary\.module_for\(/g) ?? []).length >= 3, 'méchas: matériaux de slot v2.2 non branchés');
 check(source.mainMenu.includes('championship_select') && source.mainMenu.includes('grid_policy_select'), 'menu: options championnat/grille absentes');
-for (const texture of ['mecha_armor.png', 'track_surface.png', 'cockpit_composite.png', 'environment_panels.png']) {
-  check(existsSync(resolve(root, 'godot/assets/textures/openai', texture)), `texture OpenAI absente: ${texture}`);
+check(source.garage.includes('%GaragePreview') && source.garage.includes('call(&"configure"'), 'garage: aperçu 3D non branché');
+check(source.garagePreview.includes('class_name GaragePreview') && /MechaFactory\w*\.build\(/.test(source.garagePreview), 'garage: script d’aperçu 3D incomplet');
+check(source.garagePreviewScene.includes('SubViewport') && source.garagePreviewScene.includes('garage_bay.png'), 'garage: scène d’aperçu v2.2 incomplète');
+check(source.garageScene.includes('garage_preview.tscn'), 'garage: composant d’aperçu absent de la scène');
+
+const textures = [
+  'mecha_armor.png', 'track_surface.png', 'cockpit_composite.png', 'environment_panels.png',
+  'mecha_armor_light.png', 'mecha_armor_heavy.png', 'module_energy.png', 'module_mobility.png',
+  'module_utility.png', 'track_thermal.png', 'track_cryo.png', 'garage_bay.png',
+];
+const textureDir = resolve(root, 'godot/assets/textures/openai');
+for (const texture of textures) {
+  check(existsSync(resolve(textureDir, texture)), `texture OpenAI absente: ${texture}`);
 }
+const deliveredPngs = existsSync(textureDir)
+  ? readdirSync(textureDir).filter((name) => name.toLowerCase().endsWith('.png')).sort()
+  : [];
+check(deliveredPngs.length === 12 && textures.every((name) => deliveredPngs.includes(name)), 'textures OpenAI: exactement les 12 PNG v2.2 sont requis');
+let manifest = {};
+try {
+  manifest = JSON.parse(source.manifest);
+} catch {
+  check(false, 'textures OpenAI: manifest.json invalide');
+}
+check(Number(manifest.schema_version) === 2, 'textures OpenAI: manifest schema 2 requis');
+const manifestAssets = Array.isArray(manifest.assets) ? manifest.assets : [];
+const manifestFiles = manifestAssets.map((asset) => asset?.file).filter(Boolean);
+check(manifestAssets.length === 12, 'textures OpenAI: 12 entrées de manifeste requises');
+check(new Set(manifestFiles).size === 12 && textures.every((name) => manifestFiles.includes(name)), 'textures OpenAI: manifeste incomplet ou dupliqué');
 check(source.save.includes('if not finished:'), 'sauvegarde: garde DNF/records absente');
 check(source.save.includes('record_valid'), 'sauvegarde: validation de record absente');
 for (const mode of ['quick', 'time_trial', 'elimination', 'grand_prix']) {
@@ -82,6 +137,9 @@ for (const inputKey of ['throttle', 'brake', 'steer', 'drift', 'boost']) {
   check(source.racer.includes(`"${inputKey}"`), `racer controls: clé absente ${inputKey}`);
 }
 check(source.smoke.includes('_test_deterministic_racer'), 'smoke: test déterministe absent');
+check(source.smoke.includes('_test_module_purchase_contract'), 'smoke: achat atomique des nouveaux modules absent');
+check(source.smoke.includes('_test_asset_manifest_contract'), 'smoke: contrat manifeste schema 2 absent');
+check(source.smoke.includes('_test_garage_preview_contract'), 'smoke: contrat scène garage preview absent');
 check(!existsSync(resolve(root, 'godot/scripts/systems/save_system.gd.stub')), 'nettoyage: save_system.gd.stub présent');
 check(!existsSync(resolve(root, 'godot/scripts/data/game_database.gd.precanonical')), 'nettoyage: game_database.gd.precanonical présent');
 check(source.project.includes('SaveSystem="*res://scripts/systems/save_system.gd"'), 'project: autoload SaveSystem absent');
@@ -93,5 +151,5 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log('Godot static validation: PASS');
-  console.log('10 chassis · 5 divisions · 8 tracks · 9 modules · 6 championships · TPS/FPS · save v3');
+  console.log('10 chassis · 5 divisions · 8 tracks · 18 modules · 6 championships · 12 textures · garage preview · TPS/FPS · save v4');
 }

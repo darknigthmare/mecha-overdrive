@@ -1,0 +1,271 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/garage_preview.gd" id="1_preview"]
+[ext_resource type="Texture2D" path="res://assets/textures/openai/garage_bay.png" id="2_bay"]
+
+[sub_resource type="StandardMaterial3D" id="Material_bay"]
+albedo_color = Color(0.2, 0.29, 0.36, 1)
+albedo_texture = ExtResource("2_bay")
+metallic = 0.72
+roughness = 0.42
+uv1_scale = Vector3(2.8, 2.8, 1)
+
+[sub_resource type="StandardMaterial3D" id="Material_floor"]
+albedo_color = Color(0.24, 0.3, 0.35, 1)
+albedo_texture = ExtResource("2_bay")
+metallic = 0.48
+roughness = 0.52
+uv1_scale = Vector3(4, 4, 1)
+
+[sub_resource type="StandardMaterial3D" id="Material_platform"]
+albedo_color = Color(0.055, 0.09, 0.13, 1)
+metallic = 0.88
+roughness = 0.3
+
+[sub_resource type="StandardMaterial3D" id="Material_glow"]
+albedo_color = Color(0.06, 0.5, 0.62, 1)
+metallic = 0.5
+roughness = 0.2
+emission_enabled = true
+emission = Color(0.17, 0.82, 1, 1)
+emission_energy_multiplier = 3.2
+
+[sub_resource type="PlaneMesh" id="Plane_floor"]
+size = Vector2(18, 18)
+
+[sub_resource type="BoxMesh" id="Box_back_wall"]
+size = Vector3(12, 6, 0.24)
+
+[sub_resource type="BoxMesh" id="Box_side_wall"]
+size = Vector3(0.24, 6, 10)
+
+[sub_resource type="BoxMesh" id="Box_pillar"]
+size = Vector3(0.18, 5.6, 0.2)
+
+[sub_resource type="BoxMesh" id="Box_beam"]
+size = Vector3(9, 0.18, 0.2)
+
+[sub_resource type="BoxMesh" id="Box_floor_strip"]
+size = Vector3(0.08, 0.025, 10)
+
+[sub_resource type="CylinderMesh" id="Cylinder_platform"]
+top_radius = 3.35
+bottom_radius = 3.55
+height = 0.24
+radial_segments = 48
+
+[node name="GaragePreview" type="PanelContainer"]
+custom_minimum_size = Vector2(520, 360)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+clip_contents = true
+theme_type_variation = &"HeroPanel"
+script = ExtResource("1_preview")
+
+[node name="Stack" type="Control" parent="."]
+layout_mode = 2
+
+[node name="ViewportContainer" type="SubViewportContainer" parent="Stack"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 2
+tooltip_text = "Glissez pour tourner le mécha, utilisez la molette pour zoomer"
+stretch = true
+
+[node name="PreviewViewport" type="SubViewport" parent="Stack/ViewportContainer"]
+unique_name_in_owner = true
+handle_input_locally = false
+size = Vector2i(640, 480)
+own_world_3d = true
+render_target_update_mode = 2
+
+[node name="PreviewWorld" type="Node3D" parent="Stack/ViewportContainer/PreviewViewport"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld"]
+unique_name_in_owner = true
+
+[node name="Bay" type="Node3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld"]
+
+[node name="Floor" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+mesh = SubResource("Plane_floor")
+material_override = SubResource("Material_floor")
+
+[node name="BackWall" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(0, 3, -5.4)
+mesh = SubResource("Box_back_wall")
+material_override = SubResource("Material_bay")
+
+[node name="LeftWall" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(-6, 3, -0.3)
+mesh = SubResource("Box_side_wall")
+material_override = SubResource("Material_bay")
+
+[node name="RightWall" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(6, 3, -0.3)
+mesh = SubResource("Box_side_wall")
+material_override = SubResource("Material_bay")
+
+[node name="PortalLeft" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(-4.4, 3, -5.18)
+mesh = SubResource("Box_pillar")
+material_override = SubResource("Material_glow")
+
+[node name="PortalRight" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(4.4, 3, -5.18)
+mesh = SubResource("Box_pillar")
+material_override = SubResource("Material_glow")
+
+[node name="PortalTop" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(0, 5.72, -5.18)
+mesh = SubResource("Box_beam")
+material_override = SubResource("Material_glow")
+
+[node name="FloorGuideLeft" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(-3.8, 0.018, -0.2)
+mesh = SubResource("Box_floor_strip")
+material_override = SubResource("Material_glow")
+
+[node name="FloorGuideRight" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(3.8, 0.018, -0.2)
+mesh = SubResource("Box_floor_strip")
+material_override = SubResource("Material_glow")
+
+[node name="Platform" type="MeshInstance3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Bay"]
+position = Vector3(0, 0.12, 0)
+mesh = SubResource("Cylinder_platform")
+material_override = SubResource("Material_platform")
+
+[node name="Turntable" type="Node3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld"]
+unique_name_in_owner = true
+
+[node name="MechaAnchor" type="Node3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld/Turntable"]
+unique_name_in_owner = true
+position = Vector3(0, 0.27, 0)
+
+[node name="KeyLight" type="DirectionalLight3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld"]
+rotation_degrees = Vector3(-48, -32, 0)
+light_color = Color(0.78, 0.92, 1, 1)
+light_energy = 1.65
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld"]
+position = Vector3(-4.5, 4.6, 4.2)
+light_color = Color(0.42, 0.72, 1, 1)
+light_energy = 4.2
+omni_range = 12.0
+
+[node name="RimLight" type="OmniLight3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld"]
+position = Vector3(4.6, 3.4, -3.8)
+light_color = Color(0.23, 0.95, 1, 1)
+light_energy = 5.0
+omni_range = 11.0
+
+[node name="PreviewCamera" type="Camera3D" parent="Stack/ViewportContainer/PreviewViewport/PreviewWorld"]
+unique_name_in_owner = true
+position = Vector3(5.4, 4.4, 8.6)
+current = true
+fov = 44.0
+near = 0.08
+far = 80.0
+
+[node name="Overlay" type="MarginContainer" parent="Stack"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="OverlayLayout" type="VBoxContainer" parent="Stack/Overlay"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TopBar" type="PanelContainer" parent="Stack/Overlay/OverlayLayout"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"CardPanel"
+
+[node name="TopRow" type="HBoxContainer" parent="Stack/Overlay/OverlayLayout/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PreviewCaption" type="Label" parent="Stack/Overlay/OverlayLayout/TopBar/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"EyebrowLabel"
+text = "APERÇU 3D // EN ATTENTE"
+
+[node name="MotionState" type="Label" parent="Stack/Overlay/OverlayLayout/TopBar/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "ROTATION AUTO"
+horizontal_alignment = 2
+
+[node name="StageSpacer" type="Control" parent="Stack/Overlay/OverlayLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="ControlsCenter" type="CenterContainer" parent="Stack/Overlay/OverlayLayout"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ControlsPanel" type="PanelContainer" parent="Stack/Overlay/OverlayLayout/ControlsCenter"]
+layout_mode = 2
+mouse_filter = 1
+theme_type_variation = &"CardPanel"
+
+[node name="Controls" type="HBoxContainer" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RotateLeftButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 44)
+layout_mode = 2
+tooltip_text = "Tourner le mécha vers la gauche"
+text = "GAUCHE"
+
+[node name="RotateRightButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(68, 44)
+layout_mode = 2
+tooltip_text = "Tourner le mécha vers la droite"
+text = "DROITE"
+
+[node name="ZoomOutButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 44)
+layout_mode = 2
+tooltip_text = "Éloigner la caméra"
+text = "−"
+
+[node name="ZoomInButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 44)
+layout_mode = 2
+tooltip_text = "Rapprocher la caméra"
+text = "+"
+
+[node name="ResetButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 44)
+layout_mode = 2
+tooltip_text = "Rétablir l’angle et le zoom par défaut"
+text = "RECENTRER"

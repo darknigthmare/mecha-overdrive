@@ -50,6 +50,46 @@ func _run() -> void:
 		_finish()
 		return
 
+	# Exercise the real garage before the race: the preview must use the same
+	# MechaFactory and update a draft module without writing the profile.
+	menu.emit_signal(&"screen_requested", &"garage")
+	var garage: Node = await _wait_for_screen(app, &"Garage", STARTUP_TIMEOUT_MS)
+	_expect(garage != null, "le garage réel doit être accessible depuis le menu")
+	if garage != null:
+		await process_frame
+		await process_frame
+		var preview := garage.find_child("GaragePreview", true, false)
+		_expect(preview != null and preview.has_method(&"current_visual"), "le garage doit exposer sa prévisualisation 3D")
+		var preview_visual: Node = preview.call(&"current_visual") as Node if preview != null and preview.has_method(&"current_visual") else null
+		_expect(preview_visual != null and preview_visual.is_inside_tree(), "le vrai modèle 3D doit être construit dans la baie")
+		if preview_visual != null:
+			var preview_loadout: Dictionary = preview_visual.get_meta("module_loadout", {})
+			_expect(preview_loadout.size() == 3, "l’aperçu doit monter les trois emplacements modulaires")
+		var core_option := garage.find_child("CoreOption", true, false) as OptionButton
+		if core_option != null:
+			for module_index in range(core_option.item_count):
+				if String(core_option.get_item_metadata(module_index)) == "core_tactical_relay":
+					core_option.select(module_index)
+					garage.call(&"_on_module_selected", module_index, "core", core_option)
+					await process_frame
+					await process_frame
+					break
+			preview_visual = preview.call(&"current_visual") as Node
+			var draft_loadout: Dictionary = preview_visual.get_meta("module_loadout", {}) if preview_visual != null else {}
+			_expect(String(draft_loadout.get("core", "")) == "core_tactical_relay", "le brouillon module doit reconstruire immédiatement le visuel")
+			garage.call(&"_cancel_draft")
+			await process_frame
+			await process_frame
+			preview_visual = preview.call(&"current_visual") as Node
+			var cancelled_loadout: Dictionary = preview_visual.get_meta("module_loadout", {}) if preview_visual != null else {}
+			_expect(String(cancelled_loadout.get("core", "")) == "core_overdrive", "Annuler doit restaurer le module sauvegardé dans le profil")
+		garage.emit_signal(&"back_requested")
+		menu = await _wait_for_screen(app, &"MainMenu", STARTUP_TIMEOUT_MS)
+		_expect(menu != null, "le retour garage doit reconstruire le menu principal")
+		if menu == null:
+			_finish()
+			return
+
 	var config: Dictionary = {
 		"mode": "quick",
 		"track_id": "foundry",
@@ -297,7 +337,7 @@ func _finish() -> void:
 	Input.action_release(&"race_accelerate")
 	_restore_profile()
 	if _failures.is_empty():
-		print("MECHA GODOT RUNTIME FLOW: PASS (menu, division roster, modules, TPS/FPS cockpit, movement, DNF, results, dedicated cup, Open cup)")
+		print("MECHA GODOT RUNTIME FLOW: PASS (menu, garage 3D, visual modules, division roster, TPS/FPS cockpit, movement, DNF, results, dedicated cup, Open cup)")
 		quit(0)
 		return
 	for failure: String in _failures:

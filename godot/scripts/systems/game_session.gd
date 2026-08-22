@@ -454,9 +454,12 @@ func _sanitize_loadout(value: Variant, chassis_id: String = "", performance_clas
 	if String(performance_class.get("module_policy", "all")) == "defaults_only":
 		return output
 	var source: Dictionary = value if value is Dictionary else {}
+	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", ""))
+	var max_tier := int(performance_class.get("max_module_tier", 1))
 	for slot_id: String in output.keys():
 		var option_id := String(source.get(slot_id, output[slot_id]))
-		if not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+		var option := GameDatabase.get_module_option(slot_id, option_id)
+		if not option.is_empty() and int(option.get("tier", 0)) <= max_tier and GameDatabase.is_module_allowed_for_division(option_id, division_id):
 			output[slot_id] = option_id
 	return output
 
@@ -466,10 +469,19 @@ func _variant_loadout(variant_index: int, chassis_id: String = "", performance_c
 	if String(performance_class.get("module_policy", "all")) == "defaults_only":
 		return _default_loadout(chassis_id)
 	var output: Dictionary = {}
+	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", ""))
+	var max_tier := int(performance_class.get("max_module_tier", 1))
+	var slot_index := 0
 	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
-		var options: Array = slot.get("options", [])
-		if not options.is_empty():
-			output[String(slot.get("id", ""))] = String(Dictionary(options[variant_index % options.size()]).get("id", slot.get("default_option_id", "")))
+		var candidates: Array[Dictionary] = []
+		for option: Dictionary in slot.get("options", []):
+			var module_id := String(option.get("id", ""))
+			if int(option.get("tier", 0)) <= max_tier and GameDatabase.is_module_allowed_for_division(module_id, division_id):
+				candidates.append(option)
+		if not candidates.is_empty():
+			var selected_index := posmod(variant_index + slot_index * 2, candidates.size())
+			output[String(slot.get("id", ""))] = String(candidates[selected_index].get("id", slot.get("default_option_id", "")))
+		slot_index += 1
 	return output
 
 

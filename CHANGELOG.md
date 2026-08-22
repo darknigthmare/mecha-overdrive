@@ -2,6 +2,30 @@
 
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
+## [2.2.0] — 2026-08-22
+
+### Ajouté
+
+- garage visuel fondé sur le vrai modèle 3D de course, avec plateau tournant, glisser, zoom, recadrage et respect du mouvement réduit ;
+- filtres par division, préréglages Équilibre/Vitesse/Contrôle/Armure et fiche détaillée de chaque pièce ;
+- neuf nouveaux modules spécialisés, portant le catalogue à dix-huit pièces et six choix dans chacun des trois emplacements ;
+- inventaire modulaire, coûts effectifs et achat plus application atomiques, sans redébiter une pièce déjà acquise ;
+- huit nouvelles textures originales OpenAI : armures légère/lourde, trois familles de module, pistes thermique/cryo et baie d’atelier.
+
+### Amélioré
+
+- comparaison base vers configuration finale pour les six statistiques, incluant modules et améliorations permanentes ;
+- aperçu instantané de la peinture, des silhouettes modulaires et des préréglages avant toute dépense ;
+- matériaux distincts selon division, famille de module et environnement de piste ;
+- dix-huit silhouettes modulaires explicites à la place du dispatch générique par fragments d’identifiant ;
+- sauvegarde v4 avec migration des neuf pièces historiques offertes et préservation stricte des championnats v3 canoniques.
+
+### Ergonomie
+
+- cibles d’action agrandies, atelier organisé en onglets et détails importants visibles sans dépendre des infobulles ;
+- validation et annulation explicites des changements, coût restant et manque de crédits affichés avant achat ;
+- rotation clavier Q/E, souris, molette et boutons accessibles directement dans la prévisualisation.
+
 ## [2.1.0] — 2026-08-22
 
 ### Ajouté

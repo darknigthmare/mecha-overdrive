@@ -1,127 +1,79 @@
-# Rapport QA — MECHA OVERDRIVE 2.1.0
+# Rapport QA — MECHA OVERDRIVE 2.2.0
 
-Date de la passe locale : **22 août 2026**
-Moteur : **Godot 4.7.2 stable officiel**
-Surface principale : **Godot 3D Web**, 1280 × 720
-Empreinte source de l'export : `512776528e73433587d91206a4b140b7ecdd3748c716e64b3d361c53f9089a91`
+Date de validation locale : 22 août 2026
 
-## Règle de preuve
+Édition principale : Godot 4.7.2, export Web mono-thread
 
-Un test présent dans le dépôt n'est pas une preuve de succès. Un gate n'est marqué **PASS** ci-dessous que s'il a été exécuté sur la révision 2.1.0 courante. La révision fonctionnelle `c20f28bc5c0a5448ebca92bb7cc19c862a39834c` a été contrôlée localement, par GitHub Actions et sur la production Vercel.
+Décision locale : **GO**
 
-## Matrice locale et publication 2.1.0
+## Périmètre livré
 
-| Gate | Résultat observé |
+- garage 3D manipulable utilisant le même `MechaFactory` que les courses ;
+- aperçu immédiat du châssis, de la peinture et des trois modules équipés ;
+- rotation automatique, glisser-déplacer, boutons, molette, zoom et recentrage ;
+- 18 modules, soit six noyaux, six mobilités et six utilitaires ;
+- fiches avec fabricant, rôle, lore, niveau, puissance, affinités, coût et effets ;
+- préréglages Équilibre, Vitesse, Contrôle et Armure ;
+- achat, peinture et équipement appliqués dans une transaction atomique ;
+- inventaire persistant et migration de sauvegarde v3 vers v4 ;
+- douze textures bitmap OpenAI documentées, dont huit nouvelles pour les armures, modules, pistes et baie du garage ;
+- compatibilité maintenue avec 10 châssis, 5 divisions, 8 circuits, 6 championnats et les vues TPS/cockpit.
+
+## Contrôles automatisés
+
+| Gate | Résultat |
 |---|---|
-| `npm run qa` | **PASS** — 115 validations, 12/12 tests moteur web, 21 intégrations |
-| Validation structurelle Godot | **PASS** — 10 châssis, 5 divisions, 8 circuits, 9 modules, 6 championnats, TPS/FPS, sauvegarde v3 |
-| Smoke Godot | **PASS** — catalogue, divisions, modules, caméras, reprise Grand Prix, pilote et audio |
-| Flux runtime Godot | **PASS** — menu, roster par division, modules, cockpit, mouvement, DNF, résultats, coupe dédiée et Open |
-| Export Web | **PASS** — WASM 39 514 754 octets, PCK 10 078 472 octets, empreintes alignées à `build.json` |
-| Chargement direct du PCK | **PASS** — Godot ouvre le paquet exporté, code 0 |
-| Chromium local | **PASS** — 5 écrans distincts, ressources JS/WASM/PCK chargées, aucune erreur |
-| `git diff --check` | **PASS** — aucune erreur d'espace ou de fin de ligne |
-| GitHub Actions | **PASS** — run [`32577148607`](https://github.com/darknigthmare/mecha-overdrive/actions/runs/32577148607), commit `c20f28bc5c0a5448ebca92bb7cc19c862a39834c` |
-| Vercel production | **PASS** — `READY / PROMOTED`, déploiement `dpl_43sMTrJF4MokfoBdNturjsRs4a6J`, alias `mecha-overdrive.vercel.app` |
-| Chromium production | **PASS** — WebGL2, canvas 1280 × 720, JS/WASM/PCK HTTP 200, aucune erreur console/page/réseau |
+| `node tools/validate-godot.mjs` | PASS — 10 châssis, 5 divisions, 8 circuits, 18 modules, 6 championnats, 12 textures, garage 3D, TPS/FPS, save v4 |
+| `npm run qa` | PASS |
+| Validation statique web | 115/115 |
+| Tests moteur du compagnon web | 12/12 |
+| Tests d’intégration du compagnon web | 21/21 |
+| Import/parse Godot 4.7.2 | PASS |
+| `godot/tests/smoke_test.gd` | PASS |
+| `godot/tests/runtime_flow_test.gd` | PASS |
+| `git diff --check` | PASS |
 
-Marqueurs Godot observés :
+Le smoke test Godot couvre le catalogue, les textures, l’aperçu garage, la sauvegarde v4, l’achat atomique, la migration, les coupes, le pilote, l’audio et les vues TPS/FPS. Le parcours runtime instancie la vraie application, ouvre le garage 3D, vérifie le changement visuel de modules, revient au menu puis joue une course jusqu’aux résultats et contrôle les coupes dédiée et Open.
 
-```text
-MECHA GODOT SMOKE: PASS (10 chassis, 5 divisions, 8 tracks, 6 cups, 9 modules, TPS/FPS, save v3, GP resume, racer, audio)
-MECHA GODOT RUNTIME FLOW: PASS (menu, division roster, modules, TPS/FPS cockpit, movement, DNF, results, dedicated cup, Open cup)
-```
+## Export navigateur
 
-## Contrats gameplay vérifiés
+| Propriété | Valeur |
+|---|---|
+| Version jeu | `2.2.0` |
+| Moteur | `4.7.2` |
+| Preset | `Web` |
+| Threads | `false` |
+| Empreinte source | `411e995089295f28f8f44dbc929c97198bf030bca10df34e831febd883a92004` |
+| PCK | 26 081 204 octets |
+| WASM | 39 514 754 octets |
+| Artefacts attestés | 9/9 |
 
-- Les cinq coupes de division n'acceptent que leurs deux architectures dédiées.
-- Le **Grand Open du Nexus** est la seule coupe interdivision par défaut et annonce explicitement son règlement mixte.
-- Les courses personnalisées restent dédiées sauf activation volontaire de l'option interdivision.
-- Un Grand Prix utilise huit concurrents stables, conserve son roster, ses points et sa difficulté lors de la reprise.
-- La sauvegarde v3 migre les profils v2, canonise le championnat et rejette les données de coupe falsifiées.
-- Les dix châssis disposent de trois emplacements modulaires : noyau, mobilité et utilitaire.
-- Les neuf modules modifient réellement les statistiques et disposent d'une représentation 3D.
-- La classe de performance `stock`, `tuned` ou `unlimited` est appliquée au règlement de grille.
-- La préférence TPS/FPS est mémorisée par châssis. En FPS, la coque extérieure est masquée et l'intérieur reste visible pendant l'animation.
-- Les huit circuits appliquent leurs profils visuels et leurs dangers physiques : boue, spores, pluie, vent latéral, courant, pression, lave et éruption.
-- Recommencer une course recrée une transaction propre ; terminer un championnat permet de le relancer.
+`tools/stamp-godot-web.mjs` normalise le HTML exporté puis `godot3d/build.json` atteste l’empreinte de chaque artefact et celle des sources Godot. Le validateur refuse un export périmé ou modifié.
 
-## Preuve navigateur locale
+## QA visuelle locale
 
-Le parcours Chromium/Playwright Core a chargé l'export par HTTP puis capturé cinq états différents :
+La version exportée a été servie localement puis pilotée dans Chromium à 1280 × 720 avec WebGL2 via SwiftShader :
 
-1. menu principal ;
-2. garage avec dix architectures, cinq divisions et sélecteurs de modules ;
-3. sélection du Grand Open avec résumé `OPEN / INTERDIVISION` ;
-4. course en vue TPS ;
-5. course en vue cockpit FPS.
+- HTTP 200 et titre `MECHA OVERDRIVE: Circuit Zero` ;
+- canvas interne et affiché en 1280 × 720 ;
+- WebGL2 actif ;
+- aucune erreur console ;
+- aucune erreur de page ;
+- aucune requête échouée ;
+- menu principal lisible sans rognage ;
+- garage complet lisible sans glyphes manquants ;
+- châssis 3D visible avec baie texturée ;
+- passage au préréglage Vitesse visible sur les modules et les statistiques ;
+- panneaux, liste des dix châssis, fiches et contrôles contenus dans le viewport.
 
-Résultat observé :
+## Sauvegarde et économie
 
-```text
-distinctScreens: 5
-consoleErrors: 0
-consoleWarnings: 0
-pageErrors: 0
-requestFailures: 0
-httpErrors: 0
-```
+La v4 conserve l’inventaire global `owned_modules` et les loadouts propres aux dix châssis. Les neuf modules historiques restent acquis lors d’une migration. Les modules inconnus, incompatibles ou non possédés sont normalisés. `purchase_and_apply_garage()` débite une seule fois les pièces manquantes et applique peinture/loadout ensemble ; toute erreur d’écriture restaure crédits, peinture et configuration.
 
-Le navigateur intégré et le binaire `agent-browser` n'étaient pas utilisables dans cet environnement. La preuve a donc été effectuée avec **Playwright Core et Google Chrome installé**, en mode headless WebGL/SwiftShader.
+## Assets et provenance
 
-## Export et intégrité
+Les huit nouvelles textures sont des créations originales OpenAI de 1254 × 1254. Le manifeste de schéma 2 contient leur identifiant de génération, prompt, usage, dimensions et SHA-256. Les douze textures runtime sont chargées explicitement et testées ; aucun asset artistique tiers n’est requis.
 
-`godot3d/build.json` atteste la version du moteur, le preset mono-thread, l'empreinte source et les SHA-256 des neuf artefacts Web. `npm run validate` refuse notamment :
+## Publication distante
 
-- un WASM inférieur à 30 Mo ;
-- un PCK inférieur à 500 Ko ;
-- un fichier dont la taille ou le SHA divergent du manifeste ;
-- un export multi-thread ou non aligné aux sources ;
-- une CSP ou des en-têtes incompatibles avec Godot Web.
-
-Pendant cette passe, la saturation du disque C: a effectivement produit un WASM vide puis un PCK incomplet. Les validateurs et Chromium ont bloqué ces artefacts. Le paquet final a été reconstruit sur un volume temporaire, chargé directement par Godot, puis copié et ré-estampillé.
-
-## Assets OpenAI
-
-Les textures générées pour cette version sont conservées sous `godot/assets/textures/openai/` :
-
-- `mecha_armor.png` ;
-- `track_surface.png` ;
-- `cockpit_composite.png` ;
-- `environment_panels.png`.
-
-`manifest.json` conserve pour chaque bitmap le prompt complet, l'identifiant de génération et sa destination. Les matériaux procéduraux des châssis, modules, cockpits, pistes et décors consomment ces textures.
-
-## Limites connues, non bloquantes
-
-- La sélection modulaire est libre : les coûts de catalogue ne constituent pas encore une économie d'achat.
-- Le champ descriptif `mechanic` des circuits n'implique pas de raccourcis dynamiques ; les dangers physiques, eux, sont actifs.
-- Certains modules partagent une famille de silhouette procédurale, tout en gardant des statistiques et matériaux distincts.
-- Le multijoueur réseau, l'écran partagé et les fantômes ne font pas partie de cette release.
-- Les sauvegardes de l'édition compagnon Canvas et de Godot 3D restent indépendantes.
-
-## Critères bloquants de publication
-
-La release doit être refusée si l'un des cas suivants apparaît :
-
-- échec d'un test Godot ou Node ;
-- division dédiée contenant un châssis hors catégorie ;
-- mode mixte activé sans choix explicite ;
-- reprise de championnat perdant roster, difficulté ou points ;
-- vue FPS masquée par la coque du joueur ;
-- WASM/PCK vide, tronqué ou divergent de `build.json` ;
-- erreur console/page/réseau pendant le parcours Chromium ;
-- GitHub Actions non vert, Vercel non `READY`, ou asset public essentiel non HTTP 200.
-
-## Consignation de publication
-
-Consignation de la publication :
-
-```text
-Révision fonctionnelle validée : c20f28bc5c0a5448ebca92bb7cc19c862a39834c
-GitHub Actions : PASS — https://github.com/darknigthmare/mecha-overdrive/actions/runs/32577148607
-Archive v2.1.0 : PASS — SHA-256 17b7a05c6d86eae1dd3066339862afe01d689680ac492ccecefabdd22abdfd72
-Release GitHub v2.1.0 : tag de cette consignation après sa CI verte
-Vercel production : READY / PROMOTED — dpl_43sMTrJF4MokfoBdNturjsRs4a6J
-URL Godot : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
-```
+Les identifiants du commit d’implémentation, du run GitHub Actions, du déploiement Vercel et de la release seront ajoutés après leur validation distante. Cette section n’est pas un substitut aux gates locales ci-dessus.

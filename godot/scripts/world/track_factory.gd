@@ -122,7 +122,9 @@ static func _build_road(root: Node3D, curve: Curve3D, length: float, width: floa
 	var road := MeshInstance3D.new()
 	road.name = "Road"
 	road.mesh = road_mesh
-	var road_material := MaterialLibrary.road(Color.WHITE, float(tuning.get("metallic", 0.58)), float(tuning.get("roughness", 0.38)), true)
+	var road_material := MaterialLibrary.road_for(spec, Color.WHITE, true)
+	road_material.metallic = float(tuning.get("metallic", 0.58))
+	road_material.roughness = float(tuning.get("roughness", 0.38))
 	road_material.uv1_scale.y = float(tuning.get("road_repeat", 0.055))
 	road.material_override = road_material
 	root.add_child(road)
@@ -131,7 +133,9 @@ static func _build_road(root: Node3D, curve: Curve3D, length: float, width: floa
 	var shoulder := MeshInstance3D.new()
 	shoulder.name = "MagneticShoulder"
 	shoulder.mesh = _strip_mesh(curve, length, width + 3.6, shoulder_color, -0.12)
-	var shoulder_material := MaterialLibrary.road(Color.WHITE, 0.34, 0.56, true)
+	var shoulder_material := MaterialLibrary.road_for(spec, Color.WHITE, true)
+	shoulder_material.metallic = 0.34
+	shoulder_material.roughness = 0.56
 	shoulder_material.uv1_scale.y = float(tuning.get("road_repeat", 0.055)) * 0.72
 	shoulder_material.vertex_color_use_as_albedo = true
 	shoulder.material_override = shoulder_material

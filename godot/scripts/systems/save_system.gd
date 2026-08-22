@@ -10,7 +10,13 @@ signal profile_loaded(profile_data: Dictionary)
 signal profile_changed(profile_data: Dictionary)
 signal save_failed(message: String)
 
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
+const CHAMPIONSHIP_SCHEMA_VERSION := 3
+const HISTORIC_MODULE_IDS: Array[String] = [
+	"core_balanced", "core_overdrive", "core_bastion",
+	"mobility_vector", "mobility_sprint", "mobility_adaptive",
+	"utility_coolant", "utility_aegis", "utility_scanner",
+]
 const SAVE_PATH := "user://mecha_overdrive_profile.json"
 const TEMP_PATH := "user://mecha_overdrive_profile.tmp"
 const BACKUP_PATH := "user://mecha_overdrive_profile.backup.json"
@@ -130,12 +136,81 @@ func set_paint(chassis_id: String, paint_hex: String = "") -> bool:
 func set_module(chassis_id: String, slot_id: String, module_id: String) -> bool:
 	if not GameDatabase.has_chassis(chassis_id) or GameDatabase.get_module_option(slot_id, module_id).is_empty():
 		return false
+	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", ""))
+	if not GameDatabase.is_module_allowed_for_division(module_id, division_id) or not is_module_owned(module_id):
+		return false
 	var loadouts: Dictionary = profile.get("loadouts", {})
 	var loadout := _sanitize_loadout(loadouts.get(chassis_id, {}), chassis_id)
 	loadout[slot_id] = module_id
 	loadouts[chassis_id] = loadout
 	profile["loadouts"] = loadouts
 	return _commit_profile()
+
+
+func is_module_owned(module_id: String) -> bool:
+	var owned: Variant = profile.get("owned_modules", [])
+	return owned is Array and module_id in owned
+
+
+func get_owned_modules() -> Array[String]:
+	var output: Array[String] = []
+	var owned: Variant = profile.get("owned_modules", [])
+	if owned is Array:
+		for module_id: Variant in owned:
+			output.append(String(module_id))
+	return output
+
+
+func get_loadout_cost(chassis_id: String, requested_loadout: Dictionary) -> int:
+	if not GameDatabase.has_chassis(chassis_id):
+		return -1
+	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", ""))
+	var owned := get_owned_modules()
+	var counted: Dictionary = {}
+	var cost := 0
+	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
+		var slot_id := String(slot.get("id", ""))
+		var module_id := String(requested_loadout.get(slot_id, ""))
+		var option := GameDatabase.get_module_option(slot_id, module_id)
+		if option.is_empty() or not GameDatabase.is_module_allowed_for_division(module_id, division_id):
+			return -1
+		if module_id not in owned and not counted.has(module_id):
+			cost += maxi(0, int(option.get("cost", 0)))
+			counted[module_id] = true
+	return cost
+
+
+func purchase_and_equip_loadout(chassis_id: String, requested_loadout: Dictionary) -> bool:
+	var paints: Dictionary = profile.get("paints", {})
+	var current_paint := String(paints.get(chassis_id, GameDatabase.get_chassis(chassis_id).get("paint", "#5EE7FF")))
+	return purchase_and_apply_garage(chassis_id, current_paint, requested_loadout)
+
+
+func purchase_and_apply_garage(chassis_id: String, paint_hex: String, requested_loadout: Dictionary) -> bool:
+	if not Color.html_is_valid(paint_hex):
+		return false
+	var cost := get_loadout_cost(chassis_id, requested_loadout)
+	var credits := maxi(0, int(profile.get("credits", 0)))
+	if cost < 0 or credits < cost:
+		return false
+	var snapshot := profile.duplicate(true)
+	var owned := get_owned_modules()
+	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
+		var module_id := String(requested_loadout.get(String(slot.get("id", "")), ""))
+		if module_id not in owned:
+			owned.append(module_id)
+	var loadouts: Dictionary = profile.get("loadouts", {})
+	loadouts[chassis_id] = _sanitize_loadout(requested_loadout, chassis_id)
+	var paints: Dictionary = profile.get("paints", {})
+	paints[chassis_id] = Color(paint_hex).to_html(false).to_upper()
+	profile["owned_modules"] = owned
+	profile["loadouts"] = loadouts
+	profile["paints"] = paints
+	profile["credits"] = credits - cost
+	if _commit_profile():
+		return true
+	profile = snapshot
+	return false
 
 
 func get_loadout(chassis_id: String = "") -> Dictionary:
@@ -320,6 +395,7 @@ func _default_profile() -> Dictionary:
 		"unlocked_paints": GameDatabase.DEFAULT_PAINTS.duplicate(),
 		"upgrades": upgrades,
 		"loadouts": loadouts,
+		"owned_modules": HISTORIC_MODULE_IDS.duplicate(),
 		"records": {},
 		"championship": {},
 		"stats": {"races": 0, "wins": 0, "podiums": 0, "championships": 0, "credits_earned": 0},
@@ -365,6 +441,31 @@ func _sanitize_profile(source: Dictionary) -> Dictionary:
 	var clean_loadouts: Dictionary = clean["loadouts"]
 	for chassis_id: String in clean_loadouts.keys():
 		clean_loadouts[chassis_id] = _sanitize_loadout(source_loadouts.get(chassis_id, {}), chassis_id)
+	clean["loadouts"] = clean_loadouts
+
+	# v3 exposed the original nine modules without purchase. They remain owned
+	# forever; v4 adds only validated catalogue IDs to that historical grant.
+	var valid_module_ids: Dictionary = {}
+	for option: Dictionary in GameDatabase.get_all_module_options():
+		valid_module_ids[String(option.get("id", ""))] = true
+	var owned_modules: Array[String] = []
+	for module_id: String in HISTORIC_MODULE_IDS:
+		if valid_module_ids.has(module_id):
+			owned_modules.append(module_id)
+	var source_owned: Variant = source.get("owned_modules", [])
+	if source_owned is Array:
+		for raw_module_id: Variant in source_owned:
+			var module_id := String(raw_module_id)
+			if valid_module_ids.has(module_id) and module_id not in owned_modules:
+				owned_modules.append(module_id)
+	clean["owned_modules"] = owned_modules
+	for chassis_id: String in clean_loadouts.keys():
+		var owned_loadout: Dictionary = clean_loadouts[chassis_id]
+		var fallback_loadout := _default_loadout(chassis_id)
+		for slot_id: String in owned_loadout.keys():
+			if String(owned_loadout[slot_id]) not in owned_modules:
+				owned_loadout[slot_id] = fallback_loadout.get(slot_id, owned_loadout[slot_id])
+		clean_loadouts[chassis_id] = owned_loadout
 	clean["loadouts"] = clean_loadouts
 
 	var old_settings: Dictionary = source.get("settings", {}) if source.get("settings", {}) is Dictionary else {}
@@ -430,14 +531,14 @@ func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, so
 		legacy_cup_id = "command_cup"
 	# v2 only knew one anonymous GP. Migrate it to the dedicated cup matching
 	# the selected chassis so an existing championship is never silently lost.
-	var default_cup_id := legacy_cup_id if source_version < SAVE_VERSION else "command_cup"
+	var default_cup_id := legacy_cup_id if source_version < CHAMPIONSHIP_SCHEMA_VERSION else "command_cup"
 	var championship_id := String(source.get("championship_id", source.get("cup_id", default_cup_id)))
 	var definition := GameDatabase.get_championship(championship_id)
 	if definition.is_empty():
 		return {}
 	# From v3 onward, a saved cup references immutable catalogue rules. This
 	# closes tampering and prevents stale fields from rewriting its homologation.
-	var track_source: Variant = source.get("tracks", definition.get("track_ids", CHAMPIONSHIP_TRACKS)) if source_version < SAVE_VERSION else definition.get("track_ids", CHAMPIONSHIP_TRACKS)
+	var track_source: Variant = source.get("tracks", definition.get("track_ids", CHAMPIONSHIP_TRACKS)) if source_version < CHAMPIONSHIP_SCHEMA_VERSION else definition.get("track_ids", CHAMPIONSHIP_TRACKS)
 	var tracks := _sanitize_track_list(track_source)
 	if tracks.is_empty():
 		return {}
@@ -538,9 +639,10 @@ func _default_loadout(chassis_id: String = "") -> Dictionary:
 func _sanitize_loadout(value: Variant, chassis_id: String = "") -> Dictionary:
 	var source: Dictionary = value if value is Dictionary else {}
 	var output := _default_loadout(chassis_id)
+	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", ""))
 	for slot_id: String in output.keys():
 		var option_id := String(source.get(slot_id, output[slot_id]))
-		if not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+		if not GameDatabase.get_module_option(slot_id, option_id).is_empty() and GameDatabase.is_module_allowed_for_division(option_id, division_id):
 			output[slot_id] = option_id
 	return output
 

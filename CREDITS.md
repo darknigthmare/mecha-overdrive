@@ -6,15 +6,23 @@ Projet préparé pour **Darknigthmare** en 2026.
 
 ## Assets
 
-MECHA OVERDRIVE — Circuit Zero ne charge aucun asset artistique tiers. Le projet contient un key art et quatre matériaux bitmap originaux produits avec l’outil de génération d’images OpenAI :
+MECHA OVERDRIVE — Circuit Zero ne charge aucun asset artistique tiers. Le projet contient un key art et douze matériaux bitmap originaux produits avec l’outil de génération d’images OpenAI :
 
-- génération commandée spécifiquement pour ce jeu le 21 août 2026 ;
+- générations commandées spécifiquement pour ce jeu les 21 et 22 août 2026 ;
 - aucune image de référence sous licence ni aucun asset officiel n’a été fourni au modèle ;
 - prompt complet et contraintes d’originalité archivés dans `docs/ASSET_PROVENANCE.md`.
 - `godot/assets/textures/openai/mecha_armor.png` — armures et modules ;
 - `godot/assets/textures/openai/track_surface.png` — pistes et épaules ;
 - `godot/assets/textures/openai/cockpit_composite.png` — cockpits ;
 - `godot/assets/textures/openai/environment_panels.png` — décors et barrières ;
+- `godot/assets/textures/openai/mecha_armor_light.png` — blindages légers et commandement ;
+- `godot/assets/textures/openai/mecha_armor_heavy.png` — blindages lourds et stabilisés ;
+- `godot/assets/textures/openai/module_energy.png` — noyaux et relais énergétiques ;
+- `godot/assets/textures/openai/module_mobility.png` — propulseurs et systèmes de mobilité ;
+- `godot/assets/textures/openai/module_utility.png` — utilitaires, capteurs et défenses ;
+- `godot/assets/textures/openai/track_thermal.png` — surfaces thermiques ;
+- `godot/assets/textures/openai/track_cryo.png` — surfaces cryogéniques ;
+- `godot/assets/textures/openai/garage_bay.png` — baie d’atelier du garage 3D ;
 - prompts complets et identifiants archivés dans `godot/assets/textures/openai/manifest.json`.
 
 La géométrie, le son et les autres surfaces de l’expérience sont générés localement :

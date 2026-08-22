@@ -124,33 +124,168 @@ const MODULE_SLOTS: Array[Dictionary] = [
 	{
 		"id": "core", "name": "Noyau", "description": "Architecture énergétique principale.", "default_option_id": "core_balanced",
 		"options": [
-			{"id": "core_balanced", "name": "Noyau Synchrone", "description": "Répartition neutre, fiable dans toutes les divisions.", "cost": 0, "stats": {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0}},
-			{"id": "core_overdrive", "name": "Cœur Overdrive", "description": "Davantage de vitesse et de réacteur au prix du blindage.", "cost": 1400, "stats": {"speed": 6, "acceleration": 3, "handling": 0, "armor": -5, "stability": -2, "reactor": 7}},
-			{"id": "core_bastion", "name": "Cœur Bastion", "description": "Renforce blindage et stabilité en sacrifiant la pointe.", "cost": 1400, "stats": {"speed": -5, "acceleration": -2, "handling": 0, "armor": 8, "stability": 6, "reactor": 0}},
+			{
+				"id": "core_balanced", "name": "Noyau Synchrone", "description": "Répartition neutre, fiable dans toutes les divisions.",
+				"cost": 0, "tier": 0, "power_draw": 0,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "core_dual_cell", "texture_set": "module_energy", "manufacturer": "Nexus Standard Works",
+				"role": "Équilibre énergétique", "lore": "Le noyau de référence de la Ligue synchronise propulsion, refroidissement et commandes sans privilégier un sous-système.",
+				"stats": {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0},
+			},
+			{
+				"id": "core_overdrive", "name": "Cœur Overdrive", "description": "Davantage de vitesse et de réacteur au prix du blindage.",
+				"cost": 1400, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "core_twin_reactor", "texture_set": "module_energy", "manufacturer": "Nexus Experimental Lab",
+				"role": "Pointe et surcharge", "lore": "Deux chambres couplées libèrent une poussée brutale, au prix de panneaux de protection sacrifiés autour du réacteur.",
+				"stats": {"speed": 6, "acceleration": 3, "handling": 0, "armor": -5, "stability": -2, "reactor": 7},
+			},
+			{
+				"id": "core_bastion", "name": "Cœur Bastion", "description": "Renforce blindage et stabilité en sacrifiant la pointe.",
+				"cost": 1400, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "core_side_bulwark", "texture_set": "module_energy", "manufacturer": "Calder Groundworks",
+				"role": "Protection lourde", "lore": "Issu des engins telluriques Calder, ce cœur enferme ses cellules dans deux caissons capables d'encaisser les contacts de peloton.",
+				"stats": {"speed": -5, "acceleration": -2, "handling": 0, "armor": 8, "stability": 6, "reactor": 0},
+			},
+			{
+				"id": "core_tactical_relay", "name": "Relais Tactique", "description": "Répartit les corrections entre les appuis, mais exige une coque plus légère.",
+				"cost": 1650, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "experimental"],
+				"visual_profile": "core_relay_ring", "texture_set": "module_energy", "manufacturer": "Aster Command Systems",
+				"role": "Contrôle coordonné", "lore": "Le relais Aster fusionne la télémétrie des appuis avant de renvoyer une correction commune à toute l'architecture.",
+				"stats": {"speed": -2, "acceleration": 0, "handling": 4, "armor": -2, "stability": 3, "reactor": 5},
+			},
+			{
+				"id": "core_hive_capacitor", "name": "Condensateur Ruche", "description": "Des cellules parallèles favorisent relance et intégrité au prix de la précision.",
+				"cost": 1750, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["swarm", "ground"],
+				"visual_profile": "core_capacitor_cluster", "texture_set": "module_energy", "manufacturer": "Mantis Collective",
+				"role": "Relance distribuée", "lore": "Six cellules indépendantes partagent charge et dégâts comme une ruche mécanique qui refuse de perdre toute sa puissance d'un seul coup.",
+				"stats": {"speed": -1, "acceleration": 6, "handling": -3, "armor": 4, "stability": -2, "reactor": 3},
+			},
+			{
+				"id": "core_phase_lattice", "name": "Réseau de Phase", "description": "Découple brièvement masse et alimentation pour gagner en pointe, avec une structure très fragile.",
+				"cost": 2500, "tier": 2, "power_draw": 3,
+				"allowed_divisions": ["experimental", "command"],
+				"visual_profile": "core_phase_lattice", "texture_set": "module_energy", "manufacturer": "Nexus Experimental Lab",
+				"role": "Découplage de phase", "lore": "Trois anneaux maintiennent le réacteur entre deux états inertiels; la Ligue ne l'autorise qu'en homologation Prototype.",
+				"stats": {"speed": 5, "acceleration": 0, "handling": 4, "armor": -6, "stability": -3, "reactor": 6},
+			},
 		],
 	},
 	{
 		"id": "mobility", "name": "Mobilité", "description": "Train de déplacement et contrôle de trajectoire.", "default_option_id": "mobility_vector",
 		"options": [
-			{"id": "mobility_vector", "name": "Servos Vectoriels", "description": "Configuration polyvalente sans compromis statistique.", "cost": 0, "stats": {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0}},
-			{"id": "mobility_sprint", "name": "Articulations Sprint", "description": "Relances explosives et vitesse accrue, stabilité réduite.", "cost": 1200, "stats": {"speed": 3, "acceleration": 8, "handling": 1, "armor": -2, "stability": -5, "reactor": 0}},
-			{"id": "mobility_adaptive", "name": "Appuis Adaptatifs", "description": "Braquage et stabilité supérieurs sur les secteurs techniques.", "cost": 1200, "stats": {"speed": -3, "acceleration": 0, "handling": 8, "armor": 0, "stability": 6, "reactor": -2}},
+			{
+				"id": "mobility_vector", "name": "Servos Vectoriels", "description": "Configuration polyvalente sans compromis statistique.",
+				"cost": 0, "tier": 0, "power_draw": 0,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "mobility_vector_pods", "texture_set": "module_mobility", "manufacturer": "Valkyr Stabilisation",
+				"role": "Mobilité polyvalente", "lore": "Ces servos constituent l'interface mécanique commune sur laquelle la Ligue a bâti ses normes de mobilité.",
+				"stats": {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0},
+			},
+			{
+				"id": "mobility_sprint", "name": "Articulations Sprint", "description": "Relances explosives et vitesse accrue, stabilité réduite.",
+				"cost": 1200, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "mobility_sprint_pistons", "texture_set": "module_mobility", "manufacturer": "Valkyr Stabilisation",
+				"role": "Accélération explosive", "lore": "Des accumulateurs tendent les articulations au freinage puis restituent l'énergie dès que le pilote rouvre les gaz.",
+				"stats": {"speed": 3, "acceleration": 8, "handling": 1, "armor": -2, "stability": -5, "reactor": 0},
+			},
+			{
+				"id": "mobility_adaptive", "name": "Appuis Adaptatifs", "description": "Braquage et stabilité supérieurs sur les secteurs techniques.",
+				"cost": 1200, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "mobility_adaptive_skids", "texture_set": "module_mobility", "manufacturer": "Mantis Collective",
+				"role": "Terrain technique", "lore": "Chaque patin lit le relief séparément et transmet sa réponse au calculateur central avant le prochain contact.",
+				"stats": {"speed": -3, "acceleration": 0, "handling": 8, "armor": 0, "stability": 6, "reactor": -2},
+			},
+			{
+				"id": "mobility_gyro_rail", "name": "Rail Gyrovectoriel", "description": "Deux volants inertiels stabilisent la dérive, avec une relance plus lente.",
+				"cost": 1550, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "ground", "experimental"],
+				"visual_profile": "mobility_gyro_flywheels", "texture_set": "module_mobility", "manufacturer": "Calder Groundworks",
+				"role": "Dérive contrôlée", "lore": "Les volants Calder déplacent leur inertie d'un flanc à l'autre pour tenir une ligne que la masse devrait rendre impossible.",
+				"stats": {"speed": 2, "acceleration": -2, "handling": 6, "armor": -2, "stability": 5, "reactor": -1},
+			},
+			{
+				"id": "mobility_multileg", "name": "Train Multi-appuis", "description": "Des appuis supplémentaires sécurisent les secteurs accidentés au détriment de la pointe.",
+				"cost": 1650, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["stabilized", "swarm"],
+				"visual_profile": "mobility_multileg_outriggers", "texture_set": "module_mobility", "manufacturer": "Mantis Collective",
+				"role": "Motricité distribuée", "lore": "Des jambes auxiliaires se déploient uniquement sous charge, transformant chaque irrégularité en point de poussée supplémentaire.",
+				"stats": {"speed": -4, "acceleration": 4, "handling": 5, "armor": 0, "stability": 5, "reactor": -2},
+			},
+			{
+				"id": "mobility_phase_skates", "name": "Patins de Phase", "description": "Une poussée sans contact extrêmement vive devient instable sous les impacts.",
+				"cost": 2350, "tier": 2, "power_draw": 3,
+				"allowed_divisions": ["experimental", "stabilized"],
+				"visual_profile": "mobility_phase_skates", "texture_set": "module_mobility", "manufacturer": "Nexus Experimental Lab",
+				"role": "Mobilité sans contact", "lore": "Quatre patins maintiennent une pellicule de phase sous le châssis; un choc mal absorbé peut décaler tout le champ porteur.",
+				"stats": {"speed": 6, "acceleration": 6, "handling": 3, "armor": -3, "stability": -7, "reactor": -2},
+			},
 		],
 	},
 	{
 		"id": "utility", "name": "Utilitaire", "description": "Sous-système tactique complémentaire.", "default_option_id": "utility_coolant",
 		"options": [
-			{"id": "utility_coolant", "name": "Boucle Cryo", "description": "Refroidissement standard et comportement prévisible.", "cost": 0, "stats": {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0}},
-			{"id": "utility_aegis", "name": "Plaques Aegis", "description": "Blindage modulaire compact, avec une légère masse additionnelle.", "cost": 1100, "stats": {"speed": -2, "acceleration": -3, "handling": 0, "armor": 7, "stability": 3, "reactor": 0}},
-			{"id": "utility_scanner", "name": "Scanner Apex", "description": "Anticipation de ligne et réponse plus précise du châssis.", "cost": 1100, "stats": {"speed": 0, "acceleration": 2, "handling": 6, "armor": -3, "stability": 0, "reactor": 3}},
+			{
+				"id": "utility_coolant", "name": "Boucle Cryo", "description": "Refroidissement standard et comportement prévisible.",
+				"cost": 0, "tier": 0, "power_draw": 0,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "utility_cryo_fins", "texture_set": "module_utility", "manufacturer": "Nexus Standard Works",
+				"role": "Refroidissement standard", "lore": "La boucle Cryo maintient la température réglementaire sans modifier le comportement prévu par le constructeur.",
+				"stats": {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0},
+			},
+			{
+				"id": "utility_aegis", "name": "Plaques Aegis", "description": "Blindage modulaire compact, avec une légère masse additionnelle.",
+				"cost": 1100, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "utility_shield_rings", "texture_set": "module_utility", "manufacturer": "Calder Groundworks",
+				"role": "Défense modulaire", "lore": "Les plaques segmentées dévient l'énergie des contacts vers deux anneaux sacrificiels remplaçables entre les manches.",
+				"stats": {"speed": -2, "acceleration": -3, "handling": 0, "armor": 7, "stability": 3, "reactor": 0},
+			},
+			{
+				"id": "utility_scanner", "name": "Scanner Apex", "description": "Anticipation de ligne et réponse plus précise du châssis.",
+				"cost": 1100, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "swarm", "ground", "experimental"],
+				"visual_profile": "utility_scanner_mast", "texture_set": "module_utility", "manufacturer": "Aster Command Systems",
+				"role": "Lecture de trajectoire", "lore": "Apex compare relief, trafic et chaleur de piste pour proposer une correction avant même que le pilote ne voie le danger.",
+				"stats": {"speed": 0, "acceleration": 2, "handling": 6, "armor": -3, "stability": 0, "reactor": 3},
+			},
+			{
+				"id": "utility_command_uplink", "name": "Liaison Stratège", "description": "Fusionne télémétrie et trajectoire au prix d'une protection réduite.",
+				"cost": 1350, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["command", "stabilized", "experimental"],
+				"visual_profile": "utility_uplink_array", "texture_set": "module_utility", "manufacturer": "Aster Command Systems",
+				"role": "Coordination tactique", "lore": "La liaison Stratège transforme les balises de la piste et les signatures rivales en une carte prédictive constamment révisée.",
+				"stats": {"speed": 0, "acceleration": 0, "handling": 3, "armor": -3, "stability": 3, "reactor": 3},
+			},
+			{
+				"id": "utility_impact_ram", "name": "Éperon Inertiel", "description": "Absorbe et restitue les contacts, mais alourdit le braquage.",
+				"cost": 1450, "tier": 1, "power_draw": 2,
+				"allowed_divisions": ["swarm", "ground"],
+				"visual_profile": "utility_impact_ram", "texture_set": "module_utility", "manufacturer": "Calder Groundworks",
+				"role": "Contact offensif", "lore": "Son ossature accumule une fraction de l'impact frontal avant de la rendre à la transmission lors de la relance.",
+				"stats": {"speed": -1, "acceleration": 3, "handling": -4, "armor": 5, "stability": 4, "reactor": -2},
+			},
+			{
+				"id": "utility_phase_sink", "name": "Dissipateur de Phase", "description": "Une dissipation réacteur extrême rend le comportement latéral plus nerveux.",
+				"cost": 2200, "tier": 2, "power_draw": 3,
+				"allowed_divisions": ["experimental", "swarm"],
+				"visual_profile": "utility_phase_sink_petals", "texture_set": "module_utility", "manufacturer": "Nexus Experimental Lab",
+				"role": "Dissipation extrême", "lore": "Ses pétales rejettent la chaleur dans une couche de phase instable qui se referme derrière le mécha comme une traînée lumineuse.",
+				"stats": {"speed": 2, "acceleration": -3, "handling": -2, "armor": 3, "stability": -4, "reactor": 8},
+			},
 		],
 	},
 ]
 
 const PERFORMANCE_CLASSES: Array[Dictionary] = [
-	{"id": "stock", "name": "Série", "description": "Châssis homologués avec modules standards.", "max_upgrade_level": 0, "module_policy": "defaults_only"},
-	{"id": "tuned", "name": "Préparé", "description": "Réglages et modules libres dans une enveloppe contrôlée.", "max_upgrade_level": 2, "module_policy": "all"},
-	{"id": "unlimited", "name": "Prototype", "description": "Toutes améliorations et configurations autorisées.", "max_upgrade_level": 4, "module_policy": "all"},
+	{"id": "stock", "name": "Série", "description": "Châssis homologués avec modules standards.", "max_upgrade_level": 0, "max_module_tier": 0, "module_power_budget": 0, "module_policy": "defaults_only"},
+	{"id": "tuned", "name": "Préparé", "description": "Réglages et modules libres dans une enveloppe contrôlée.", "max_upgrade_level": 2, "max_module_tier": 1, "module_power_budget": 6, "module_policy": "all"},
+	{"id": "unlimited", "name": "Prototype", "description": "Toutes améliorations et configurations autorisées.", "max_upgrade_level": 4, "max_module_tier": 2, "module_power_budget": 9, "module_policy": "all"},
 ]
 
 const RACE_RULESETS: Array[Dictionary] = [
@@ -203,6 +338,53 @@ static func get_all_divisions() -> Array[Dictionary]:
 
 static func get_all_module_slots() -> Array[Dictionary]:
 	return MODULE_SLOTS.duplicate(true)
+
+
+static func get_all_module_options() -> Array[Dictionary]:
+	var options: Array[Dictionary] = []
+	for slot: Dictionary in MODULE_SLOTS:
+		for option: Dictionary in slot.get("options", []):
+			options.append(option.duplicate(true))
+	return options
+
+
+static func get_module_count() -> int:
+	var count := 0
+	for slot: Dictionary in MODULE_SLOTS:
+		count += Array(slot.get("options", [])).size()
+	return count
+
+
+static func calculate_module_totals(loadout: Dictionary) -> Dictionary:
+	var totals: Dictionary = {
+		"speed": 0,
+		"acceleration": 0,
+		"handling": 0,
+		"armor": 0,
+		"stability": 0,
+		"reactor": 0,
+	}
+	for slot: Dictionary in MODULE_SLOTS:
+		var slot_id := String(slot.get("id", ""))
+		var option_id := String(loadout.get(slot_id, ""))
+		var option := get_module_option(slot_id, option_id)
+		if option.is_empty():
+			continue
+		var stats: Dictionary = option.get("stats", {}) if option.get("stats", {}) is Dictionary else {}
+		for stat_id: String in totals.keys():
+			totals[stat_id] = int(totals[stat_id]) + int(stats.get(stat_id, 0))
+	return totals
+
+
+static func is_module_allowed_for_division(module_id: String, division_id: String) -> bool:
+	if get_division(division_id).is_empty():
+		return false
+	for option: Dictionary in get_all_module_options():
+		if String(option.get("id", "")) != module_id:
+			continue
+		var allowed_divisions: Array = option.get("allowed_divisions", [])
+		return division_id in allowed_divisions
+	return false
 
 
 static func get_all_performance_classes() -> Array[Dictionary]:

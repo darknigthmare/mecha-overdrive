@@ -10,8 +10,8 @@ static func build(chassis: Dictionary, paint: Color, is_player: bool = false, cu
 	root.name = "Mecha_%s" % String(chassis.get("id", "unknown"))
 	root.set_meta("chassis_id", chassis.get("id", "biped"))
 
-	var primary := MaterialLibrary.mecha(paint, 0.82, 0.24, 1.8)
-	var dark := MaterialLibrary.mecha(paint.darkened(0.64), 0.9, 0.31, 2.4)
+	var primary := MaterialLibrary.mecha_for(chassis, paint, "primary")
+	var dark := MaterialLibrary.mecha_for(chassis, paint.darkened(0.64), "secondary")
 	var joint := MaterialLibrary.joint()
 	var cockpit := MaterialLibrary.cockpit()
 	var glow_color := Color("64ebff") if is_player else Color(String(chassis.get("glow", "ff9c55")))

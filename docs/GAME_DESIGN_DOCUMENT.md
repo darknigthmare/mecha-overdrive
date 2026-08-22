@@ -1,6 +1,6 @@
 # Game Design Document — MECHA OVERDRIVE: Circuit Zero
 
-## Contrat de jeu actuel — Godot 2.1.0
+## Contrat de jeu actuel — Godot 2.2.0
 
 Cette section est la spécification autoritative de l’édition Godot. Elle remplace, pour cette édition, les quantités et limites de la baseline Canvas/PWA 1.0 archivée plus bas.
 
@@ -43,7 +43,7 @@ Trois classes de performance encadrent l’écart de puissance :
 | `tuned` | Préparé | choix libre parmi les modules | niveau maximal 2 |
 | `unlimited` | Prototype | choix libre parmi les modules | niveau maximal 4 |
 
-Chaque châssis possède un chargement enregistré dans **3 emplacements** — Noyau, Mobilité, Utilitaire — avec **9 modules** au total. Le garage affiche leur impact net sur vitesse, accélération, maniabilité, blindage, stabilité et réacteur. Les modules sont visibles sur la géométrie 3D et leurs modificateurs sont consommés par la simulation.
+Chaque châssis possède un chargement enregistré dans **3 emplacements** — Noyau, Mobilité, Utilitaire — avec **18 modules** au total, soit six options par emplacement. Les neuf pièces historiques restent universelles et acquises ; neuf pièces spécialisées ajoutent affinités de division, tier, consommation, fabricant, rôle et lore. Le garage affiche le vrai modèle 3D de course et compare la base à la configuration finale avant tout achat.
 
 ### Huit circuits
 
@@ -60,15 +60,15 @@ Chaque circuit définit son grip, son profil de tracé, ses matériaux, ses acce
 
 Tous les châssis fournissent une vue TPS et une vue cockpit/FPS avec ancres dédiées. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé par châssis. La vue interne active le composite cockpit et masque les pièces extérieures obstructives.
 
-La bibliothèque de matériaux couvre l’armure des méchas, les surfaces de piste, le cockpit et les panneaux d’environnement avec quatre textures raster originales générées avec OpenAI. Les fichiers, identifiants de génération, prompts et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
+La bibliothèque de matériaux couvre l’armure légère et lourde, les trois familles de modules, les surfaces standard, thermiques et cryogéniques, le cockpit, les panneaux d’environnement et la baie du garage avec douze textures raster originales générées avec OpenAI. Les fichiers, identifiants de génération, prompts et usages sont consignés dans `godot/assets/textures/openai/manifest.json` ; les huit textures de la vague 2.2.0 y ajoutent dimensions et empreinte SHA-256 vérifiable.
 
 ### Sauvegarde et continuité
 
-Le profil Godot utilise `SAVE_VERSION = 3`. Il conserve notamment les chargements modulaires et la caméra par châssis, ainsi que l’identité, la manche, la grille stable, la division, le règlement et la classe du championnat actif. La migration v2 associe un ancien Grand Prix à la coupe dédiée de la division sélectionnée. À la lecture, les propriétés de coupe sont recanonicalisées depuis le catalogue immuable afin qu’un profil altéré ne puisse pas redéfinir le championnat.
+Le profil Godot utilise `SAVE_VERSION = 4`. Il conserve les chargements, l’inventaire de modules et la caméra par châssis, ainsi que l’identité, la manche, la grille stable, la division, le règlement et la classe du championnat actif. Les profils v3 reçoivent les neuf pièces qui étaient auparavant libres. Le seuil de migration des anciens Grands Prix reste explicitement fixé au schéma championnat v3 : la montée en v4 ne rend jamais les circuits sauvegardés autoritatifs.
 
 ## Annexe — Spécification historique du compagnon web 1.0
 
-Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.1.0 ci-dessus.
+Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.2.0 ci-dessus.
 
 ## 1. Vision
 
@@ -92,7 +92,7 @@ Les objets doivent produire une conséquence claire sans interrompre durablement
 
 ### Rejouabilité courte
 
-Une course peut être lancée en quelques secondes. Le garage, les records et le Grand Prix donnent un objectif durable sans bloquer l’accès aux huit châssis.
+Une course peut être lancée en quelques secondes. Le garage, les records et le Grand Prix donnent un objectif durable sans bloquer l’accès aux dix châssis.
 
 ## 3. Boucle principale
 

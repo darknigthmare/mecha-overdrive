@@ -10,16 +10,19 @@ const GarageScript = preload("res://scripts/ui/garage.gd")
 const MechaFactoryScript = preload("res://scripts/mecha/mecha_factory.gd")
 const RaceControllerScript = preload("res://scripts/race/race_controller.gd")
 const TrackFactoryScript = preload("res://scripts/world/track_factory.gd")
+const GaragePreviewScene = preload("res://scenes/components/garage_preview.tscn")
 
 var _failures: Array[String] = []
 
 
 func _init() -> void:
 	_test_database()
+	_test_asset_manifest_contract()
 	_test_profile_contract()
 	_test_session_modes()
 	_test_division_grids()
 	_test_modular_contract()
+	_test_module_purchase_contract()
 	_test_performance_classes()
 	_test_mecha_visual_contract()
 	_test_track_visual_contract()
@@ -27,13 +30,14 @@ func _init() -> void:
 	_test_time_trial_results_contract()
 	_test_grand_prix_persistence()
 	_test_garage_current_chassis()
+	_test_garage_preview_contract()
 	_test_backup_recovery()
 	_test_deterministic_racer()
 	_test_boost_pad_contract()
 	_test_chassis_abilities()
 	_test_audio_event_lifecycle()
 	if _failures.is_empty():
-		print("MECHA GODOT SMOKE: PASS (10 chassis, 5 divisions, 8 tracks, 6 cups, 9 modules, TPS/FPS, save v3, GP resume, racer, audio)")
+		print("MECHA GODOT SMOKE: PASS (10 chassis, 5 divisions, 8 tracks, 6 cups, 18 modules, 12 textures, garage preview, TPS/FPS, save v4, GP resume, racer, audio)")
 		quit(0)
 		return
 	for failure in _failures:
@@ -49,9 +53,23 @@ func _test_database() -> void:
 	_expect(DatabaseScript.MODULE_SLOTS.size() == 3, "la customisation doit exposer 3 emplacements")
 	_expect(DatabaseScript.CHAMPIONSHIPS.size() == 6, "le catalogue doit contenir 6 championnats")
 	var module_count := 0
+	var module_ids: Dictionary = {}
 	for slot: Dictionary in DatabaseScript.MODULE_SLOTS:
-		module_count += Array(slot.get("options", [])).size()
-	_expect(module_count == 9, "la customisation doit contenir 9 modules")
+		var options: Array = slot.get("options", [])
+		_expect(options.size() == 6, "chaque emplacement doit proposer 6 modules : %s" % slot.get("id", "?"))
+		module_count += options.size()
+		for option_value: Variant in options:
+			if not option_value is Dictionary:
+				_expect(false, "option module invalide : %s" % slot.get("id", "?"))
+				continue
+			var option: Dictionary = option_value
+			var module_id := String(option.get("id", ""))
+			_expect(not module_id.is_empty() and not module_ids.has(module_id), "identifiant module absent ou dupliqué : %s" % module_id)
+			module_ids[module_id] = true
+			_expect(int(option.get("cost", -1)) >= 0, "coût module invalide : %s" % module_id)
+			_expect(not String(option.get("visual_profile", "")).is_empty(), "profil visuel module absent : %s" % module_id)
+			_expect(not String(option.get("texture_set", "")).is_empty(), "texture de module absente : %s" % module_id)
+	_expect(module_count == 18 and module_ids.size() == 18, "la customisation doit contenir 18 modules uniques")
 	var expected := {
 		"biped": "Raptor R2", "tripod": "Triarch T3", "quadruped": "Fenrir Q4",
 		"hexapod": "Mantis H6", "octopod": "Arachne O8", "hover": "Wraith V0",
@@ -79,12 +97,58 @@ func _test_database() -> void:
 			_expect(division_id.is_empty(), "un Open mixte ne doit pas imposer de division")
 		else:
 			_expect(not DatabaseScript.get_division(division_id).is_empty(), "coupe dédiée sans division")
-	for texture_path: String in ["res://assets/textures/openai/mecha_armor.png", "res://assets/textures/openai/track_surface.png", "res://assets/textures/openai/cockpit_composite.png", "res://assets/textures/openai/environment_panels.png"]:
+	for texture_path: String in [
+		"res://assets/textures/openai/mecha_armor.png",
+		"res://assets/textures/openai/track_surface.png",
+		"res://assets/textures/openai/cockpit_composite.png",
+		"res://assets/textures/openai/environment_panels.png",
+		"res://assets/textures/openai/mecha_armor_light.png",
+		"res://assets/textures/openai/mecha_armor_heavy.png",
+		"res://assets/textures/openai/module_energy.png",
+		"res://assets/textures/openai/module_mobility.png",
+		"res://assets/textures/openai/module_utility.png",
+		"res://assets/textures/openai/track_thermal.png",
+		"res://assets/textures/openai/track_cryo.png",
+		"res://assets/textures/openai/garage_bay.png",
+	]:
 		_expect(ResourceLoader.exists(texture_path), "texture OpenAI absente : %s" % texture_path)
+
+
+func _test_asset_manifest_contract() -> void:
+	var manifest_file := FileAccess.open("res://assets/textures/openai/manifest.json", FileAccess.READ)
+	_expect(manifest_file != null, "manifest OpenAI absent")
+	if manifest_file == null:
+		return
+	var parsed: Variant = JSON.parse_string(manifest_file.get_as_text())
+	manifest_file.close()
+	_expect(parsed is Dictionary, "manifest OpenAI invalide")
+	if not parsed is Dictionary:
+		return
+	var manifest: Dictionary = parsed
+	_expect(int(manifest.get("schema_version", 0)) == 2, "le manifest OpenAI doit utiliser le schema 2")
+	var expected_files: Array[String] = [
+		"mecha_armor.png", "track_surface.png", "cockpit_composite.png", "environment_panels.png",
+		"mecha_armor_light.png", "mecha_armor_heavy.png", "module_energy.png", "module_mobility.png",
+		"module_utility.png", "track_thermal.png", "track_cryo.png", "garage_bay.png",
+	]
+	var assets: Array = manifest.get("assets", [])
+	var seen: Dictionary = {}
+	_expect(assets.size() == 12, "le manifest OpenAI doit décrire 12 textures")
+	for asset_value: Variant in assets:
+		if not asset_value is Dictionary:
+			_expect(false, "entrée du manifest OpenAI invalide")
+			continue
+		var file_name := String(Dictionary(asset_value).get("file", ""))
+		_expect(expected_files.has(file_name), "texture inattendue dans le manifest : %s" % file_name)
+		_expect(not seen.has(file_name), "texture dupliquée dans le manifest : %s" % file_name)
+		seen[file_name] = true
+	for file_name: String in expected_files:
+		_expect(seen.has(file_name), "texture absente du manifest : %s" % file_name)
 
 
 func _test_profile_contract() -> void:
 	var service: SaveSystemService = SaveScript.new()
+	_expect(SaveScript.SAVE_VERSION == 4, "SAVE_VERSION doit être 4")
 	var clean: Dictionary = service._sanitize_profile({
 		"version": -4,
 		"credits": -900,
@@ -95,8 +159,17 @@ func _test_profile_contract() -> void:
 	_expect(int(clean.get("credits", -1)) == 0, "les crédits négatifs doivent être normalisés")
 	_expect(String(clean.get("selected_chassis", "")) == "biped", "fallback châssis invalide")
 	_expect(Dictionary(clean.get("records", {})).is_empty(), "un chrono invalide ne doit pas survivre")
-	_expect(Dictionary(clean.get("loadouts", {})).size() == 10, "la migration v3 doit créer 10 loadouts")
-	_expect(String(Dictionary(clean.get("settings", {})).get("camera_view", "")) == "tps", "la migration v3 doit utiliser la vue TPS")
+	_expect(Dictionary(clean.get("loadouts", {})).size() == 10, "la migration v4 doit créer 10 loadouts")
+	_expect(String(Dictionary(clean.get("settings", {})).get("camera_view", "")) == "tps", "la migration v4 doit utiliser la vue TPS")
+	var historic_modules: Array[String] = [
+		"core_balanced", "core_overdrive", "core_bastion",
+		"mobility_vector", "mobility_sprint", "mobility_adaptive",
+		"utility_coolant", "utility_aegis", "utility_scanner",
+	]
+	var owned_modules: Array = clean.get("owned_modules", [])
+	_expect(owned_modules.size() == historic_modules.size(), "les 9 modules historiques doivent rester acquis")
+	for module_id: String in historic_modules:
+		_expect(owned_modules.has(module_id), "module historique non acquis après migration : %s" % module_id)
 	for chassis_id: String in Dictionary(clean.get("loadouts", {})).keys():
 		_expect(Dictionary(Dictionary(clean.get("loadouts", {}))[chassis_id]).size() == 3, "loadout migré incomplet : %s" % chassis_id)
 	service.free()
@@ -154,6 +227,48 @@ func _test_modular_contract() -> void:
 	service.free()
 
 
+func _test_module_purchase_contract() -> void:
+	var service: SaveSystemService = _new_test_save("module_purchase")
+	service.profile = service._default_profile()
+	service.profile["credits"] = 6000
+	var command_loadout := {
+		"core": "core_tactical_relay",
+		"mobility": "mobility_gyro_rail",
+		"utility": "utility_command_uplink",
+	}
+	var first_cost := service.get_loadout_cost("biped", command_loadout)
+	_expect(first_cost == 4550, "le prix groupé des nouveaux modules Commandement doit être 4550")
+	_expect(service.purchase_and_apply_garage("biped", "#4FA9FF", command_loadout), "l'achat atomique des nouveaux modules doit réussir")
+	_expect(int(service.profile.get("credits", -1)) == 6000 - first_cost, "les nouveaux modules doivent être débités exactement une fois")
+	for module_id: String in command_loadout.values():
+		_expect(service.is_module_owned(module_id), "module acheté non acquis : %s" % module_id)
+	_expect(service.get_loadout("biped") == command_loadout, "le loadout acheté doit être équipé atomiquement")
+	var credits_after_first_purchase := int(service.profile.get("credits", -1))
+	_expect(service.get_loadout_cost("biped", command_loadout) == 0, "un module déjà acquis ne doit plus être facturé")
+	_expect(service.purchase_and_apply_garage("biped", "#4FA9FF", command_loadout), "réappliquer un loadout acquis doit réussir")
+	_expect(int(service.profile.get("credits", -1)) == credits_after_first_purchase, "réappliquer un loadout ne doit jamais débiter deux fois")
+	_cleanup_test_storage(service)
+	service.free()
+
+	var atomic_service: SaveSystemService = _new_test_save("module_atomic_failure")
+	atomic_service.profile = atomic_service._default_profile()
+	var prototype_loadout := {
+		"core": "core_phase_lattice",
+		"mobility": "mobility_phase_skates",
+		"utility": "utility_phase_sink",
+	}
+	var prototype_cost := atomic_service.get_loadout_cost("hover", prototype_loadout)
+	_expect(prototype_cost == 7050, "le prix groupé Prototype doit être 7050")
+	atomic_service.profile["credits"] = prototype_cost - 1
+	var before_failure := atomic_service.profile.duplicate(true)
+	_expect(not atomic_service.purchase_and_apply_garage("hover", "#B86BFF", prototype_loadout), "un achat sans crédits suffisants doit être refusé")
+	_expect(atomic_service.profile == before_failure, "un achat refusé doit laisser tout le profil inchangé")
+	for module_id: String in prototype_loadout.values():
+		_expect(not atomic_service.is_module_owned(module_id), "un achat refusé ne doit acquérir aucun module : %s" % module_id)
+	_cleanup_test_storage(atomic_service)
+	atomic_service.free()
+
+
 func _test_performance_classes() -> void:
 	var controller: RaceController = RaceControllerScript.new()
 	var requested := {"core": "core_overdrive", "mobility": "mobility_sprint", "utility": "utility_scanner"}
@@ -198,6 +313,24 @@ func _test_mecha_visual_contract() -> void:
 		var authored_visual: RacerVisual = MechaFactoryScript.build(chassis, Color(String(chassis.get("paint", "#5EE7FF"))), false, {})
 		_expect(Dictionary(authored_visual.get_meta("module_loadout", {})) == Dictionary(chassis.get("default_loadout", {})), "le visuel sans réglage doit utiliser le loadout constructeur : %s" % chassis.get("id", "?"))
 		authored_visual.free()
+	var reference_chassis: Dictionary = DatabaseScript.get_chassis("biped")
+	var holder_prefix := {
+		"core": "ModuleCore_",
+		"mobility": "ModuleMobility_",
+		"utility": "ModuleUtility_",
+	}
+	for slot: Dictionary in DatabaseScript.MODULE_SLOTS:
+		var slot_id := String(slot.get("id", ""))
+		for option_value: Variant in slot.get("options", []):
+			if not option_value is Dictionary:
+				continue
+			var module_id := String(Dictionary(option_value).get("id", ""))
+			var loadout: Dictionary = Dictionary(reference_chassis.get("default_loadout", {})).duplicate(true)
+			loadout[slot_id] = module_id
+			var module_visual: RacerVisual = MechaFactoryScript.build(reference_chassis, Color("#5EE7FF"), true, loadout)
+			var holder := module_visual.get_node_or_null("%s%s" % [holder_prefix.get(slot_id, ""), module_id])
+			_expect(holder != null and holder.get_child_count() > 0, "silhouette module vide : %s" % module_id)
+			module_visual.free()
 
 
 func _test_track_visual_contract() -> void:
@@ -242,14 +375,18 @@ func _test_championship_migration_and_tamper_guard() -> void:
 
 	var guard_service: SaveSystemService = SaveScript.new()
 	var guard_profile: Dictionary = guard_service._default_profile()
+	guard_profile["version"] = 3
 	var guard_session: GameSessionService = SessionScript.new()
 	var command_roster := guard_session._build_roster(guard_profile, 8, "command", "division", 72, "tuned")
-	var guarded: Dictionary = guard_service._sanitize_championship({
+	guard_profile["championship"] = {
 		"active": true, "championship_id": "command_cup", "difficulty": "pilot", "round_index": 0,
 		"tracks": ["abyss"], "division_id": "ground", "ruleset_id": "elite_open", "grid_policy": "mixed",
 		"mixed_divisions": true, "performance_class_id": "unlimited", "entrants": command_roster,
-	}, guard_profile, 3)
+	}
+	var migrated_v3: Dictionary = guard_service._sanitize_profile(guard_profile)
+	var guarded: Dictionary = migrated_v3.get("championship", {})
 	var command_definition := DatabaseScript.get_championship("command_cup")
+	_expect(int(migrated_v3.get("version", 0)) == 4, "une sauvegarde v3 doit migrer vers SAVE_VERSION 4")
 	_expect(guarded.get("tracks", []) == command_definition.get("track_ids", []), "une sauvegarde ne doit pas remplacer les circuits canoniques d'une coupe")
 	_expect(String(guarded.get("division_id", "")) == "command" and String(guarded.get("ruleset_id", "")) == "division_locked", "une sauvegarde ne doit pas ouvrir une coupe dédiée")
 	_expect(not bool(guarded.get("mixed_divisions", true)) and String(guarded.get("performance_class_id", "")) == "tuned", "une sauvegarde ne doit pas modifier la classe d'une coupe")
@@ -379,6 +516,27 @@ func _test_garage_current_chassis() -> void:
 	_expect(restored_service.get_upgrade_level("engine", "biped") == 0, "le biped doit rester inchangé après rechargement")
 	_cleanup_test_storage(restored_service)
 	restored_service.free()
+
+
+func _test_garage_preview_contract() -> void:
+	var preview: Node = GaragePreviewScene.instantiate()
+	_expect(preview.has_method("configure") and preview.has_method("preview_texture"), "API garage preview incomplète")
+	root.add_child(preview)
+	var viewport := preview.get_node_or_null("Stack/ViewportContainer/PreviewViewport") as SubViewport
+	var anchor := preview.get_node_or_null("Stack/ViewportContainer/PreviewViewport/PreviewWorld/Turntable/MechaAnchor") as Node3D
+	_expect(viewport != null, "SubViewport du garage preview absent")
+	_expect(preview.find_children("*", "SubViewport", true, false).size() == 1, "le garage preview doit posséder exactement un SubViewport")
+	_expect(anchor != null, "ancre mécha du garage preview absente")
+	var chassis: Dictionary = DatabaseScript.get_chassis("biped")
+	var loadout: Dictionary = chassis.get("default_loadout", {})
+	preview.call("configure", chassis, "#5EE7FF", loadout)
+	var configured_chassis: Dictionary = preview.get("_chassis")
+	var configured_loadout: Dictionary = preview.get("_loadout")
+	_expect(String(configured_chassis.get("id", "")) == "biped", "le garage preview doit conserver le vrai châssis MechaFactory avant sa frame ready")
+	_expect(configured_loadout == loadout, "le garage preview doit conserver le loadout réel avant sa frame ready")
+	preview.call("set_reduced_motion", true)
+	_expect(bool(preview.get("reduced_motion")), "le garage preview doit respecter la réduction des mouvements")
+	preview.free()
 
 
 func _test_backup_recovery() -> void:

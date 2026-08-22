@@ -4,8 +4,16 @@ class_name GarageScreen
 signal back_requested
 
 const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
+const STAT_IDS: Array[String] = ["speed", "acceleration", "handling", "armor", "stability", "reactor"]
+const PRESETS: Dictionary = {
+	"balanced": {"core": "core_balanced", "mobility": "mobility_vector", "utility": "utility_coolant"},
+	"speed": {"core": "core_overdrive", "mobility": "mobility_sprint", "utility": "utility_scanner"},
+	"control": {"core": "core_balanced", "mobility": "mobility_adaptive", "utility": "utility_scanner"},
+	"armor": {"core": "core_bastion", "mobility": "mobility_adaptive", "utility": "utility_aegis"},
+}
 
 @onready var credits_value: Label = %CreditsValue
+@onready var division_filter: OptionButton = %DivisionFilter
 @onready var chassis_list: ItemList = %ChassisList
 @onready var chassis_category: Label = %ChassisCategory
 @onready var chassis_name: Label = %ChassisName
@@ -19,10 +27,19 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 @onready var core_option: OptionButton = %CoreOption
 @onready var mobility_option: OptionButton = %MobilityOption
 @onready var utility_option: OptionButton = %UtilityOption
+@onready var module_detail: Label = %ModuleDetail
 @onready var module_summary: Label = %ModuleSummary
+@onready var purchase_summary: Label = %PurchaseSummary
+@onready var apply_button: Button = %ApplyButton
+@onready var cancel_button: Button = %CancelButton
 @onready var select_button: Button = %SelectButton
 @onready var back_button: Button = %BackButton
 @onready var status_message: Label = %StatusMessage
+@onready var garage_preview: Control = %GaragePreview
+@onready var preset_balanced: Button = %PresetBalanced
+@onready var preset_speed: Button = %PresetSpeed
+@onready var preset_control: Button = %PresetControl
+@onready var preset_armor: Button = %PresetArmor
 
 @onready var speed_bar: ProgressBar = %SpeedBar
 @onready var acceleration_bar: ProgressBar = %AccelerationBar
@@ -30,6 +47,12 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 @onready var armor_bar: ProgressBar = %ArmorBar
 @onready var stability_bar: ProgressBar = %StabilityBar
 @onready var reactor_bar: ProgressBar = %ReactorBar
+@onready var speed_value: Label = %SpeedValue
+@onready var acceleration_value: Label = %AccelerationValue
+@onready var handling_value: Label = %HandlingValue
+@onready var armor_value: Label = %ArmorValue
+@onready var stability_value: Label = %StabilityValue
+@onready var reactor_value: Label = %ReactorValue
 
 @onready var engine_level: Label = %EngineLevel
 @onready var servos_level: Label = %ServosLevel
@@ -40,16 +63,22 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 @onready var reactor_button: Button = %ReactorButton
 @onready var armor_button: Button = %ArmorButton
 
+var _all_entries: Array[Dictionary] = []
 var _entries: Array[Dictionary] = []
 var _current_id := ""
 var _profile: Dictionary = {}
+var _drafts: Dictionary = {}
+var _draft_paint := "#5EE7FF"
+var _draft_loadout: Dictionary = {}
+var _focused_slot := "core"
+var _syncing := false
 
 
 func _ready() -> void:
 	theme = ThemeFactory.create_theme(_settings())
 	_bind_actions()
+	_populate_divisions()
 	_populate_paints()
-	_populate_modules()
 	_bind_save_events()
 	refresh()
 	call_deferred("_configure_focus")
@@ -66,42 +95,38 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):
 		get_viewport().set_input_as_handled()
 		back_requested.emit()
+	elif event is InputEventKey:
+		var key_event := event as InputEventKey
+		if not key_event.pressed or key_event.echo:
+			return
+		if key_event.keycode == KEY_Q:
+			_preview_call(&"rotate_left")
+		elif key_event.keycode == KEY_E:
+			_preview_call(&"rotate_right")
 
 
 func refresh() -> void:
 	_profile = _read_profile()
 	theme = ThemeFactory.create_theme(_settings())
 	credits_value.text = "%s CR" % _format_number(_number(_profile, "credits", 0.0))
-	var previous_id := _current_id
-	if previous_id.is_empty():
-		previous_id = _string(_profile, "selected_chassis", "biped")
-	_entries = GameDatabase.get_all_chassis()
-	chassis_list.clear()
-	var selection_index := 0
-	for index in range(_entries.size()):
-		var chassis := _entries[index]
-		var chassis_id := String(chassis.get("id", ""))
-		var locked := not _is_unlocked(chassis_id)
-		var prefix := "VERROUILLÉ  //  " if locked else ""
-		chassis_list.add_item("%s%s  //  %s" % [prefix, String(chassis.get("category", "ARCHITECTURE")), String(chassis.get("name", chassis_id))])
-		chassis_list.set_item_metadata(index, chassis_id)
-		chassis_list.set_item_disabled(index, locked)
-		if chassis_id == previous_id:
-			selection_index = index
-	if not _entries.is_empty():
-		if chassis_list.is_item_disabled(selection_index):
-			selection_index = _first_unlocked_index()
-		chassis_list.select(selection_index)
-		_show_chassis(selection_index)
+	_all_entries = GameDatabase.get_all_chassis()
+	_refresh_roster()
 
 
 func _bind_actions() -> void:
+	division_filter.item_selected.connect(_on_division_filter_selected)
 	chassis_list.item_selected.connect(_show_chassis)
 	chassis_list.item_activated.connect(_activate_chassis)
 	paint_option.item_selected.connect(_on_paint_selected)
 	core_option.item_selected.connect(_on_module_selected.bind("core", core_option))
 	mobility_option.item_selected.connect(_on_module_selected.bind("mobility", mobility_option))
 	utility_option.item_selected.connect(_on_module_selected.bind("utility", utility_option))
+	preset_balanced.pressed.connect(_apply_preset.bind("balanced"))
+	preset_speed.pressed.connect(_apply_preset.bind("speed"))
+	preset_control.pressed.connect(_apply_preset.bind("control"))
+	preset_armor.pressed.connect(_apply_preset.bind("armor"))
+	apply_button.pressed.connect(_apply_draft)
+	cancel_button.pressed.connect(_cancel_draft)
 	select_button.pressed.connect(_select_current)
 	back_button.pressed.connect(func() -> void: back_requested.emit())
 	engine_button.pressed.connect(_buy_upgrade.bind("engine"))
@@ -115,8 +140,7 @@ func _bind_save_events() -> void:
 	if save == null:
 		return
 	var callback := Callable(self, "_on_profile_changed")
-	var profile_signals: Array[StringName] = [&"profile_loaded", &"profile_changed"]
-	for signal_name: StringName in profile_signals:
+	for signal_name: StringName in [&"profile_loaded", &"profile_changed"]:
 		if save.has_signal(signal_name) and not save.is_connected(signal_name, callback):
 			save.connect(signal_name, callback)
 	var failure := Callable(self, "_on_save_failed")
@@ -124,109 +148,154 @@ func _bind_save_events() -> void:
 		save.connect(&"save_failed", failure)
 
 
+func _populate_divisions() -> void:
+	division_filter.clear()
+	division_filter.add_item("TOUTES LES DIVISIONS")
+	division_filter.set_item_metadata(0, "")
+	for division: Dictionary in GameDatabase.get_all_divisions():
+		var index := division_filter.item_count
+		division_filter.add_item("%s  //  %s" % [String(division.get("short", "DIV")), String(division.get("name", "DIVISION")).to_upper()])
+		division_filter.set_item_metadata(index, String(division.get("id", "")))
+
+
 func _populate_paints() -> void:
 	paint_option.clear()
-	var names := ["CYAN ION", "CORAIL", "VERT NEXUS", "JAUNE SOLAIRE", "VIOLET PHASE", "MAGENTA", "BLANC CERAMIQUE", "GRAPHITE"]
+	var names := ["CYAN ION", "CORAIL", "VERT NEXUS", "JAUNE SOLAIRE", "VIOLET PHASE", "MAGENTA", "BLANC CÉRAMIQUE", "GRAPHITE"]
 	for index in range(GameDatabase.DEFAULT_PAINTS.size()):
 		paint_option.add_item(names[index] if index < names.size() else "PEINTURE %02d" % (index + 1))
 		paint_option.set_item_metadata(index, GameDatabase.DEFAULT_PAINTS[index])
 
 
-func _populate_modules() -> void:
-	_populate_module_option("core", core_option)
-	_populate_module_option("mobility", mobility_option)
-	_populate_module_option("utility", utility_option)
+func _on_division_filter_selected(_index: int) -> void:
+	_store_current_draft()
+	_refresh_roster()
 
 
-func _populate_module_option(slot_id: String, option_button: OptionButton) -> void:
-	option_button.clear()
-	var slot := GameDatabase.get_module_slot(slot_id)
-	for option: Dictionary in slot.get("options", []):
-		var index := option_button.item_count
-		option_button.add_item(String(option.get("name", "MODULE")).to_upper())
-		option_button.set_item_metadata(index, String(option.get("id", "")))
-		option_button.set_item_tooltip(index, String(option.get("description", "")))
+func _refresh_roster() -> void:
+	var filter_id := ""
+	if division_filter.selected >= 0:
+		filter_id = String(division_filter.get_item_metadata(division_filter.selected))
+	var previous_id := _current_id if not _current_id.is_empty() else _string(_profile, "selected_chassis", "biped")
+	_entries.clear()
+	chassis_list.clear()
+	var selection_index := -1
+	for chassis: Dictionary in _all_entries:
+		if not filter_id.is_empty() and String(chassis.get("division_id", "")) != filter_id:
+			continue
+		var chassis_id := String(chassis.get("id", ""))
+		var division := GameDatabase.get_division(String(chassis.get("division_id", "")))
+		var locked := not _is_unlocked(chassis_id)
+		_entries.append(chassis)
+		var index := _entries.size() - 1
+		var prefix := "VERROUILLÉ  //  " if locked else ""
+		chassis_list.add_item("%s%s  //  %s  •  %s" % [
+			prefix, String(chassis.get("name", chassis_id)).to_upper(),
+			String(chassis.get("category", "ARCHITECTURE")), String(division.get("short", "DIV")),
+		])
+		chassis_list.set_item_metadata(index, chassis_id)
+		chassis_list.set_item_disabled(index, locked)
+		chassis_list.set_item_tooltip(index, String(chassis.get("subtitle", "")))
+		if chassis_id == previous_id:
+			selection_index = index
+	if _entries.is_empty():
+		return
+	if selection_index < 0 or chassis_list.is_item_disabled(selection_index):
+		selection_index = _first_unlocked_index()
+	chassis_list.select(selection_index)
+	_show_chassis(selection_index)
 
 
 func _show_chassis(index: int) -> void:
 	if index < 0 or index >= _entries.size():
 		return
+	_store_current_draft()
 	var chassis := _entries[index]
 	_current_id = String(chassis.get("id", ""))
 	var division := GameDatabase.get_division(String(chassis.get("division_id", "command")))
-	chassis_category.text = "%s  //  %s" % [String(chassis.get("category", "ARCHITECTURE")).to_upper(), String(division.get("name", "DIVISION")).to_upper()]
+	chassis_category.text = "%s  //  DIVISION %s" % [
+		String(chassis.get("category", "ARCHITECTURE")).to_upper(),
+		String(division.get("name", "DIVISION")).to_upper(),
+	]
 	chassis_name.text = String(chassis.get("name", _current_id)).to_upper()
 	chassis_subtitle.text = String(chassis.get("subtitle", "Configuration de course"))
-	chassis_description.text = "%s  //  %s
-%s" % [String(chassis.get("manufacturer", "NEXUS WORKS")).to_upper(), String(division.get("short", "DIV")), String(chassis.get("lore", chassis.get("description", "")))]
+	chassis_description.text = "%s  //  %s\n%s" % [
+		String(chassis.get("manufacturer", "NEXUS WORKS")).to_upper(),
+		String(division.get("short", "DIV")),
+		String(chassis.get("lore", chassis.get("description", ""))),
+	]
 	ability_name.text = String(chassis.get("ability", "Système propriétaire")).to_upper()
 	ability_description.text = String(chassis.get("ability_description", ""))
-	var stats: Dictionary = chassis.get("stats", {})
-	_set_stat(speed_bar, stats.get("speed", 0))
-	_set_stat(acceleration_bar, stats.get("acceleration", 0))
-	_set_stat(handling_bar, stats.get("handling", 0))
-	_set_stat(armor_bar, stats.get("armor", 0))
-	_set_stat(stability_bar, stats.get("stability", 0))
-	_set_stat(reactor_bar, stats.get("reactor", 0))
-
 	var selected_id := _string(_profile, "selected_chassis", "biped")
 	var is_selected := _current_id == selected_id
-	selected_badge.text = "ACTIF" if is_selected else "DISPONIBLE"
+	selected_badge.text = "ACTIF" if is_selected else "PRÊT"
 	selected_badge.theme_type_variation = &"MetricLabel" if is_selected else &"MutedLabel"
 	select_button.disabled = is_selected or not _is_unlocked(_current_id)
 	select_button.text = "CHÂSSIS ACTIF" if is_selected else "ÉQUIPER CE CHÂSSIS"
-	_sync_paint(chassis)
-	_sync_modules(chassis)
+	_load_draft(chassis)
+	_populate_modules_for_current()
+	_refresh_configuration()
 	_refresh_upgrades()
-	status_message.text = "ARCHITECTURE %02d / %02d" % [index + 1, _entries.size()]
+	status_message.theme_type_variation = &"MutedLabel"
+	status_message.text = "ARCHITECTURE %02d / %02d  //  Q E : ROTATION  •  MOLETTE : ZOOM" % [index + 1, _entries.size()]
 
 
-func _activate_chassis(index: int) -> void:
-	_show_chassis(index)
-	_select_current()
+func _load_draft(chassis: Dictionary) -> void:
+	var paints: Dictionary = _profile.get("paints", {}) if _profile.get("paints", {}) is Dictionary else {}
+	var all_loadouts: Dictionary = _profile.get("loadouts", {}) if _profile.get("loadouts", {}) is Dictionary else {}
+	var saved_paint := String(paints.get(_current_id, chassis.get("paint", "#5EE7FF")))
+	var saved_loadout: Dictionary = all_loadouts.get(_current_id, chassis.get("default_loadout", {})) if all_loadouts.get(_current_id, {}) is Dictionary else {}
+	var draft: Dictionary = _drafts.get(_current_id, {}) if _drafts.get(_current_id, {}) is Dictionary else {}
+	_draft_paint = String(draft.get("paint", saved_paint))
+	_draft_loadout = Dictionary(draft.get("loadout", saved_loadout)).duplicate(true)
+	_sync_paint()
 
 
-func _select_current() -> void:
-	if _current_id.is_empty() or not _is_unlocked(_current_id):
+func _store_current_draft() -> void:
+	if _current_id.is_empty() or _draft_loadout.is_empty():
 		return
-	var save := _save_system()
-	if save != null and save.has_method(&"select_chassis"):
-		save.call(&"select_chassis", _current_id)
-	_profile["selected_chassis"] = _current_id
-	status_message.text = "%s // CHÂSSIS ÉQUIPÉ" % chassis_name.text
-	refresh()
+	_drafts[_current_id] = {"paint": _draft_paint, "loadout": _draft_loadout.duplicate(true)}
 
 
-func _on_paint_selected(index: int) -> void:
-	if index < 0:
-		return
-	var paint := String(paint_option.get_item_metadata(index))
-	paint_preview.color = Color(paint)
-	var save := _save_system()
-	if save != null and save.has_method(&"set_paint"):
-		save.call(&"set_paint", _current_id, paint)
-	status_message.text = "PEINTURE %s APPLIQUÉE" % paint_option.get_item_text(index)
-
-
-func _sync_paint(chassis: Dictionary) -> void:
-	var paints: Dictionary = _profile.get("paints", {})
-	var paint := String(paints.get(_current_id, chassis.get("paint", "#5EE7FF")))
+func _sync_paint() -> void:
 	var closest := 0
 	for index in range(paint_option.item_count):
-		if String(paint_option.get_item_metadata(index)).to_upper() == paint.to_upper():
+		if String(paint_option.get_item_metadata(index)).to_upper() == _draft_paint.to_upper():
 			closest = index
 			break
+	_syncing = true
 	paint_option.select(closest)
-	paint_preview.color = Color(paint)
+	_syncing = false
+	paint_preview.color = Color(_draft_paint)
 
 
-func _sync_modules(chassis: Dictionary) -> void:
-	var all_loadouts: Dictionary = _profile.get("loadouts", {}) if _profile.get("loadouts", {}) is Dictionary else {}
-	var loadout: Dictionary = all_loadouts.get(_current_id, chassis.get("default_loadout", {})) if all_loadouts.get(_current_id, {}) is Dictionary else {}
-	_select_module_value(core_option, String(loadout.get("core", "core_balanced")))
-	_select_module_value(mobility_option, String(loadout.get("mobility", "mobility_vector")))
-	_select_module_value(utility_option, String(loadout.get("utility", "utility_coolant")))
-	_refresh_module_summary()
+func _populate_modules_for_current() -> void:
+	_syncing = true
+	_populate_module_option("core", core_option)
+	_populate_module_option("mobility", mobility_option)
+	_populate_module_option("utility", utility_option)
+	_syncing = false
+
+
+func _populate_module_option(slot_id: String, option_button: OptionButton) -> void:
+	option_button.clear()
+	var slot := GameDatabase.get_module_slot(slot_id)
+	var chassis := GameDatabase.get_chassis(_current_id)
+	var division_id := String(chassis.get("division_id", ""))
+	for option: Dictionary in slot.get("options", []):
+		var module_id := String(option.get("id", ""))
+		if not GameDatabase.is_module_allowed_for_division(module_id, division_id):
+			continue
+		var owned := _is_module_owned(module_id)
+		var label := String(option.get("name", "MODULE")).to_upper()
+		if not owned:
+			label += "  //  %d CR" % int(option.get("cost", 0))
+		var index := option_button.item_count
+		option_button.add_item(label)
+		option_button.set_item_metadata(index, module_id)
+		option_button.set_item_tooltip(index, String(option.get("description", "")))
+	var requested := String(_draft_loadout.get(slot_id, slot.get("default_option_id", "")))
+	_select_module_value(option_button, requested)
+	_draft_loadout[slot_id] = _selected_module_id(option_button)
 
 
 func _select_module_value(option_button: OptionButton, module_id: String) -> void:
@@ -238,40 +307,216 @@ func _select_module_value(option_button: OptionButton, module_id: String) -> voi
 		option_button.select(0)
 
 
-func _on_module_selected(index: int, slot_id: String, option_button: OptionButton) -> void:
-	if _current_id.is_empty() or index < 0 or index >= option_button.item_count:
+func _on_paint_selected(index: int) -> void:
+	if _syncing or _current_id.is_empty() or index < 0:
 		return
-	var module_id := String(option_button.get_item_metadata(index))
-	var save := _save_system()
-	if save == null or not save.has_method(&"set_module") or not bool(save.call(&"set_module", _current_id, slot_id, module_id)):
-		status_message.text = "MODULE REFUSÉ // CONFIGURATION INVALIDE"
-		status_message.theme_type_variation = &"WarningLabel"
-		return
-	_profile = _read_profile()
+	_draft_paint = String(paint_option.get_item_metadata(index))
+	paint_preview.color = Color(_draft_paint)
+	_store_current_draft()
+	_refresh_configuration()
 	status_message.theme_type_variation = &"MutedLabel"
-	status_message.text = "%s // MODULE INSTALLÉ" % option_button.get_item_text(index)
+	status_message.text = "APERÇU PEINTURE // APPLIQUEZ POUR SAUVEGARDER"
+
+
+func _on_module_selected(index: int, slot_id: String, option_button: OptionButton) -> void:
+	if _syncing or _current_id.is_empty() or index < 0 or index >= option_button.item_count:
+		return
+	_focused_slot = slot_id
+	_draft_loadout[slot_id] = String(option_button.get_item_metadata(index))
+	_store_current_draft()
+	_refresh_configuration()
+	status_message.theme_type_variation = &"MutedLabel"
+	status_message.text = "%s // APERÇU INSTALLÉ, VALIDATION EN ATTENTE" % option_button.get_item_text(index)
+
+
+func _apply_preset(preset_id: String) -> void:
+	var preset: Dictionary = PRESETS.get(preset_id, {})
+	if preset.is_empty():
+		return
+	for slot_id: String in preset.keys():
+		_draft_loadout[slot_id] = preset[slot_id]
+	_populate_modules_for_current()
+	_store_current_draft()
+	_refresh_configuration()
+	status_message.text = "PRÉRÉGLAGE %s // APERÇU PRÊT" % preset_id.to_upper()
+
+
+func _refresh_configuration() -> void:
+	_update_preview()
+	_refresh_stats()
+	_refresh_module_detail()
 	_refresh_module_summary()
+	_refresh_apply_state()
+
+
+func _update_preview() -> void:
+	var chassis := GameDatabase.get_chassis(_current_id)
+	if chassis.is_empty():
+		return
+	var settings := _settings()
+	if garage_preview.has_method(&"refresh_theme"):
+		garage_preview.call(&"refresh_theme", settings)
+	if garage_preview.has_method(&"configure"):
+		garage_preview.call(&"configure", chassis, Color(_draft_paint), _draft_loadout.duplicate(true))
+	if garage_preview.has_method(&"set_reduced_motion"):
+		garage_preview.call(&"set_reduced_motion", bool(settings.get("reduced_motion", false)))
+
+
+func _refresh_stats() -> void:
+	var chassis := GameDatabase.get_chassis(_current_id)
+	var base: Dictionary = chassis.get("stats", {}) if chassis.get("stats", {}) is Dictionary else {}
+	var totals := GameDatabase.calculate_module_totals(_draft_loadout)
+	var final_values: Dictionary = {}
+	for stat_id: String in STAT_IDS:
+		final_values[stat_id] = int(base.get(stat_id, 0)) + int(totals.get(stat_id, 0))
+	var engine := _upgrade_level("engine")
+	var servos := _upgrade_level("servos")
+	var cooling := _upgrade_level("reactor")
+	var armor_upgrade := _upgrade_level("armor")
+	final_values["speed"] += roundi(float(base.get("speed", 0)) * 0.035 * engine)
+	final_values["acceleration"] += roundi(float(base.get("acceleration", 0)) * 0.045 * servos)
+	final_values["handling"] += roundi(float(base.get("handling", 0)) * 0.035 * servos)
+	final_values["armor"] += roundi(float(base.get("armor", 0)) * 0.060 * armor_upgrade)
+	final_values["reactor"] += roundi(float(base.get("reactor", 0)) * 0.055 * cooling)
+	_set_stat(speed_bar, speed_value, int(base.get("speed", 0)), int(final_values["speed"]))
+	_set_stat(acceleration_bar, acceleration_value, int(base.get("acceleration", 0)), int(final_values["acceleration"]))
+	_set_stat(handling_bar, handling_value, int(base.get("handling", 0)), int(final_values["handling"]))
+	_set_stat(armor_bar, armor_value, int(base.get("armor", 0)), int(final_values["armor"]))
+	_set_stat(stability_bar, stability_value, int(base.get("stability", 0)), int(final_values["stability"]))
+	_set_stat(reactor_bar, reactor_value, int(base.get("reactor", 0)), int(final_values["reactor"]))
+
+
+func _set_stat(bar: ProgressBar, value_label: Label, base_value: int, configured_value: int) -> void:
+	var final_value := clampi(configured_value, 0, 100)
+	var delta := final_value - base_value
+	bar.value = final_value
+	bar.tooltip_text = "Base %d, configuration %d, variation %+d" % [base_value, final_value, delta]
+	value_label.text = "%d > %d  (%+d)" % [base_value, final_value, delta]
+	value_label.theme_type_variation = &"MetricLabel" if delta >= 0 else &"WarningLabel"
+
+
+func _refresh_module_detail() -> void:
+	var option_button := _option_for_slot(_focused_slot)
+	var module_id := _selected_module_id(option_button)
+	var option := GameDatabase.get_module_option(_focused_slot, module_id)
+	if option.is_empty():
+		module_detail.text = "Sélectionnez un module pour afficher sa fiche."
+		return
+	var allowed: Array = option.get("allowed_divisions", [])
+	var division_names := PackedStringArray()
+	for division_id: Variant in allowed:
+		var division := GameDatabase.get_division(String(division_id))
+		division_names.append(String(division.get("short", division_id)).to_upper())
+	var affinity := "TOUTES DIVISIONS" if division_names.is_empty() else "AFFINITÉ " + " / ".join(division_names)
+	var state := "POSSÉDÉ" if _is_module_owned(module_id) else "À ACQUÉRIR • %d CR" % int(option.get("cost", 0))
+	module_detail.text = "%s  //  %s\n%s  •  TIER %d  •  %s\n%s\n%s\n%s" % [
+		String(option.get("name", module_id)).to_upper(),
+		String(option.get("manufacturer", "NEXUS RACING")).to_upper(),
+		String(option.get("role", "Polyvalent")).to_upper(),
+		int(option.get("tier", 0)),
+		state,
+		String(option.get("description", "")),
+		_format_deltas(option.get("stats", {})),
+		affinity,
+	]
 
 
 func _refresh_module_summary() -> void:
-	var selected_ids := {
-		"core": String(core_option.get_item_metadata(core_option.selected)) if core_option.selected >= 0 else "",
-		"mobility": String(mobility_option.get_item_metadata(mobility_option.selected)) if mobility_option.selected >= 0 else "",
-		"utility": String(utility_option.get_item_metadata(utility_option.selected)) if utility_option.selected >= 0 else "",
-	}
-	var totals := {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0}
 	var names := PackedStringArray()
-	for slot_id: String in selected_ids.keys():
-		var option := GameDatabase.get_module_option(slot_id, selected_ids[slot_id])
+	for slot_id: String in ["core", "mobility", "utility"]:
+		var option := GameDatabase.get_module_option(slot_id, String(_draft_loadout.get(slot_id, "")))
 		names.append(String(option.get("name", "MODULE")).to_upper())
-		var stats: Dictionary = option.get("stats", {}) if option.get("stats", {}) is Dictionary else {}
-		for stat_id: String in totals.keys():
-			totals[stat_id] = int(totals[stat_id]) + int(stats.get(stat_id, 0))
-	module_summary.text = "%s
-VIT %+d  •  ACC %+d  •  MAN %+d  •  ARM %+d  •  STB %+d  •  RÉA %+d" % [
-		"  /  ".join(names), totals["speed"], totals["acceleration"], totals["handling"],
-		totals["armor"], totals["stability"], totals["reactor"],
-	]
+	var totals := GameDatabase.calculate_module_totals(_draft_loadout)
+	module_summary.text = "%s\nTOTAL CONFIGURATION  //  %s" % ["  /  ".join(names), _format_deltas(totals)]
+
+
+func _refresh_apply_state() -> void:
+	var cost := _current_loadout_cost()
+	var dirty := _is_draft_dirty()
+	var credits := int(_number(_profile, "credits", 0.0))
+	apply_button.disabled = not dirty or cost < 0 or cost > credits
+	cancel_button.disabled = not dirty
+	if cost < 0:
+		apply_button.text = "CONFIGURATION INCOMPATIBLE"
+		purchase_summary.text = "Cette combinaison ne peut pas être homologuée pour la division active."
+	elif cost > credits:
+		apply_button.text = "CRÉDITS INSUFFISANTS"
+		purchase_summary.text = "Coût %d CR  •  Solde %d CR  •  Manque %d CR" % [cost, credits, cost - credits]
+	elif cost > 0:
+		apply_button.text = "ACHETER + APPLIQUER  •  %d CR" % cost
+		purchase_summary.text = "Achat définitif des nouveaux modules, peinture et montage inclus."
+	elif dirty:
+		apply_button.text = "APPLIQUER LA CONFIGURATION"
+		purchase_summary.text = "Tous les modules sélectionnés sont possédés."
+	else:
+		apply_button.text = "CONFIGURATION ACTIVE"
+		purchase_summary.text = "Aucune modification en attente."
+
+
+func _apply_draft() -> void:
+	if _current_id.is_empty() or not _is_draft_dirty():
+		return
+	var save := _save_system()
+	if save == null or not save.has_method(&"purchase_and_apply_garage"):
+		_show_error("SERVICE GARAGE INDISPONIBLE")
+		return
+	var retained := {"paint": _draft_paint, "loadout": _draft_loadout.duplicate(true)}
+	_drafts.erase(_current_id)
+	var result: Variant = save.call(&"purchase_and_apply_garage", _current_id, _draft_paint, _draft_loadout.duplicate(true))
+	if not (result is bool and result):
+		_drafts[_current_id] = retained
+		_show_error("ACHAT OU MONTAGE REFUSÉ")
+		return
+	status_message.theme_type_variation = &"MetricLabel"
+	status_message.text = "CONFIGURATION SAUVEGARDÉE // MÉCHA PRÊT POUR LA COURSE"
+	refresh()
+
+
+func _cancel_draft() -> void:
+	_drafts.erase(_current_id)
+	# Prevent _show_chassis() from persisting the outgoing draft again before it
+	# reloads the saved profile configuration.
+	_draft_loadout.clear()
+	var index := chassis_list.get_selected_items()[0] if not chassis_list.get_selected_items().is_empty() else 0
+	_show_chassis(index)
+	status_message.text = "MODIFICATIONS ANNULÉES // CONFIGURATION SAUVEGARDÉE RESTAURÉE"
+
+
+func _current_loadout_cost() -> int:
+	var save := _save_system()
+	if save != null and save.has_method(&"get_loadout_cost"):
+		return int(save.call(&"get_loadout_cost", _current_id, _draft_loadout))
+	return 0
+
+
+func _is_draft_dirty() -> bool:
+	var chassis := GameDatabase.get_chassis(_current_id)
+	var paints: Dictionary = _profile.get("paints", {}) if _profile.get("paints", {}) is Dictionary else {}
+	var saved_paint := String(paints.get(_current_id, chassis.get("paint", "#5EE7FF")))
+	if saved_paint.to_upper() != _draft_paint.to_upper():
+		return true
+	var all_loadouts: Dictionary = _profile.get("loadouts", {}) if _profile.get("loadouts", {}) is Dictionary else {}
+	var saved: Dictionary = all_loadouts.get(_current_id, chassis.get("default_loadout", {})) if all_loadouts.get(_current_id, {}) is Dictionary else {}
+	for slot_id: String in ["core", "mobility", "utility"]:
+		if String(saved.get(slot_id, "")) != String(_draft_loadout.get(slot_id, "")):
+			return true
+	return false
+
+
+func _activate_chassis(index: int) -> void:
+	_show_chassis(index)
+	_select_current()
+
+
+func _select_current() -> void:
+	if _current_id.is_empty() or not _is_unlocked(_current_id):
+		return
+	var save := _save_system()
+	if save == null or not save.has_method(&"select_chassis") or not bool(save.call(&"select_chassis", _current_id)):
+		_show_error("SÉLECTION DU CHÂSSIS IMPOSSIBLE")
+		return
+	status_message.theme_type_variation = &"MetricLabel"
+	status_message.text = "%s // CHÂSSIS ACTIF" % chassis_name.text
 
 
 func _buy_upgrade(upgrade_id: String) -> void:
@@ -283,17 +528,14 @@ func _buy_upgrade(upgrade_id: String) -> void:
 		return
 	var cost := int(costs[level])
 	if int(_number(_profile, "credits", 0.0)) < cost:
-		status_message.text = "CRÉDITS INSUFFISANTS // %d CR REQUIS" % cost
-		status_message.theme_type_variation = &"WarningLabel"
+		_show_error("CRÉDITS INSUFFISANTS // %d CR REQUIS" % cost)
 		return
 	var save := _save_system()
 	if not _purchase_current_upgrade(save, upgrade_id):
-		status_message.text = "AMÉLIORATION REFUSÉE"
-		status_message.theme_type_variation = &"WarningLabel"
+		_show_error("AMÉLIORATION REFUSÉE")
 		return
-	status_message.theme_type_variation = &"MutedLabel"
+	status_message.theme_type_variation = &"MetricLabel"
 	status_message.text = "%s // INSTALLATION TERMINÉE" % String(upgrade.get("name", upgrade_id)).to_upper()
-	refresh()
 
 
 func _purchase_current_upgrade(save_system: Node, upgrade_id: String) -> bool:
@@ -301,8 +543,6 @@ func _purchase_current_upgrade(save_system: Node, upgrade_id: String) -> bool:
 		return false
 	var result: Variant = save_system.call(&"buy_upgrade", upgrade_id, _current_id)
 	return result is bool and result
-
-
 
 
 func _refresh_upgrades() -> void:
@@ -316,7 +556,7 @@ func _update_upgrade_ui(upgrade_id: String, level_label: Label, button: Button) 
 	var upgrade := GameDatabase.get_upgrade(upgrade_id)
 	var level := _upgrade_level(upgrade_id)
 	var costs: Array = upgrade.get("costs", [])
-	level_label.text = "NIVEAU %d / %d" % [level, costs.size()]
+	level_label.text = "NIVEAU %d / %d  //  %s" % [level, costs.size(), String(upgrade.get("description", ""))]
 	if level >= costs.size():
 		button.text = "MAXIMUM"
 		button.disabled = true
@@ -328,22 +568,46 @@ func _update_upgrade_ui(upgrade_id: String, level_label: Label, button: Button) 
 func _upgrade_level(upgrade_id: String) -> int:
 	var upgrades: Variant = _profile.get("upgrades", {})
 	if upgrades is Dictionary:
-		var upgrades_dictionary: Dictionary = upgrades
-		var chassis_upgrades: Variant = upgrades_dictionary.get(_current_id, {})
+		var chassis_upgrades: Variant = Dictionary(upgrades).get(_current_id, {})
 		if chassis_upgrades is Dictionary:
-			var chassis_upgrade_dictionary: Dictionary = chassis_upgrades
-			if not chassis_upgrade_dictionary.is_empty():
-				return int(chassis_upgrade_dictionary.get(upgrade_id, 0))
-		return int(upgrades_dictionary.get(upgrade_id, 0))
+			return int(Dictionary(chassis_upgrades).get(upgrade_id, 0))
 	return 0
 
 
+func _is_module_owned(module_id: String) -> bool:
+	var owned: Variant = _profile.get("owned_modules", [])
+	return owned is Array and module_id in owned
+
+
+func _selected_module_id(option_button: OptionButton) -> String:
+	return String(option_button.get_item_metadata(option_button.selected)) if option_button != null and option_button.selected >= 0 else ""
+
+
+func _option_for_slot(slot_id: String) -> OptionButton:
+	match slot_id:
+		"mobility": return mobility_option
+		"utility": return utility_option
+		_: return core_option
+
+
+func _format_deltas(value: Variant) -> String:
+	var stats: Dictionary = value if value is Dictionary else {}
+	return "VIT %+d  •  ACC %+d  •  MAN %+d  •  ARM %+d  •  STB %+d  •  RÉA %+d" % [
+		int(stats.get("speed", 0)), int(stats.get("acceleration", 0)),
+		int(stats.get("handling", 0)), int(stats.get("armor", 0)),
+		int(stats.get("stability", 0)), int(stats.get("reactor", 0)),
+	]
+
+
+func _preview_call(method_name: StringName) -> void:
+	if garage_preview != null and garage_preview.has_method(method_name):
+		garage_preview.call(method_name)
+
+
 func _is_unlocked(chassis_id: String) -> bool:
-	var unlocked: Variant = _profile.get("unlocked_chassis", _profile.get("unlockedChassis", []))
-	if unlocked is Array:
-		var unlocked_chassis: Array = unlocked
-		if not unlocked_chassis.is_empty():
-			return chassis_id in unlocked_chassis
+	var unlocked: Variant = _profile.get("owned_chassis", _profile.get("unlocked_chassis", _profile.get("unlockedChassis", [])))
+	if unlocked is Array and not Array(unlocked).is_empty():
+		return chassis_id in unlocked
 	return true
 
 
@@ -354,14 +618,11 @@ func _first_unlocked_index() -> int:
 	return 0
 
 
-func _set_stat(bar: ProgressBar, value: Variant) -> void:
-	bar.value = clampf(float(value), 0.0, 100.0)
-	bar.tooltip_text = "%s sur 100" % roundi(bar.value)
-
-
 func _configure_focus() -> void:
 	ThemeFactory.connect_focus_chain([
-		chassis_list, select_button, paint_option, core_option, mobility_option, utility_option,
+		division_filter, chassis_list, select_button, paint_option,
+		preset_balanced, preset_speed, preset_control, preset_armor,
+		core_option, mobility_option, utility_option, apply_button, cancel_button,
 		engine_button, servos_button, reactor_button, armor_button, back_button,
 	])
 	chassis_list.grab_focus()
@@ -372,7 +633,11 @@ func _on_profile_changed(_data: Dictionary = {}) -> void:
 
 
 func _on_save_failed(message: String = "Sauvegarde indisponible") -> void:
-	status_message.text = "ALERTE SAUVEGARDE // %s" % message.to_upper()
+	_show_error("ALERTE SAUVEGARDE // %s" % message.to_upper())
+
+
+func _show_error(message: String) -> void:
+	status_message.text = message
 	status_message.theme_type_variation = &"WarningLabel"
 
 
@@ -385,15 +650,11 @@ func _read_profile() -> Dictionary:
 	if save == null:
 		return {}
 	var value: Variant = save.get("profile")
-	if value is Dictionary:
-		var profile_dictionary: Dictionary = value
-		return profile_dictionary.duplicate(true)
-	return {}
+	return Dictionary(value).duplicate(true) if value is Dictionary else {}
 
 
 func _settings() -> Dictionary:
-	var profile := _read_profile()
-	var value: Variant = profile.get("settings", {})
+	var value: Variant = _profile.get("settings", {}) if not _profile.is_empty() else _read_profile().get("settings", {})
 	return value if value is Dictionary else {}
 
 

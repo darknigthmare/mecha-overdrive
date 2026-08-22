@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "project": "MECHA OVERDRIVE",
   "generated_at": "2026-08-22",
   "generator": "OpenAI built-in image generation",
@@ -29,6 +29,78 @@
       "generation_id": "exec-02f22be6-b9a3-4b1f-9ab1-cdb51b864226",
       "usage": ["trackside barriers", "environment props", "industrial scenery"],
       "prompt": "Create an original seamless square PBR-style industrial environment panel texture pack surface for the indie game MECHA OVERDRIVE. Orthographic flat material capture, rugged dark gunmetal maintenance plating mixed with compact vents, ribbed service channels, ceramic hazard inserts in muted amber, subtle cyan conduits, dust, rain marks and controlled edge wear suitable for walls, barriers, props and trackside structures across foundry, desert, ice, orbital, jungle, megacity, abyss and reactor racing circuits. Perfectly tileable on all four edges, evenly lit, no perspective, no baked directional shadows, no readable text, no letters, no numbers, no conventional hazard stripes, no logo, no UI, no watermark, no trademark. Premium realistic stylized game material, square 1:1, texture-only image."
+    },
+    {
+      "file": "mecha_armor_light.png",
+      "generation_id": "exec-f3283ae3-c283-4934-bec0-21fe701a8d89",
+      "sha256": "a492be0430129e42c34bd9fa2a634633b0340fec525203cd217d74ec21906daa",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["command, swarm and experimental mecha armor", "garage preview primary surfaces"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for MECHA OVERDRIVE racing mecha armor. Primary request: original lightweight advanced ceramic armor surface for agile racing mechas. Scene/backdrop: orthographic flat material capture only. Subject: pearl-gray ceramic titanium micro-panels, graphite flex seams, fine carbon weave inserts, small recessed fasteners, restrained cyan energy veins, subtle high-speed abrasion and believable edge wear. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, evenly distributed detail, no focal object. Lighting/mood: neutral even studio illumination, no baked directional shadows. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no readable text; no letters; no numbers; no symbols; no logo; no UI; no watermark; no trademark; original design only. Avoid: vehicle silhouette, cockpit, character, large bolts, hazard stripes, franchise resemblance."
+    },
+    {
+      "file": "mecha_armor_heavy.png",
+      "generation_id": "exec-6a5fb823-16bc-4636-a01c-a528ba12fe40",
+      "sha256": "1cbef973e2b40ec927258db8456d021490512f29266ef51534a3076dda964d65",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["ground and stabilized mecha armor", "garage preview secondary surfaces"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for MECHA OVERDRIVE heavy racing mecha armor. Primary request: original reinforced fortress-grade armor surface for ground and stabilized racing mechas. Scene/backdrop: orthographic flat material capture only. Subject: dark gunmetal layered armor slabs, tungsten ribs, compact impact-dissipation cells, amber heat-treated edges, subtle oil scuffs and race wear. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, evenly distributed medium and fine detail, no focal object. Lighting/mood: neutral even studio illumination, no baked directional shadows. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no readable text; no letters; no numbers; no conventional hazard stripes; no logo; no UI; no watermark; no trademark; original design only. Avoid: vehicle silhouette, weapon, cockpit, character, franchise resemblance."
+    },
+    {
+      "file": "module_energy.png",
+      "generation_id": "exec-eea59f4d-b101-4cfc-9993-4dcae020385b",
+      "sha256": "a65f4a42706122b331930bfdcf0041d61d8a46b55d340fbcf7967ed05ffafcfb",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["all core module silhouettes"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for MECHA OVERDRIVE energy-core modules. Primary request: original compact racing reactor and energy-distribution surface. Scene/backdrop: orthographic flat material capture only. Subject: dark titanium housings, dense copper induction windings, ceramic isolators, thin cyan plasma conduits, small magenta diagnostic lights, controlled heat discoloration. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, evenly distributed technical details, no single device or focal object. Lighting/mood: neutral even illumination; emissive-looking accents without bloom. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no baked shadows; no readable text; no letters; no numbers; no symbols; no logo; no UI; no watermark; no trademark; original design only. Avoid: complete engine, vehicle, human, exposed dangerous arcs, franchise resemblance."
+    },
+    {
+      "file": "module_mobility.png",
+      "generation_id": "exec-9aafcc4a-cefa-4c81-b67a-8b58229f05f9",
+      "sha256": "a158adf3dad5287e462df4c6f9a88dc8b8ac6057f7d028a3982f389b26d78a11",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["all mobility module silhouettes"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for MECHA OVERDRIVE mobility modules. Primary request: original high-performance servo, suspension and traction composite surface. Scene/backdrop: orthographic flat material capture only. Subject: graphite carbon weave, polished titanium actuator rails, black flexible bellows, blue-violet magnet arrays, fine grease traces and believable race wear. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, dense reusable mechanical detail with no focal object. Lighting/mood: neutral even studio illumination. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no baked directional shadows; no readable text; no letters; no numbers; no arrows; no logo; no UI; no watermark; no trademark; original design only. Avoid: wheel silhouette, full suspension assembly, vehicle, character, franchise resemblance."
+    },
+    {
+      "file": "module_utility.png",
+      "generation_id": "exec-b66cb30c-f20f-48a0-adc9-ace8ea63cfd0",
+      "sha256": "18a22ea047ba4cced3f2feee8fc7659d6e879cfe44104ac0d1d02b8ce21fce7f",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["all utility module silhouettes"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for MECHA OVERDRIVE utility modules. Primary request: original racing telemetry, defense and service-system composite surface. Scene/backdrop: orthographic flat material capture only. Subject: matte dark alloy panels, compact optical sensor lenses, shield emitter rings, micro cooling grilles, small cyan and amber status lights, fine service wear. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, reusable technical details evenly distributed, no focal object. Lighting/mood: neutral even studio illumination; controlled emissive accents. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no baked shadows; no readable text; no letters; no numbers; no icons; no logo; no UI; no watermark; no trademark; original design only. Avoid: full radar dish, complete drone, vehicle, character, franchise resemblance."
+    },
+    {
+      "file": "track_thermal.png",
+      "generation_id": "exec-c3543a32-c68c-4a26-b3f7-747ab5d7eeb5",
+      "sha256": "38e6436b60db4dbcf5641e6099d335fc607332e62808116d50e83af555d5d98b",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["foundry and caldera racing surfaces"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for MECHA OVERDRIVE thermal racing tracks. Primary request: original heat-resistant futuristic circuit surface for foundry and volcanic reactor courses. Scene/backdrop: orthographic flat material capture only. Subject: black ceramic basalt composite, interlocked refractory plates, thin molten-orange energy channels, glowing red micro-fissures, scorched tire abrasion, sparse cooled metal inserts. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, even reusable detail, no focal object. Lighting/mood: neutral material lighting with restrained internal glow, no bloom. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no baked directional shadows; no readable text; no letters; no numbers; no arrows; no logo; no UI; no watermark; no trademark; original design only. Avoid: open lava pool, landscape, vehicle, conventional hazard stripes, franchise resemblance."
+    },
+    {
+      "file": "track_cryo.png",
+      "generation_id": "exec-1f760e08-e083-444a-a6bf-4316d996e711",
+      "sha256": "872ce9a83a4761acca78ffe75fcdcde1ec124a5cf6f27465a61f2ce0766656ba",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["glacier and abyss racing surfaces"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for MECHA OVERDRIVE cryogenic racing tracks. Primary request: original frost-resistant futuristic circuit surface for glacier and abyssal courses. Scene/backdrop: orthographic flat material capture only. Subject: dark blue-black composite plates beneath translucent frost, narrow cyan guide inlays, fine ice crystals, pressure-worn seams, subtle wet reflections and tire polishing. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, even reusable micro and medium detail, no focal object. Lighting/mood: neutral cold material lighting, no baked directional shadows. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no readable text; no letters; no numbers; no arrows; no logo; no UI; no watermark; no trademark; original design only. Avoid: snow landscape, ocean scene, vehicle, large cracks, franchise resemblance."
+    },
+    {
+      "file": "garage_bay.png",
+      "generation_id": "exec-6bdc26bf-1421-4369-859e-34366af46e50",
+      "sha256": "573fd293eed1c2f24e23a0b4e3a735cff0ff32adefe66cef1e6d6ca87e8279ce",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["interactive garage preview floor and bay walls"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for the MECHA OVERDRIVE garage preview bay. Primary request: original premium motorsport-mecha workshop floor and service-bay panel surface. Scene/backdrop: orthographic flat material capture only. Subject: dark graphite anti-slip plates, flush cyan service conduits, muted amber maintenance inserts, compact drainage grids, subtle grease wipe marks, tire scuffs and clean professional wear. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, evenly distributed detail, no focal object. Lighting/mood: neutral even workshop illumination, no baked directional shadows. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no readable text; no letters; no numbers; no arrows; no conventional hazard stripes; no logo; no UI; no watermark; no trademark; original design only. Avoid: complete garage scene, tools, people, vehicle silhouette, franchise resemblance."
     }
   ]
 }

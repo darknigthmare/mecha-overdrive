@@ -26,7 +26,7 @@ Le dépôt contient deux runtimes indépendants qui partagent la même identité
 
 ## 2. Architecture de l’édition Godot 3D
 
-Cette section décrit le contrat de la release **Godot 2.1.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
+Cette section décrit le contrat de la release **Godot 2.2.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
 
 ### 2.1 Configuration du projet
 
@@ -64,7 +64,7 @@ Le coordinateur écoute des signaux de haut niveau (`race_requested`, `screen_re
 - cinq divisions : `command`, `stabilized`, `swarm`, `ground` et `experimental` ;
 - huit circuits : Fonderie Néon, Faille Écarlate, Arc Polaire, Cimetière Orbital et les quatre ajouts `canopy`, `tempest`, `abyss`, `caldera` ;
 - huit objets ;
-- trois emplacements modulaires et neuf modules ;
+- trois emplacements modulaires et dix-huit modules, six par emplacement ;
 - trois classes de performance : `stock`, `tuned`, `unlimited` ;
 - trois règlements de grille : `division_locked`, `open_mixed`, `elite_open` ;
 - six championnats : cinq coupes dédiées à une division et `nexus_open`, seule coupe ouverte aux divisions mélangées ;
@@ -141,9 +141,9 @@ Un résultat n’est commité qu’une fois par session. `complete_race` normali
 
 Par défaut, `GameSession` construit une grille de la division du châssis sélectionné. Le mélange n’est autorisé que par une demande explicite compatible avec `open_mixed` ou `elite_open`. Les classes appliquent aussi une politique réelle : configuration d’usine et améliorations nulles en `stock`, plafond de niveau 2 en `tuned`, plafond de niveau 4 en `unlimited`.
 
-### 2.9 Sauvegarde v3
+### 2.9 Sauvegarde v4
 
-Le schéma courant est `SAVE_VERSION = 3` et le fichier principal :
+Le schéma courant est `SAVE_VERSION = 4` et le fichier principal :
 
 ```text
 user://mecha_overdrive_profile.json
@@ -161,6 +161,7 @@ paints[chassis_id]
 unlocked_paints[]
 upgrades[chassis_id][engine|servos|reactor|armor]
 loadouts[chassis_id][slot_id]
+owned_modules[]
 camera_modes[chassis_id]
 records[track_id][mode]
 stats[races|wins|podiums|championships|credits_earned]
@@ -168,11 +169,11 @@ settings[accessibilité|audio]
 championship[id|round|tracks|division_id|ruleset_id|grid_policy|performance_class|roster]
 ```
 
-À chaque lecture, le service reconstruit un profil par défaut puis n’accepte que les valeurs valides et bornées. Une sauvegarde v2 est migrée vers un chargement par châssis, une vue persistante et la coupe dédiée correspondant à la division sélectionnée. Les propriétés immuables d’un championnat sont ensuite recopiées depuis le catalogue canonique : une sauvegarde modifiée ne peut pas injecter des circuits, une division ou un règlement arbitraires. L’écriture suit un flux temporaire → backup → remplacement. Un JSON invalide est archivé en `.corrupt.json`. Les DNF n’accordent ni crédits ni record.
+À chaque lecture, le service reconstruit un profil par défaut puis n’accepte que les valeurs valides et bornées. Une sauvegarde v2 est migrée vers un chargement par châssis, une vue persistante et la coupe dédiée correspondant à la division sélectionnée. Une sauvegarde v3 conserve ses chargements et reçoit les neuf modules historiques. Les propriétés immuables d’un championnat sont ensuite recopiées depuis le catalogue canonique : une sauvegarde modifiée ne peut pas injecter des circuits, une division ou un règlement arbitraires. L’écriture suit un flux temporaire → backup → remplacement. Un JSON invalide est archivé en `.corrupt.json`. Les DNF n’accordent ni crédits ni record.
 
 ### 2.10 UI, accessibilité et audio
 
-Les scripts `scripts/ui/` construisent les écrans de menu, garage, codex, HUD et résultats. Le menu expose division, politique de grille, championnat et classe de performance ; le garage expose les trois emplacements modulaires et leur effet sur les statistiques. `ui_theme.gd` centralise la direction visuelle. Les réglages persistants couvrent contraste élevé, mouvement réduit, texte agrandi, secousse caméra, unités métriques et volumes.
+Les scripts `scripts/ui/` construisent les écrans de menu, garage, codex, HUD et résultats. Le menu expose division, politique de grille, championnat et classe de performance ; le garage utilise un unique SubViewport Web-friendly pour montrer le vrai mécha, sa peinture et ses modules, puis applique atomiquement le brouillon validé. `ui_theme.gd` centralise la direction visuelle. Les réglages persistants couvrent contraste élevé, mouvement réduit, texte agrandi, secousse caméra, unités métriques et volumes.
 
 `scripts/audio/audio_director.gd` génère l’ambiance moteur et les événements de course à l’exécution. Aucun fichier audio externe n’est requis par cette branche.
 
@@ -213,7 +214,7 @@ ResultsScreen
 
 ## 4. Architecture historique de l’édition compagnon web
 
-Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.1.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
+Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.2.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
 
 | Fichier | Responsabilité |
 |---|---|
@@ -261,7 +262,7 @@ Les deux surfaces sont publiées ensemble :
 ### Godot
 
 - `tools/validate-godot.mjs` : contrat statique des ressources et données Godot.
-- `godot/tests/smoke_test.gd` : 10 châssis, 5 divisions, 8 circuits, 6 coupes, 9 modules, sauvegarde v3, migration/canonicalisation, classes, dangers et déterminisme.
+- `godot/tests/smoke_test.gd` : 10 châssis, 5 divisions, 8 circuits, 6 coupes, 18 modules, sauvegarde v4, achat atomique, migration/canonicalisation, classes, dangers et déterminisme.
 - `godot/tests/runtime_flow_test.gd` : vraie scène, grille par division, modules, vues TPS/cockpit, mouvement, DNF, résultats et coupes dédiée/ouverte avec sauvegarde isolée.
 - `godot --headless --path godot --editor --quit` : import et parse par le vrai moteur.
 

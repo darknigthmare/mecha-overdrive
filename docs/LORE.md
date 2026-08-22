@@ -83,7 +83,7 @@ Le joueur entre dans la compétition sous son propre indicatif et construit sa r
 
 Le Hangar 08 est un atelier neutre situé sous la tribune principale du Circuit Zero. Les crédits de course y sont convertis en pièces homologuées. Les peintures n’affectent pas les performances, mais les équipes les utilisent pour identifier leurs machines dans le nuage de poussière, la neige ou les projections thermiques.
 
-Chaque machine reçoit trois interfaces normalisées : **Noyau**, **Mobilité** et **Utilitaire**. Neuf modules homologués circulent entre les ateliers, mais leur assemblage reste propre à chaque châssis. Les commissaires inspectent la configuration avant chaque départ selon la classe de performance engagée.
+Chaque machine reçoit trois interfaces normalisées : **Noyau**, **Mobilité** et **Utilitaire**. Dix-huit modules homologués circulent entre les ateliers : neuf pièces historiques universelles et neuf systèmes spécialisés dont l’affinité dépend des divisions. Leur assemblage reste propre à chaque châssis. Les commissaires inspectent la configuration avant chaque départ selon la classe de performance engagée.
 
 Les cockpits sont eux aussi adaptés à l’architecture. Certains pilotes exigent la vision tactique extérieure des drones TPS ; d’autres ne jurent que par la vue interne, au plus près des vibrations et de la chaleur. Le Hangar 08 conserve ce choix dans le profil de chaque machine.
 

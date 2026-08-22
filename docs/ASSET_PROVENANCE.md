@@ -36,3 +36,24 @@ Le manifeste machine lisible [`../godot/assets/textures/openai/manifest.json`](.
 ### Statut
 
 Assets originaux créés pour MECHA OVERDRIVE. Une vérification juridique séparée reste recommandée avant exploitation commerciale ou dépôt de marque.
+
+## Vague de matériaux OpenAI — édition Godot 2.2.0
+
+Huit images supplémentaires ont été créées le 22 août 2026 avec le générateur d’images OpenAI intégré, en nouvelle génération raster et sans image de référence :
+
+| Fichier | Identifiant de génération | Usage runtime |
+|---|---|---|
+| `mecha_armor_light.png` | `exec-f3283ae3-c283-4934-bec0-21fe701a8d89` | armures Commandement, Essaim et Expérimental |
+| `mecha_armor_heavy.png` | `exec-6a5fb823-16bc-4636-a01c-a528ba12fe40` | armures Stabilisé et Sol |
+| `module_energy.png` | `exec-eea59f4d-b101-4cfc-9993-4dcae020385b` | six silhouettes de noyau |
+| `module_mobility.png` | `exec-9aafcc4a-cefa-4c81-b67a-8b58229f05f9` | six silhouettes de mobilité |
+| `module_utility.png` | `exec-b66cb30c-f20f-48a0-adc9-ace8ea63cfd0` | six silhouettes utilitaires |
+| `track_thermal.png` | `exec-c3543a32-c68c-4a26-b3f7-747ab5d7eeb5` | Fonderie Néon et Caldeira Zéro |
+| `track_cryo.png` | `exec-1f760e08-e083-444a-a6bf-4316d996e711` | Arc Polaire et Tranchée Hadale |
+| `garage_bay.png` | `exec-6bdc26bf-1421-4369-859e-34366af46e50` | sol et panneaux de la prévisualisation 3D |
+
+Le manifeste schema 2 archive pour les douze textures le rôle, et pour cette vague les dimensions, les empreintes SHA-256, les prompts complets et l’identifiant de génération. Les originaux restent dans le dossier de générations Codex ; les copies runtime sont celles versionnées dans le projet.
+
+### Statut
+
+Ces surfaces sont des créations originales du projet, sans texte, logo, marque, UI ou référence d’image tierce. Elles sont réellement branchées sur `MaterialLibrary`, `MechaFactory`, `MechaVisualModules`, `TrackFactory` et la baie interactive du garage.
