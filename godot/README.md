@@ -1,6 +1,6 @@
 # MECHA OVERDRIVE — édition Godot 3D
 
-Cette arborescence contient l’édition principale de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale.
+Cette arborescence contient l’édition principale **2.0.1** de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale.
 
 ## Ouvrir le projet
 
@@ -52,7 +52,7 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 user://mecha_overdrive_profile.json
 ```
 
-Le profil conserve le pilote, les crédits, le châssis, les peintures, les améliorations, les records, les statistiques, l’accessibilité et les volumes. Les données sont normalisées et bornées à la lecture. L’écriture utilise un fichier temporaire et un backup. Une course DNF ne peut pas créer de record ni verser de récompense.
+Le profil conserve le pilote, les crédits, le châssis, les peintures, les améliorations, les records, les statistiques, le Grand Prix en cours, l’accessibilité et les volumes. Les données sont normalisées et bornées à la lecture. L’écriture utilise un fichier temporaire et un backup réellement restaurable. Une course DNF ne peut pas créer de record ni verser de récompense.
 
 Le chemin absolu de `user://` dépend du système ; Godot permet de l’ouvrir depuis l’éditeur via **Projet > Ouvrir le dossier de données utilisateur**.
 
@@ -109,6 +109,20 @@ godot/
     └── runtime_flow_test.gd
 ```
 
+## Export Web reproductible
+
+Le preset `Web` mono-thread produit l’application dans `../godot3d/`. Les templates d’export officiels Godot 4.7.2 doivent être installés :
+
+```bash
+godot --headless --path godot --export-release Web ../godot3d/mecha-overdrive.html
+npm run stamp:godot-web
+npm run validate
+```
+
+Le manifeste `godot3d/build.json` contient l’empreinte des sources et de chaque artefact. Toute modification du projet exige donc un nouvel export et un nouveau stamp avant publication.
+
+L’export Web cible les ordinateurs avec WebGL2, clavier ou manette. L’édition compagnon à la racine conserve les commandes tactiles et la PWA hors ligne.
+
 ## Frontière avec l’édition web
 
-L’application web à la racine n’est pas un export de ce projet. Elle possède huit châssis et sa propre sauvegarde `localStorage` v1. Les deux éditions peuvent évoluer et être testées séparément ; Vercel publie la version web statique, tandis que ce dossier reste la source Godot principale.
+L’application web à la racine n’est pas un export de ce projet. Elle possède huit châssis et sa propre sauvegarde `localStorage` v1. `godot3d/` est, lui, l’export navigateur exact de cette édition principale. Vercel publie les deux éditions sous le même domaine sans fusionner leurs sauvegardes.

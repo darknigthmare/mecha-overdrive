@@ -15,6 +15,7 @@
     "test:browser": "python3 tests/browser_smoke.py",
     "test:flow": "python3 tests/full_flow_qa.py",
     "test:godot-structure": "node tools/validate-godot.mjs",
+    "stamp:godot-web": "node tools/stamp-godot-web.mjs",
     "test": "npm run check && npm run validate && npm run test:engine && npm run test:integration",
     "qa": "npm test && npm run test:godot-structure"
   },

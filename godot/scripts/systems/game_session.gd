@@ -15,6 +15,33 @@ var last_result: Dictionary = {}
 var championship: Dictionary = {}
 var _result_committed := false
 var _session_counter := 0
+var _save_system_override: Node = null
+
+
+func _ready() -> void:
+	restore_championship()
+
+
+func restore_championship() -> Dictionary:
+	championship = {}
+	var save_system := _save_system()
+	if save_system == null or not save_system.has_method(&"get_championship"):
+		return {}
+	var restored: Variant = save_system.call(&"get_championship")
+	if not restored is Dictionary:
+		return {}
+	var restored_data: Dictionary = restored
+	var round_index := int(restored_data.get("round_index", -1))
+	var entrants: Variant = restored_data.get("entrants", [])
+	if not bool(restored_data.get("active", false)):
+		return {}
+	if round_index < 0 or round_index >= GRAND_PRIX_TRACKS.size():
+		return {}
+	if not entrants is Array or Array(entrants).size() != MAX_RACERS:
+		return {}
+	championship = restored_data.duplicate(true)
+	championship_changed.emit(championship.duplicate(true))
+	return championship.duplicate(true)
 
 
 func configure(request: Dictionary) -> Dictionary:
@@ -71,11 +98,19 @@ func complete_race(raw_result: Dictionary) -> Dictionary:
 	var elapsed := maxf(0.0, float(raw_result.get("elapsed", 0.0)))
 	var position := clampi(int(raw_result.get("position", config.get("racer_count", MAX_RACERS))), 1, int(config.get("racer_count", MAX_RACERS)))
 	var laps_completed := clampi(int(raw_result.get("laps_completed", 0)), 0, int(config.get("laps", 3)))
+	var mode := String(config.get("mode", "quick"))
+	var track_id := String(config.get("track_id", "foundry"))
+	var track := GameDatabase.get_track(track_id)
+	var racer_count := int(config.get("racer_count", MAX_RACERS))
+	var save_system := _save_system()
 	var result := {
 		"session_id": int(config.get("session_id", 0)),
-		"mode": String(config.get("mode", "quick")),
-		"track_id": String(config.get("track_id", "foundry")),
+		"mode": mode,
+		"track_id": track_id,
 		"difficulty": String(config.get("difficulty", "pilot")),
+		"track_name": String(track.get("name", track_id)),
+		"racer_count": racer_count,
+		"total_racers": racer_count,
 		"finished": finished,
 		"dnf": not finished,
 		"eliminated": eliminated,
@@ -87,14 +122,21 @@ func complete_race(raw_result: Dictionary) -> Dictionary:
 		"record_valid": finished and elapsed > 0.0,
 		"classification": _sanitize_classification(raw_result.get("classification", [])),
 	}
+	_apply_record_contract(result, save_system)
 
-	if String(config.get("mode", "")) == "grand_prix":
+	if mode == "grand_prix":
 		_apply_championship_result(result)
-		result["championship"] = championship.duplicate(true)
+		var championship_result := _championship_result()
+		result["championship"] = championship_result
+		result["round"] = int(championship_result.get("round", 1))
+		result["total_rounds"] = int(championship_result.get("total_rounds", GRAND_PRIX_TRACKS.size()))
+		result["championship_standings"] = championship_result.get("standings", [])
+		result["championship_complete"] = bool(championship_result.get("complete", false))
+		result["can_continue"] = bool(championship_result.get("can_continue", false))
 
 	_result_committed = true
 	last_result = result.duplicate(true)
-	var save_system := get_node_or_null("/root/SaveSystem")
+	# SaveSystem was resolved before result normalization.
 	if save_system != null and save_system.has_method(&"record_race_result"):
 		save_system.call(&"record_race_result", result.duplicate(true))
 	race_completed.emit(result.duplicate(true))
@@ -127,6 +169,7 @@ func abandon_championship() -> void:
 		return
 	championship["active"] = false
 	championship["abandoned"] = true
+	_persist_championship()
 	championship_changed.emit(championship.duplicate(true))
 
 
@@ -145,6 +188,7 @@ func _start_championship(difficulty: String) -> void:
 		"entrants": entrants,
 		"champion_id": "",
 	}
+	_persist_championship()
 	championship_changed.emit(championship.duplicate(true))
 
 
@@ -156,6 +200,8 @@ func _apply_championship_result(result: Dictionary) -> void:
 	if classification.is_empty():
 		classification = _fallback_classification(int(result.get("position", MAX_RACERS)))
 	var awarded: Dictionary = {}
+	var player_points := 0
+	result["championship_won"] = false
 	for rank in range(classification.size()):
 		var entry: Dictionary = classification[rank]
 		var racer_id := String(entry.get("racer_id", ""))
@@ -163,6 +209,8 @@ func _apply_championship_result(result: Dictionary) -> void:
 			continue
 		awarded[racer_id] = true
 		var points := GameDatabase.CHAMPIONSHIP_POINTS[rank] if rank < GameDatabase.CHAMPIONSHIP_POINTS.size() else 0
+		if racer_id == "player":
+			player_points = points
 		for entrant_index in range(entrants.size()):
 			var entrant: Dictionary = entrants[entrant_index]
 			if String(entrant.get("id", "")) == racer_id:
@@ -171,6 +219,8 @@ func _apply_championship_result(result: Dictionary) -> void:
 				break
 
 	championship["entrants"] = entrants
+	result["points"] = player_points
+	result["championship_points"] = player_points
 	var completed_tracks: Array = championship.get("completed_tracks", [])
 	completed_tracks.append(String(config.get("track_id", "foundry")))
 	championship["completed_tracks"] = completed_tracks
@@ -186,6 +236,90 @@ func _apply_championship_result(result: Dictionary) -> void:
 		championship["champion_id"] = champion_id
 		result["championship_won"] = champion_id == "player"
 	championship_changed.emit(championship.duplicate(true))
+
+
+func _apply_record_contract(result: Dictionary, save_system: Node) -> void:
+	var record_valid := bool(result.get("record_valid", false))
+	var elapsed := float(result.get("elapsed", 0.0))
+	var track_id := String(result.get("track_id", ""))
+	var mode := String(result.get("mode", "quick"))
+	var previous_record := 0.0
+	if save_system != null:
+		var profile_value: Variant = save_system.get("profile")
+		if profile_value is Dictionary:
+			var profile_data: Dictionary = profile_value
+			var records_value: Variant = profile_data.get("records", {})
+			if records_value is Dictionary:
+				var records: Dictionary = records_value
+				var track_records_value: Variant = records.get(track_id, {})
+				if track_records_value is Dictionary:
+					var track_records: Dictionary = track_records_value
+					previous_record = maxf(0.0, float(track_records.get(mode, 0.0)))
+
+	var new_record := record_valid and elapsed > 0.0 and (previous_record <= 0.0 or elapsed < previous_record)
+	var best_time := elapsed if new_record else previous_record
+	result["previous_record"] = previous_record
+	result["new_record"] = new_record
+	result["record"] = new_record
+	result["best_time"] = best_time
+	result["record_time"] = best_time
+
+
+func _championship_result() -> Dictionary:
+	var output := championship.duplicate(true)
+	var total_rounds := GRAND_PRIX_TRACKS.size()
+	var completed_rounds := clampi(int(championship.get("round_index", 0)), 0, total_rounds)
+	var complete := completed_rounds >= total_rounds and not bool(championship.get("active", false)) and not bool(championship.get("abandoned", false))
+	var entrants: Array = championship.get("entrants", [])
+	var sorted_entrants := entrants.duplicate(true)
+	sorted_entrants.sort_custom(Callable(self, "_championship_entry_precedes"))
+	var standings: Array[Dictionary] = []
+	for index in range(sorted_entrants.size()):
+		var entrant: Dictionary = sorted_entrants[index]
+		var entrant_id := String(entrant.get("id", ""))
+		var entrant_name := String(entrant.get("name", "PILOTE"))
+		standings.append({
+			"racer_id": entrant_id,
+			"id": entrant_id,
+			"pilot": entrant_name,
+			"name": entrant_name,
+			"points": maxi(0, int(entrant.get("points", 0))),
+			"position": index + 1,
+			"player": entrant_id == "player",
+		})
+	output["round"] = clampi(completed_rounds, 1, total_rounds)
+	output["total_rounds"] = total_rounds
+	output["standings"] = standings
+	output["complete"] = complete
+	output["championship_complete"] = complete
+	output["can_continue"] = bool(championship.get("active", false)) and completed_rounds < total_rounds
+	return output
+
+
+func _championship_entry_precedes(a: Dictionary, b: Dictionary) -> bool:
+	var a_points := int(a.get("points", 0))
+	var b_points := int(b.get("points", 0))
+	if a_points == b_points:
+		return String(a.get("id", "")) < String(b.get("id", ""))
+	return a_points > b_points
+
+
+func _persist_championship() -> void:
+	var save_system := _save_system()
+	if save_system == null:
+		return
+	if bool(championship.get("active", false)) and save_system.has_method(&"save_championship"):
+		save_system.call(&"save_championship", championship.duplicate(true))
+	elif save_system.has_method(&"clear_championship"):
+		save_system.call(&"clear_championship")
+
+
+func _save_system() -> Node:
+	if _save_system_override != null and is_instance_valid(_save_system_override):
+		return _save_system_override
+	if not is_inside_tree():
+		return null
+	return get_node_or_null("/root/SaveSystem")
 
 
 func _fallback_classification(player_position: int) -> Array[Dictionary]:
@@ -218,8 +352,13 @@ func _sanitize_classification(value: Variant) -> Array[Dictionary]:
 		if racer_id.is_empty() or seen.has(racer_id):
 			continue
 		seen[racer_id] = true
+		var display_name := String(entry.get("display_name", entry.get("name", entry.get("pilot", racer_id))))
 		output.append({
 			"racer_id": racer_id,
+			"name": display_name,
+			"pilot": display_name,
+			"player": racer_id == "player" or bool(entry.get("player", false)),
+			"delta": String(entry.get("delta", entry.get("gap", ""))),
 			"position": output.size() + 1,
 			"elapsed": maxf(0.0, float(entry.get("elapsed", 0.0))),
 		})

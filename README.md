@@ -10,12 +10,23 @@ Le visuel de présentation est une création originale générée avec OpenAI po
 
 | Édition | Emplacement | Contenu | Exécution |
 |---|---|---|---|
-| **Godot 3D — principale** | `godot/` | 10 châssis, 4 modes, 4 circuits, garage, codex, progression et sauvegarde v2 | Godot **4.7.2** |
+| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 4 modes, 4 circuits, garage, codex, progression et sauvegarde v2 | Godot **4.7.2** ou navigateur WebGL2 |
 | **Web — compagnon autonome** | racine du dépôt | 8 châssis, Course rapide, Grand Prix et Contre-la-montre, PWA hors ligne | Navigateur moderne, Node.js facultatif |
 
-La version déclarée dans le projet Godot est `2.0.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+La version déclarée dans le projet Godot est `2.0.1`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+
+## Jouer en ligne
+
+- **Godot 3D 2.0.1** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
+- **Édition web légère** : [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app)
+
+L’export Godot est mono-thread, WebGL2 et destiné aux ordinateurs avec clavier ou manette. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste l’option tactile et PWA hors ligne.
 
 ## Lancer l’édition Godot 3D
+
+### Depuis le navigateur
+
+Ouvrez l’URL Godot 3D ci-dessus puis cliquez dans le jeu avant de piloter, afin d’autoriser l’audio du navigateur. La sauvegarde `user://` est conservée dans le stockage du site lorsque le navigateur l’autorise.
 
 ### Depuis l’éditeur
 
@@ -72,7 +83,7 @@ Les circuits sont assemblés en 3D par `TrackFactory` à partir des spécificati
 
 ### Combat et progression
 
-La branche Godot contient huit objets : missile ion, EMP, bouclier phase, cellule Overdrive, mine gravitique, drone réparateur, onde cinétique et Railburst. Le garage expose les peintures et quatre familles d’améliorations : moteur, servomoteurs, refroidissement et blindage.
+La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cellule Overdrive, charge gravitique, drone réparateur, onde cinétique et Railburst. Le garage expose les peintures et quatre familles d’améliorations : moteur, servomoteurs, refroidissement et blindage. Chaque architecture applique réellement sa capacité propre en course.
 
 ## Contrôles Godot
 
@@ -103,6 +114,7 @@ La sauvegarde v2 conserve notamment :
 - peintures et niveaux d’amélioration par châssis ;
 - records par circuit et mode ;
 - statistiques de carrière ;
+- championnat Grand Prix en cours, points et manche suivante ;
 - accessibilité et volumes audio.
 
 Les données sont normalisées à la lecture. L’écriture passe par un fichier temporaire puis une sauvegarde de secours ; un fichier illisible est archivé avant reconstruction d’un profil sain. Un abandon ou DNF compte comme course, mais ne peut accorder ni crédits ni record.
@@ -177,6 +189,7 @@ MECHA_OVERDRIVE/
 │   └── tests/
 │       ├── smoke_test.gd          contrat déterministe headless
 │       └── runtime_flow_test.gd   flux menu/course/résultats headless
+├── godot3d/                       export Web Godot 4.7.2 vérifié et publiable
 ├── index.html                     édition web Canvas pseudo-3D
 ├── js/                            moteur, données, rendu et UI web
 ├── tests/                         QA Node et parcours navigateur web
@@ -197,10 +210,11 @@ MECHA_OVERDRIVE/
 - [`docs/LORE.md`](docs/LORE.md) — univers, pilotes et circuits.
 - [`docs/ASSET_PROVENANCE.md`](docs/ASSET_PROVENANCE.md) — origine des assets créés pour le projet.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — pistes d’évolution.
+- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) — attribution du runtime Godot et de ses composants.
 
 ## Publication
 
-Vercel héberge l’édition web statique sur [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app). La branche Godot reste le projet source principal à ouvrir dans Godot 4.7.2 ; un export jouable Godot doit faire l’objet d’un gate d’export séparé avant d’être annoncé comme livrable binaire.
+Vercel héberge le lanceur et l’édition web légère sur [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app), ainsi que l’export jouable Godot 3D sous `/godot3d/mecha-overdrive`. `godot3d/build.json` atteste les empreintes des artefacts et leur synchronisation avec les sources ; `npm run validate` refuse un export incomplet, altéré ou obsolète.
 
 ## Licence
 

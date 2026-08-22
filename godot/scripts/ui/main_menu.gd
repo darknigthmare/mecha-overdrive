@@ -18,6 +18,8 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 @onready var contrast_toggle: CheckButton = %ContrastToggle
 @onready var motion_toggle: CheckButton = %MotionToggle
 @onready var text_toggle: CheckButton = %TextToggle
+@onready var track_select: OptionButton = %TrackSelect
+@onready var difficulty_select: OptionButton = %DifficultySelect
 
 @onready var quick_button: Button = %QuickButton
 @onready var grand_prix_button: Button = %GrandPrixButton
@@ -32,6 +34,9 @@ var _last_focused: Control
 
 
 func _ready() -> void:
+	_setup_race_options()
+	if OS.has_feature("web"):
+		quit_button.hide()
 	_bind_actions()
 	_bind_services()
 	_refresh_profile()
@@ -79,6 +84,8 @@ func _bind_actions() -> void:
 	contrast_toggle.toggled.connect(_on_accessibility_toggled)
 	motion_toggle.toggled.connect(_on_accessibility_toggled)
 	text_toggle.toggled.connect(_on_accessibility_toggled)
+	track_select.item_selected.connect(_on_race_option_selected)
+	difficulty_select.item_selected.connect(_on_race_option_selected)
 
 	for control in _focus_controls():
 		control.focus_entered.connect(_remember_focus.bind(control))
@@ -99,12 +106,13 @@ func _bind_services() -> void:
 
 
 func _start_mode(mode: StringName) -> void:
-	var track_id := _default_track_id()
+	var track_id := _selected_track_id()
+	var track := GameDatabase.get_track(track_id)
 	var config := {
 		"mode": String(mode),
 		"track_id": track_id,
-		"difficulty": "pilot",
-		"laps": 3,
+		"difficulty": _selected_difficulty_id(),
+		"laps": int(track.get("default_laps", 3)),
 		"new_championship": mode == &"grand_prix",
 	}
 	var session := _game_session()
@@ -123,6 +131,11 @@ func _open_screen(screen_id: StringName) -> void:
 
 func _request_quit() -> void:
 	quit_requested.emit()
+
+
+func _on_race_option_selected(_index: int) -> void:
+	var track := GameDatabase.get_track(_selected_track_id())
+	status_message.text = "CONFIGURATION // %s // %s" % [String(track.get("name", "CIRCUIT ZERO")).to_upper(), difficulty_select.get_item_text(difficulty_select.selected).to_upper()]
 
 
 func _on_accessibility_toggled(_enabled: bool) -> void:
@@ -188,10 +201,14 @@ func _configure_focus() -> void:
 
 
 func _focus_controls() -> Array[Control]:
-	return [
+	var controls: Array[Control] = [
+		track_select, difficulty_select,
 		quick_button, grand_prix_button, time_trial_button, elimination_button,
-		garage_button, codex_button, contrast_toggle, motion_toggle, text_toggle, quit_button,
+		garage_button, codex_button, contrast_toggle, motion_toggle, text_toggle,
 	]
+	if quit_button.visible:
+		controls.append(quit_button)
+	return controls
 
 
 func _remember_focus(control: Control) -> void:
@@ -244,10 +261,35 @@ func _profile() -> Dictionary:
 	return value if value is Dictionary else {}
 
 
-func _default_track_id() -> String:
-	if not GameDatabase.TRACKS.is_empty():
-		return _string_value(GameDatabase.TRACKS[0], ["id"], "foundry")
+func _setup_race_options() -> void:
+	track_select.clear()
+	for track: Dictionary in GameDatabase.TRACKS:
+		var track_index := track_select.item_count
+		track_select.add_item(String(track.get("name", "CIRCUIT ZERO")).to_upper())
+		track_select.set_item_metadata(track_index, String(track.get("id", "foundry")))
+	difficulty_select.clear()
+	for difficulty: Dictionary in GameDatabase.DIFFICULTIES:
+		var difficulty_index := difficulty_select.item_count
+		difficulty_select.add_item(String(difficulty.get("name", "PILOTE")).to_upper())
+		difficulty_select.set_item_metadata(difficulty_index, String(difficulty.get("id", "pilot")))
+		if String(difficulty.get("id", "")) == "pilot":
+			difficulty_select.select(difficulty_index)
+
+
+func _selected_track_id() -> String:
+	if track_select.item_count > 0 and track_select.selected >= 0:
+		var selected: Variant = track_select.get_item_metadata(track_select.selected)
+		if selected is String and GameDatabase.has_track(String(selected)):
+			return String(selected)
 	return "foundry"
+
+
+func _selected_difficulty_id() -> String:
+	if difficulty_select.item_count > 0 and difficulty_select.selected >= 0:
+		var selected: Variant = difficulty_select.get_item_metadata(difficulty_select.selected)
+		if selected is String and GameDatabase.has_difficulty(String(selected)):
+			return String(selected)
+	return "pilot"
 
 
 func _set_toggle_without_signal(toggle: CheckButton, value: bool) -> void:

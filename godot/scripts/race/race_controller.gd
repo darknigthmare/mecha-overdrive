@@ -292,7 +292,7 @@ func _apply_item(source: RefCounted, item_id: String) -> void:
 		"mine":
 			var target := _nearest_racer_behind(source, 18.0)
 			if target != null:
-				target.call(&"apply_hit", 18.0, 0.48)
+				target.call(&"apply_ground_mine", 18.0, 0.48)
 		"ion", "rail":
 			var target := _nearest_racer(source, true, 72.0 if item_id == "ion" else 108.0)
 			if target != null:
@@ -370,10 +370,9 @@ func _process_marker_contact(racer: RefCounted, snapshot: Dictionary) -> void:
 				# Stable ID staggering avoids a whole pack firing on the same tick.
 				_ai_item_cooldowns[racer_id] = AI_ITEM_PICKUP_DELAY + float(posmod(racer_id.hash(), 4)) * 0.05
 		else:
-			# The pad is represented as a short-lived overdrive cell.
-			racer.call(&"grant_item", "overdrive")
-			var used := String(racer.call(&"use_item"))
-			if racer == _player and not used.is_empty():
+			# Dedicated reactor recharge: a pad never consumes the held item.
+			var activated := bool(racer.call(&"apply_boost_pad"))
+			if racer == _player and activated:
 				_audio.play_event("boost")
 
 
@@ -390,8 +389,11 @@ func _resolve_close_contacts() -> void:
 				continue
 			if absf(float(a.get("distance", 0.0)) - float(b.get("distance", 0.0))) < 1.65 and absf(float(a.get("lane", 0.0)) - float(b.get("lane", 0.0))) < 0.18:
 				var direction := -1.0 if float(a.get("lane", 0.0)) < float(b.get("lane", 0.0)) else 1.0
-				first.call(&"apply_hit", 0.018, direction * 0.04)
-				second.call(&"apply_hit", 0.018, -direction * 0.04)
+				var first_strength := float(first.call(&"contact_damage_multiplier"))
+				var second_strength := float(second.call(&"contact_damage_multiplier"))
+				# Each chassis authors the damage and shove it deals to the rival.
+				first.call(&"apply_hit", 0.018 * second_strength, direction * 0.04 * second_strength)
+				second.call(&"apply_hit", 0.018 * first_strength, -direction * 0.04 * first_strength)
 
 
 func _sort_and_rank_snapshots() -> void:
@@ -642,7 +644,8 @@ func _update_camera(delta: float) -> void:
 	var look_target := pose.origin + forward * (10.0 + float(state.get("speed_ratio", 0.0)) * 7.0) + Vector3.UP * 1.8
 	var weight := 1.0 - exp(-delta * 6.5)
 	_camera.global_position = _camera.global_position.lerp(target_position, weight)
-	var next_basis := _camera.global_transform.looking_at(look_target, Vector3.UP, true).basis
+	# Camera3D looks along -Z; `use_model_front` would turn its view away from the track.
+	var next_basis := _camera.global_transform.looking_at(look_target, Vector3.UP, false).basis
 	_camera.global_basis = _camera.global_basis.slerp(next_basis, weight)
 	_camera.fov = lerpf(_camera.fov, 72.0 + minf(10.0, float(state.get("speed_ratio", 0.0)) * 5.5), weight)
 

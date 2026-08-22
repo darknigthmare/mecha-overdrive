@@ -5,6 +5,7 @@ extends Node
 ## files; engine, ambience, rhythm bed and feedback are synthesized locally.
 
 const MIX_RATE := 22050.0
+const MAX_EVENTS := 16
 
 var speed_ratio := 0.0
 var boost_amount := 0.0
@@ -23,18 +24,23 @@ var _phase_motor := 0.0
 var _phase_music := 0.0
 var _sample_clock := 0.0
 var _events: Array[Dictionary] = []
+var _procedural_enabled := true
+var _awaiting_web_activation := OS.has_feature("web")
 
 
 func _ready() -> void:
 	_player = AudioStreamPlayer.new()
 	_player.name = "ProceduralMix"
+	# Godot Web defaults to sample playback, which cannot host a live generator.
+	# Stream playback keeps the same procedural mix on desktop and in browsers.
+	_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	var stream := AudioStreamGenerator.new()
 	stream.mix_rate = MIX_RATE
 	stream.buffer_length = 0.28
 	_player.stream = stream
 	add_child(_player)
-	_player.play()
-	_playback = _player.get_stream_playback() as AudioStreamGeneratorPlayback
+	_start_playback()
+	set_process_input(_awaiting_web_activation)
 
 
 func configure(settings: Dictionary) -> void:
@@ -65,7 +71,58 @@ func play_event(event_name: String) -> void:
 		"finish": frequency = 660.0; duration = 0.95; gain = 0.42
 		"count": frequency = 330.0; duration = 0.16; gain = 0.25
 		"go": frequency = 760.0; duration = 0.4; gain = 0.42
+	if _events.size() >= MAX_EVENTS:
+		_events.remove_at(0)
 	_events.append({"frequency": frequency, "remaining": duration, "duration": duration, "gain": gain, "phase": 0.0})
+
+
+func procedural_audio_enabled() -> bool:
+	return _procedural_enabled
+
+
+func uses_stream_playback() -> bool:
+	return _player != null and _player.playback_type == AudioServer.PLAYBACK_TYPE_STREAM
+
+
+func awaiting_user_activation() -> bool:
+	return _awaiting_web_activation
+
+
+func _start_playback() -> void:
+	if _player == null:
+		return
+	if _player.playing:
+		_player.stop()
+	_player.play()
+	_playback = _player.get_stream_playback() as AudioStreamGeneratorPlayback
+	_procedural_enabled = _playback != null
+	set_process(_procedural_enabled)
+
+
+func _input(event: InputEvent) -> void:
+	if not _awaiting_web_activation or not _is_activation_event(event):
+		return
+	# Browser AudioContext activation must happen synchronously in the trusted
+	# input callback. Restarting the stream here is safe and releases autoplay.
+	_awaiting_web_activation = false
+	set_process_input(false)
+	_start_playback()
+
+
+func _is_activation_event(event: InputEvent) -> bool:
+	if event is InputEventKey:
+		var key_event := event as InputEventKey
+		return key_event.pressed
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		return mouse_event.pressed
+	if event is InputEventJoypadButton:
+		var joypad_event := event as InputEventJoypadButton
+		return joypad_event.pressed
+	if event is InputEventScreenTouch:
+		var touch_event := event as InputEventScreenTouch
+		return touch_event.pressed
+	return false
 
 
 func _process(_delta: float) -> void:
@@ -94,14 +151,22 @@ func _sample_frame() -> Vector2:
 	var music := (kick + pulse) * music_gain
 
 	var event_mix := 0.0
-	for event in _events:
-		var duration: float = event.duration
-		var remaining: float = event.remaining
+	var event_index := _events.size() - 1
+	while event_index >= 0:
+		var event: Dictionary = _events[event_index]
+		var duration := float(event.get("duration", 0.0))
+		var remaining := float(event.get("remaining", 0.0))
 		var envelope := clampf(remaining / maxf(0.001, duration), 0.0, 1.0)
-		event.phase = fmod(float(event.phase) + float(event.frequency) / MIX_RATE, 1.0)
-		event_mix += sin(float(event.phase) * TAU) * envelope * float(event.gain) * sfx_gain
-		event.remaining = remaining - 1.0 / MIX_RATE
-	_events = _events.filter(func(event: Dictionary) -> bool: return float(event.remaining) > 0.0)
+		var phase := fmod(float(event.get("phase", 0.0)) + float(event.get("frequency", 440.0)) / MIX_RATE, 1.0)
+		event_mix += sin(phase * TAU) * envelope * float(event.get("gain", 0.0)) * sfx_gain
+		var next_remaining := remaining - 1.0 / MIX_RATE
+		if next_remaining <= 0.0:
+			_events.remove_at(event_index)
+		else:
+			event["phase"] = phase
+			event["remaining"] = next_remaining
+			_events[event_index] = event
+		event_index -= 1
 
 	var sample := clampf((motor + music + event_mix) * master_gain * (0.0 if muted else 1.0), -0.92, 0.92)
 	return Vector2(sample, sample)

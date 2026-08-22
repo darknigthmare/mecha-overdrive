@@ -14,9 +14,10 @@ MECHA OVERDRIVE — Circuit Zero ne charge aucun asset tiers. Le projet contient
 
 Le reste de l’expérience est généré localement :
 
-- les huit méchas sont dessinés procéduralement dans `js/renderer.js` ;
-- les circuits, paysages, particules, objets et effets sont produits par Canvas 2D ;
-- les sons et la musique sont synthétisés à l’exécution avec Web Audio ;
+- les huit méchas du compagnon sont dessinés dans `js/renderer.js` ;
+- les dix méchas de l’édition principale sont assemblés en primitives 3D par Godot ;
+- les circuits, paysages, particules, objets et effets sont produits par Canvas 2D ou par la scène 3D procédurale ;
+- les sons sont synthétisés à l’exécution par Web Audio ou `AudioStreamGenerator` ;
 - l’interface utilise les polices système du navigateur ;
 - l’icône SVG a été créée pour ce projet ;
 - les captures de `media/preview-*.png` proviennent de cette version du jeu.
@@ -25,4 +26,6 @@ Aucun modèle, texture, son, logo, personnage, nom de circuit ou fichier provena
 
 ## Technologies natives utilisées
 
-HTML5, CSS, JavaScript, Canvas 2D, Web Audio API, Gamepad API, Pointer Events, Web Storage, Web App Manifest et Service Worker.
+Godot Engine 4.7.2, GDScript, WebGL2, HTML5, CSS, JavaScript, Canvas 2D, Web Audio API, Gamepad API, Pointer Events, Web Storage, Web App Manifest et Service Worker.
+
+Les mentions de licence du runtime Godot sont regroupées dans [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

@@ -9,17 +9,20 @@ Le dépôt contient deux runtimes indépendants qui partagent la même identité
                            │
              ┌─────────────┴─────────────┐
              │                           │
-      édition Godot 3D             édition web
-        principale                  compagnon
-       Godot 4.7.2             HTML/CSS/Canvas/JS
-       godot/user://           navigateur/localStorage
+      édition Godot 3D          compagnon Canvas/PWA
+        principale                  tactile
+   sources `godot/`          HTML/CSS/Canvas/JS racine
+       Godot 4.7.2              navigateur/localStorage
              │                           │
-       source desktop             publication Vercel
+      export `godot3d/`                  │
+             └─────────────┬─────────────┘
+                           ▼
+                publication statique Vercel
 ```
 
 - **Godot 3D** vit sous `godot/` et constitue l’édition principale.
-- **Web** vit à la racine et reste une application statique autonome.
-- Vercel sert l’édition web ; il ne transforme pas automatiquement le projet Godot en export Web.
+- **Compagnon web** vit à la racine et reste une application statique autonome.
+- **Godot Web** est un export explicite et attesté sous `godot3d/` ; Vercel sert les deux surfaces sans fusionner leurs sauvegardes.
 
 ## 2. Architecture de l’édition Godot 3D
 
@@ -193,9 +196,9 @@ GameSession.complete_race
 ResultsScreen
 ```
 
-## 4. Architecture de l’édition web
+## 4. Architecture de l’édition compagnon web
 
-L’édition web est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
+L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
 
 | Fichier | Responsabilité |
 |---|---|
@@ -226,15 +229,17 @@ mecha_overdrive_circuit_zero_save_v1
 
 Elle conserve crédits, châssis, peintures, améliorations, meilleurs temps, statistiques, paramètres et état du Grand Prix web. Elle n’est ni migrée vers le profil Godot v2 ni partagée avec lui.
 
-### 4.3 PWA et Vercel
+### 4.3 PWA, export Godot Web et Vercel
 
-`manifest.webmanifest` configure l’installation en paysage. `service-worker.js` pré-cache le runtime statique et nettoie ses anciens caches. `vercel.json` configure la publication de la racine du dépôt.
+`manifest.webmanifest` configure l’installation en paysage du compagnon. `service-worker.js` pré-cache son runtime, nettoie ses anciens caches et exclut explicitement `/godot3d/`. Le jeu Godot Web reste donc une application connectée distincte.
 
-Les chemins de déploiement concernent uniquement l’édition web :
+`godot/export_presets.cfg` produit une cible Web mono-thread dans `godot3d/`. `godot3d/build.json` atteste la version Godot, le preset, le SHA des sources ainsi que la taille et le SHA-256 des neuf artefacts. `vercel.json` applique une CSP stricte au compagnon et une CSP dédiée au bootstrap WebAssembly sous `/godot3d/`.
 
-- `npm start` ou `python3 tools/serve.py` en local ;
-- Vercel, GitHub Pages, Netlify ou autre hébergement HTTPS ;
-- ouverture directe possible, sans garantie PWA/service worker.
+Les deux surfaces sont publiées ensemble :
+
+- `/` : compagnon Canvas/PWA, adapté au tactile ;
+- `/godot3d/mecha-overdrive` : édition Godot 3D, ciblée clavier/manette ;
+- `npm start` sert localement les MIME `.wasm` et `.pck` nécessaires.
 
 ## 5. Outils de validation
 
@@ -248,7 +253,8 @@ Les chemins de déploiement concernent uniquement l’édition web :
 ### Web
 
 - `tools/check.mjs` : syntaxe récursive JS/MJS.
-- `tools/validate.mjs` : structure, données, PWA, cache et références.
+- `tools/validate.mjs` : structure, données, PWA, cache, CSP et contrat complet de l’export Godot Web.
+- `tools/stamp-godot-web.mjs` : manifeste reproductible des sources et artefacts `godot3d/`.
 - `tests/run-tests.mjs` : tests moteur.
 - `tests/smoke.mjs` : intégration Node.
 - `tests/browser_smoke.py` et `tests/full_flow_qa.py` : parcours Chromium.
@@ -259,7 +265,7 @@ Les chemins de déploiement concernent uniquement l’édition web :
 npm run qa
 ```
 
-Cet agrégat combine la QA Node web et le validateur statique Godot. Le parse/import et le smoke Godot doivent être exécutés séparément avec Godot 4.7.2.
+Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le validateur statique Godot. Le parse/import, le smoke et le flux runtime Godot doivent être exécutés séparément avec Godot 4.7.2.
 
 ## 6. Ajouter du contenu Godot
 
@@ -289,6 +295,6 @@ Cet agrégat combine la QA Node web et le validateur statique Godot. Le parse/im
 
 - Une validation Node ne prouve pas qu’un script GDScript se parse.
 - Un smoke headless ne remplace pas un parcours visuel et input complet.
-- Un déploiement Vercel `READY` ne prouve que l’édition web.
-- Un export Godot doit être produit et testé séparément pour chaque cible.
+- Un déploiement Vercel `READY` prouve la publication, pas à lui seul le bon déroulement d’une course WebGL.
+- Chaque modification des sources Godot impose un nouvel export, un nouveau stamp et un parcours navigateur du build produit.
 - Toute annonce doit citer les gates réellement exécutés sur le commit publié.

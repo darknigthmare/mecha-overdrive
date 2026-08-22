@@ -62,6 +62,7 @@ func _run() -> void:
 	_expect(race.get_script() == RACE_CONTROLLER_SCRIPT, "le nœud de course doit utiliser RaceController")
 	var track: Node = race.get("_track") as Node
 	var hud: Node = race.get("_hud") as Node
+	var audio: Node = race.get("_audio") as Node
 	var racers_value: Variant = race.get("_racers")
 	var racer_count: int = 0
 	if racers_value is Array:
@@ -69,6 +70,9 @@ func _run() -> void:
 		racer_count = racers.size()
 	_expect(track != null and track.is_inside_tree(), "le circuit 3D réel doit être instancié")
 	_expect(hud != null and hud.is_inside_tree(), "le HUD réel doit être instancié")
+	_expect(audio != null and bool(audio.call(&"procedural_audio_enabled")), "l'audio procédural doit être actif")
+	if audio != null:
+		_expect(bool(audio.call(&"uses_stream_playback")), "AudioStreamGenerator doit forcer PLAYBACK_TYPE_STREAM")
 	_expect(racer_count == 8, "la course rapide doit contenir exactement 8 pilotes")
 	_expect(race.has_signal(&"race_finished"), "RaceController doit exposer race_finished")
 	if race.has_signal(&"race_finished"):
@@ -90,6 +94,18 @@ func _run() -> void:
 			break
 	Input.action_release(&"race_accelerate")
 	_expect(distance > 1.0, "le joueur doit avancer sous accélération réelle")
+
+	var camera: Camera3D = race.get("_camera") as Camera3D
+	var visuals_value: Variant = race.get("_visuals")
+	var player_visual: Node3D
+	if visuals_value is Dictionary:
+		var visuals: Dictionary = visuals_value
+		player_visual = visuals.get("player") as Node3D
+	_expect(camera != null and player_visual != null, "la caméra et le mécha joueur doivent exister")
+	if camera != null and player_visual != null:
+		var to_player := (player_visual.global_position - camera.global_position).normalized()
+		var camera_forward := -camera.global_basis.z.normalized()
+		_expect(camera_forward.dot(to_player) > 0.55, "la Camera3D doit regarder le joueur et la piste")
 
 	if not is_instance_valid(race) or player == null:
 		_expect(false, "la course ne doit pas disparaître avant la fin forcée")
@@ -169,7 +185,7 @@ func _finish() -> void:
 	Input.action_release(&"race_accelerate")
 	_restore_profile()
 	if _failures.is_empty():
-		print("MECHA GODOT RUNTIME FLOW: PASS (menu, 3D race, HUD, 8 racers, movement, DNF, results, menu)")
+		print("MECHA GODOT RUNTIME FLOW: PASS (menu, 3D race, HUD, stream audio, camera, 8 racers, movement, DNF, results, menu)")
 		quit(0)
 		return
 	for failure: String in _failures:

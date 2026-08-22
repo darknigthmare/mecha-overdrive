@@ -20,6 +20,7 @@ godot/export/
 *.import
 *.translation
 *.pck
+!godot3d/*.pck
 
 # One-shot reconstruction intermediates
 *.codex-new

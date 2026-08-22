@@ -2,7 +2,7 @@
 .github
 .tmp
 .vercel
-godot
+godot/
 tests
 tools
 docs

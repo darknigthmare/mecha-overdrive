@@ -2,6 +2,31 @@
 
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
+## [2.0.1] — 2026-08-22
+
+### Ajouté
+
+- véritable export Web de l’édition Godot 3D sous `godot3d/`, produit avec les modèles officiels Godot 4.7.2 en profil mono-thread ;
+- manifeste de build reproductible `godot3d/build.json` avec taille et SHA-256 des neuf artefacts exportés ;
+- scripts de contrôle et d’estampillage du build Web Godot, intégrés à la validation Node ;
+- lanceur visible depuis l’édition compagnon vers la course Godot 3D, avec cible bureau clavier/manette explicitée ;
+- notices tierces et attribution du moteur Godot pour la distribution publique.
+
+### Amélioré
+
+- aptitudes spécialisées et déterministes des dix châssis, objets IA, pads de boost et contrats Course/Contre-la-montre/Grand Prix ;
+- récupération réelle des sauvegardes de secours, persistance d’un Grand Prix actif et sélection garage fiable ;
+- sélecteurs de circuit et de difficulté dans le menu principal Godot ;
+- audio procédural Web via `AudioStreamGenerator`, caméra de course, winding des meshes de piste et temporisation du signal `OVERDRIVE!` ;
+- règles CSP, cache et types MIME adaptés au runtime WebAssembly Godot sans affaiblir la CSP de l’édition compagnon.
+
+### Validation
+
+- `npm run qa` réussi : 26 fichiers JavaScript/MJS, 115 contrôles de validation, 12/12 tests moteur et 21 contrôles d’intégration ;
+- import, smoke et flux runtime réussis avec Godot 4.7.2 officiel ;
+- export Web mono-thread complet : neuf artefacts présents, tailles et empreintes vérifiées ;
+- Chromium local : menu Godot puis vraie course 3D avec circuit, méchas, HUD et audio chargés, sans erreur console, page ou réseau.
+
 ## [2.0.0] — 2026-08-22
 
 ### Ajouté

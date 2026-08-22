@@ -132,6 +132,44 @@ layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
 text = "CHOISISSEZ UN PROTOCOLE"
 
+[node name="RaceOptions" type="HBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TrackBlock" type="VBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions/RaceOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="TrackLabel" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions/RaceOptions/TrackBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "CIRCUIT"
+
+[node name="TrackSelect" type="OptionButton" parent="SafeArea/Page/Content/ActionsPanel/Actions/RaceOptions/TrackBlock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Circuit utilisé hors Grand Prix"
+
+[node name="DifficultyBlock" type="VBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions/RaceOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="DifficultyLabel" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions/RaceOptions/DifficultyBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "DIFFICULTÉ"
+
+[node name="DifficultySelect" type="OptionButton" parent="SafeArea/Page/Content/ActionsPanel/Actions/RaceOptions/DifficultyBlock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Niveau des pilotes IA et multiplicateur de récompense"
+
 [node name="QuickButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)

@@ -7,22 +7,23 @@ Ce rapport distingue les deux surfaces du dépôt :
 - **Godot 3D**, édition principale sous Godot **4.7.2** ;
 - **web**, édition compagnon statique à la racine.
 
-Un fichier de test présent dans le dépôt indique une couverture prévue, pas un résultat. Un gate n’est marqué comme réussi qu’après exécution sur la révision courante. La QA Node, le validateur statique, l’import strict, le smoke et le flux runtime Godot ainsi que les parcours Chromium locaux ont été confirmés.
+Un fichier de test présent dans le dépôt indique une couverture prévue, pas un résultat. Un gate n’est marqué comme réussi qu’après exécution sur la révision courante. La QA Node, le validateur statique, l’import strict, le smoke, le flux runtime Godot, le contrat d’export Web et les parcours Chromium locaux ont été confirmés.
 
 ## 2. Matrice de release courante
 
 | Gate | Commande ou surface | État documenté |
 |---|---|---|
-| Validation web Node | `npm test` | **PASS** — 17 JS, 79 contrôles structure/PWA, 12/12 moteur, 21 intégration |
+| Validation Node | `npm test` | **PASS** — 26 JS/MJS, 115 contrôles de validation, 12/12 moteur, 21 intégration |
 | Contrat structurel Godot | `node tools/validate-godot.mjs` | **PASS** — 10 châssis, 4 circuits, 8 objets, 4 modes |
 | Agrégat web + structure Godot | `npm run qa` | **PASS** — agrège les deux gates précédents |
 | Import et parse Godot | `godot --headless --path godot --editor --quit` | **PASS** — Godot 4.7.2, code 0, aucune erreur |
-| Smoke Godot | `godot --headless --path godot --script res://tests/smoke_test.gd` | **PASS** — code 0, marqueur de succès observé |
-| Flux runtime Godot | `godot --headless --path godot --script res://tests/runtime_flow_test.gd` | **PASS** — menu, course 3D, HUD, mouvement, DNF, résultats et retour menu ; code 0, aucun avertissement |
-| Parcours navigateur local | Chromium/Playwright HTTP, bureau + mobile | **PASS** — 0 erreur et 0 requête échouée |
-| Déploiement Vercel | `https://mecha-overdrive.vercel.app` | **PASS** — production READY, HTTP 200, assets/PWA, parcours bureau/mobile et navigation hors ligne |
+| Smoke Godot | `godot --headless --path godot --script res://tests/smoke_test.gd` | **PASS** — catalogue, récupération de sauvegarde, résultats, Grand Prix, garage, pads, 10 aptitudes et audio |
+| Flux runtime Godot | `godot --headless --path godot --script res://tests/runtime_flow_test.gd` | **PASS** — menu, course 3D, HUD, audio stream, caméra, 8 pilotes, mouvement, DNF, résultats et retour menu |
+| Export Godot Web | preset `Web`, sortie `godot3d/` | **PASS** — profil mono-thread, 9 artefacts, tailles et SHA-256 contrôlés |
+| Parcours Godot Web local | Chromium/Playwright HTTP, 1280 × 720 | **PASS** — menu puis vraie course 3D, 0 erreur console/page/réseau et 0 requête échouée |
+| Déploiement Vercel 2.0.1 | `https://mecha-overdrive.vercel.app` | **EN ATTENTE** — publication et contrôle de production à exécuter après le push de la révision |
 
-La production web a été vérifiée le 22 août 2026. Les statuts runtime et Vercel ci-dessus proviennent d’exécutions réelles, pas d’une déduction des validations statiques.
+Les statuts locaux ci-dessus proviennent d’exécutions réelles sur la révision courante. Le statut Vercel reste volontairement en attente tant que le build 2.0.1 n’est pas publié et contrôlé sur l’URL publique.
 
 ## 3. QA Godot 3D
 
@@ -32,7 +33,7 @@ La production web a été vérifiée le 22 août 2026. Les statuts runtime et Ve
 - renderer **GL Compatibility** ;
 - scène principale `res://scenes/app.tscn` ;
 - résolution de référence 1280 × 720, viewport logique 1920 × 1080 ;
-- profil de sauvegarde v2 dans `user://mecha_overdrive_profile.json`.
+- profil de sauvegarde v2, backup et Grand Prix actif dans `user://`.
 
 ### 3.2 Validation structurelle sans moteur
 
@@ -84,12 +85,14 @@ Le script `godot/tests/smoke_test.gd` vérifie :
 5. configuration des quatre modes ;
 6. grille solo en contre-la-montre et grille à huit ailleurs ;
 7. déterminisme d’un pilote simulé pendant 300 ticks ;
-8. présence de `max_armor` et progression positive du pilote.
+8. récupération d’un backup valide et persistance/reprise du Grand Prix ;
+9. ciblage du châssis courant dans le garage et comportement des pads de boost ;
+10. aptitudes spécialisées des dix châssis et initialisation audio.
 
 Le succès attendu est un code de sortie `0` avec le marqueur :
 
 ```text
-MECHA GODOT SMOKE: PASS (catalogue, save, modes, deterministic racer)
+MECHA GODOT SMOKE: PASS (catalogue, save recovery, results, GP resume, garage, racer, pads, 10 abilities, audio)
 ```
 
 Résultat confirmé : **PASS** avec code de sortie `0` et marqueur de succès observé.
@@ -102,9 +105,13 @@ Commande exécutée :
 godot --headless --path godot --script res://tests/runtime_flow_test.gd
 ```
 
-Le test instancie `app.tscn`, lance une vraie course à huit pilotes, vérifie Track/HUD/mouvement, force un DNF, contrôle Results et revient au menu. La sauvegarde est isolée puis restaurée.
+Le test instancie `app.tscn`, lance une vraie course à huit pilotes, vérifie le circuit, le HUD, le mouvement, la caméra et le flux audio, force un DNF, contrôle Results et revient au menu. La sauvegarde est isolée puis restaurée.
 
-Résultat confirmé : **PASS**, code `0`, marqueur `MECHA GODOT RUNTIME FLOW: PASS`, sans avertissement ni fuite ObjectDB.
+Résultat confirmé : **PASS**, code `0`, avec le marqueur :
+
+```text
+MECHA GODOT RUNTIME FLOW: PASS (menu, 3D race, HUD, stream audio, camera, 8 racers, movement, DNF, results, menu)
+```
 
 Après les gates headless, vérifier au minimum :
 
@@ -123,7 +130,7 @@ Après les gates headless, vérifier au minimum :
 
 Le noyau automatisé est confirmé. La liste manuelle étendue ci-dessus reste recommandée avant tout export binaire desktop.
 
-## 4. QA de l’édition web
+## 4. QA des surfaces Web
 
 ### 4.1 Agrégat Node
 
@@ -144,9 +151,9 @@ npm run test:integration
 
 La couverture vise la syntaxe JS/MJS, les références statiques, le manifeste et le cache PWA, les huit châssis web, les quatre circuits, les objets, la physique, le garage, les sauvegardes, le contre-la-montre, le Grand Prix et les non-régressions DNF/recalage.
 
-Résultat confirmé : **PASS** — 17 fichiers JavaScript/MJS, 79 contrôles de structure/PWA, 12/12 tests moteur et 21 contrôles d’intégration.
+Résultat confirmé : **PASS** — 26 fichiers JavaScript/MJS, 115 contrôles de validation, 12/12 tests moteur et 21 contrôles d’intégration.
 
-### 4.2 Parcours navigateur
+### 4.2 Parcours de l’édition compagnon
 
 Commandes disponibles :
 
@@ -169,21 +176,34 @@ Le parcours de release couvre :
 
 Résultat local confirmé : **PASS** sous Chromium/Playwright via HTTP en vues bureau et mobile. Le menu et le key art répondent correctement (`200`), le service worker est actif, le garage expose 8 châssis, 4 améliorations et 8 peintures, la course démarre avec 8 concurrents, pause/reprise fonctionne et 9 commandes tactiles sont présentes. Le parcours n’a relevé aucune erreur ni requête échouée.
 
-### 4.3 Déploiement statique
+### 4.3 Export et parcours Godot Web
 
-Production vérifiée : [`https://mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app).
+La cible `Web` de `godot/export_presets.cfg` produit un build Godot 4.7.2 mono-thread sous `godot3d/`. Ce choix évite d’exiger l’isolation cross-origin et conserve une publication statique compatible Vercel. Le build courant comprend neuf artefacts : HTML, JavaScript, WebAssembly, PCK, deux worklets audio, deux icônes et l’image PNG de démarrage.
 
-- réponse HTTP 200 de `/` et `/index.html` ;
-- chargement du key art, du manifeste et du service worker ;
-- absence de ressource distante requise par le runtime ;
-- parcours menu → course → pause → retour ;
-- comportement hors ligne après une première ouverture HTTPS.
+`npm run stamp:godot-web` génère `godot3d/build.json`. `npm run validate` vérifie ensuite :
 
-Résultat confirmé : **PASS**. Le déploiement `dpl_Cbx6DRzWJ6TaYfJivJ5z6Rwrxc2a` est `READY` et aliased sur l’URL publique. `/`, le key art, le manifeste et le service worker répondent correctement ; `/index.html` redirige proprement vers l’URL canonique `/`.
+- la présence et la taille minimale de chaque artefact ;
+- l’empreinte SHA-256 et le nombre d’octets enregistrés dans le manifeste ;
+- la cohérence du SHA source, de la version Godot et du preset ;
+- l’absence de threads Web et d’extensions natives ;
+- les règles CSP, cache, service worker et lanceur racine nécessaires.
 
-Le parcours Chromium de production confirme menu, garage, Course rapide à huit concurrents, pause/reprise et interface tactile, sans erreur console ni requête échouée.
+Résultat confirmé : **PASS** — neuf artefacts cohérents. Chromium a chargé le menu Godot en WebGL2, puis lancé une vraie course montrant circuit, méchas et HUD. Les fichiers JS, WASM, PCK et worklets audio ont répondu `200`; le parcours a relevé **0** erreur console, **0** avertissement console, **0** erreur de page et **0** requête échouée. Le signal `OVERDRIVE!` s’est correctement masqué après le départ.
 
-La navigation PWA hors ligne a été validée après installation et prise de contrôle du service worker : les requêtes réseau ont été bloquées, puis un rechargement initié par la page a restauré le menu depuis le cache canonique.
+### 4.4 Déploiement Vercel
+
+URL cible : [`https://mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app).
+
+Le push et le déploiement de la révision 2.0.1 n’étaient pas encore exécutés au moment de ce rapport. La production ne doit être déclarée conforme qu’après avoir vérifié :
+
+- état du déploiement `READY` et association au commit publié ;
+- HTTP `200` sur `/`, le lanceur Godot, le JS, le WASM, le PCK et les worklets ;
+- MIME `application/wasm` pour le module WebAssembly ;
+- CSP stricte à la racine et CSP Godot autorisant uniquement les besoins WebAssembly prévus ;
+- parcours public menu Godot → vraie course, sans erreur console/page/réseau ;
+- non-régression du compagnon PWA, y compris le cache hors ligne après une première visite HTTPS.
+
+État de la gate 2.0.1 : **EN ATTENTE DE PUBLICATION**.
 
 ## 5. Baseline web historique importée
 
@@ -203,15 +223,16 @@ La release est bloquée si l’un de ces cas est observé :
 - DNF récompensé ou enregistré comme record ;
 - sauvegarde v2 corrompue sans récupération ;
 - exception JavaScript, test Node en échec ou référence statique manquante ;
+- export Godot Web absent, incomplet, multi-thread ou divergent de `build.json` ;
 - déploiement non `READY`, HTTP non 200 ou asset essentiel absent.
 
 ## 7. Limites connues du périmètre
 
 - Le multijoueur réseau, l’écran partagé et les fantômes ne font pas partie de cette édition.
-- L’édition web utilise un rendu Canvas pseudo-3D ; elle n’est pas un export Web de Godot.
+- Le build Godot Web est ciblé bureau clavier/manette ; l’édition compagnon Canvas/PWA reste la surface tactile mobile.
 - Les sauvegardes Godot et web sont indépendantes.
-- Vercel publie l’édition web statique, pas un binaire desktop Godot.
-- Un export Godot Windows/Linux/Web exige un gate d’export et un smoke test du binaire produit.
+- Le service worker du compagnon n’intercepte pas `godot3d/` : l’export Godot nécessite une connexion.
+- Aucun binaire Windows/Linux natif n’est inclus dans cette gate.
 
 ## 8. Gabarit de consignation finale
 
@@ -224,5 +245,6 @@ Import Godot : PASS/FAIL
 Smoke Godot : PASS/FAIL
 Runtime Godot : PASS/FAIL + surface vérifiée
 Navigateur local : PASS/FAIL + viewport
+Export Godot Web : PASS/FAIL + SHA du manifeste
 Vercel : READY/FAIL + URL
 ```

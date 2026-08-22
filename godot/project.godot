@@ -6,7 +6,7 @@ config_version=5
 
 config/name="MECHA OVERDRIVE: Circuit Zero"
 config/description="Arcade combat racer built around ten distinct mecha locomotion architectures."
-config/version="2.0.0"
+config/version="2.0.1"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 run/main_scene="res://scenes/app.tscn"
 
@@ -29,6 +29,7 @@ window/handheld/orientation=6
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_etc2_astc=true
 
 [audio]
 

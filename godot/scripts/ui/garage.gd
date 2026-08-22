@@ -206,15 +206,22 @@ func _buy_upgrade(upgrade_id: String) -> void:
 		status_message.theme_type_variation = &"WarningLabel"
 		return
 	var save := _save_system()
-	if save != null and save.has_method(&"buy_upgrade"):
-		var result: Variant = save.call(&"buy_upgrade", upgrade_id)
-		if result is bool and not result:
-			status_message.text = "AMÉLIORATION REFUSÉE"
-			status_message.theme_type_variation = &"WarningLabel"
-			return
+	if not _purchase_current_upgrade(save, upgrade_id):
+		status_message.text = "AMÉLIORATION REFUSÉE"
+		status_message.theme_type_variation = &"WarningLabel"
+		return
 	status_message.theme_type_variation = &"MutedLabel"
 	status_message.text = "%s // INSTALLATION TERMINÉE" % String(upgrade.get("name", upgrade_id)).to_upper()
 	refresh()
+
+
+func _purchase_current_upgrade(save_system: Node, upgrade_id: String) -> bool:
+	if save_system == null or not save_system.has_method(&"buy_upgrade"):
+		return false
+	var result: Variant = save_system.call(&"buy_upgrade", upgrade_id, _current_id)
+	return result is bool and result
+
+
 
 
 func _refresh_upgrades() -> void:

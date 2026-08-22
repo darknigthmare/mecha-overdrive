@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "gameVersion": "2.0.1",
+  "godotVersion": "4.7.2",
+  "preset": "Web",
+  "threads": false,
+  "sourceSha256": "fe6c956b8f17fad022a2300c28216a984d891f4063d70e4dc6bd7f0019628bba",
+  "artifacts": {
+    "mecha-overdrive.html": {
+      "bytes": 5848,
+      "sha256": "cbb6191fa18672c9430b2ca2b51ac480bacdb48f0157df54d29f0da9832178ee"
+    },
+    "mecha-overdrive.js": {
+      "bytes": 279815,
+      "sha256": "33c94cb3175f3333b82e2a3be5e8e86f77986f0aa2042b1631f6367a4e5bb6ba"
+    },
+    "mecha-overdrive.wasm": {
+      "bytes": 39514754,
+      "sha256": "fc74679e3b97f76878947fcd4fbe1268cbfa6188182a2e33bbc3f5dc9bfa57d0"
+    },
+    "mecha-overdrive.pck": {
+      "bytes": 1784484,
+      "sha256": "038ec0b0f677603651bc899edb6379c1f96bc171c62e60c625901b95b66ca543"
+    },
+    "mecha-overdrive.audio.worklet.js": {
+      "bytes": 7298,
+      "sha256": "5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3"
+    },
+    "mecha-overdrive.audio.position.worklet.js": {
+      "bytes": 2973,
+      "sha256": "be33985bc7160d6bf9646f259cd86b259cd67b02ccb297ee5c44f8ac84327bc8"
+    },
+    "mecha-overdrive.png": {
+      "bytes": 21443,
+      "sha256": "3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e"
+    },
+    "mecha-overdrive.icon.png": {
+      "bytes": 5700,
+      "sha256": "ad3c35ad0facf487c618204bd98db543034fc95224eadc7f08c7a9ff38d5b3b5"
+    },
+    "mecha-overdrive.apple-touch-icon.png": {
+      "bytes": 11944,
+      "sha256": "01d4f63e525941e06ce74f5187dad030d20a8d52a07ce365ae4e94af97a3b1f5"
+    }
+  }
+}

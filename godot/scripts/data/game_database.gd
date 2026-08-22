@@ -47,14 +47,14 @@ const TRACKS: Array[Dictionary] = [
 ]
 
 const ITEMS: Array[Dictionary] = [
-	{"id": "ion", "name": "Missile ion", "short": "ION", "kind": "projectile", "description": "Projectile guidé contre le rival le plus proche devant."},
+	{"id": "ion", "name": "Décharge ion", "short": "ION", "kind": "projectile", "description": "Décharge ciblée contre le rival le plus proche devant."},
 	{"id": "emp", "name": "Impulsion EMP", "short": "EMP", "kind": "area", "description": "Perturbe le réacteur et la direction des rivaux proches."},
 	{"id": "shield", "name": "Bouclier phase", "short": "BOUCLIER", "kind": "defense", "description": "Absorbe les impacts pendant une durée limitée."},
 	{"id": "overdrive", "name": "Cellule Overdrive", "short": "OVERDRIVE", "kind": "mobility", "description": "Refroidit puis surcharge temporairement le réacteur."},
-	{"id": "mine", "name": "Mine gravitique", "short": "MINE", "kind": "trap", "description": "Dépose une zone de contrôle derrière le pilote."},
+	{"id": "mine", "name": "Charge gravitique", "short": "MINE", "kind": "trap", "description": "Déclenche une charge sur le rival le plus proche derrière."},
 	{"id": "repair", "name": "Drone réparateur", "short": "RÉPARATION", "kind": "repair", "description": "Restaure une partie du blindage maximal."},
 	{"id": "shockwave", "name": "Onde cinétique", "short": "ONDE", "kind": "area", "description": "Repousse et endommage les machines voisines."},
-	{"id": "rail", "name": "Railburst", "short": "RAIL", "kind": "projectile", "description": "Tir frontal rapide qui récompense une trajectoire précise."},
+	{"id": "rail", "name": "Railburst", "short": "RAIL", "kind": "projectile", "description": "Frappe frontale instantanée qui récompense l’alignement."},
 ]
 
 const PILOTS: Array[Dictionary] = [

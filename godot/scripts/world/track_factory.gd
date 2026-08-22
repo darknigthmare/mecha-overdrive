@@ -159,8 +159,9 @@ static func _strip_mesh(curve: Curve3D, length: float, width: float, color: Colo
 		var left1 := p1.origin - p1.basis.x.normalized() * width * 0.5 + Vector3.UP * y_offset
 		var right1 := p1.origin + p1.basis.x.normalized() * width * 0.5 + Vector3.UP * y_offset
 		var stripe := color.lightened(0.055) if posmod(int(index / 4.0), 2) == 0 else color
-		_add_triangle(surface, left0, right0, right1, stripe, Vector2(0, d0), Vector2(1, d0), Vector2(1, d1))
-		_add_triangle(surface, left0, right1, left1, stripe, Vector2(0, d0), Vector2(1, d1), Vector2(0, d1))
+		# Counter-clockwise from the driving side so road normals face the racers/camera.
+		_add_triangle(surface, left0, right1, right0, stripe, Vector2(0, d0), Vector2(1, d1), Vector2(1, d0))
+		_add_triangle(surface, left0, left1, right1, stripe, Vector2(0, d0), Vector2(0, d1), Vector2(1, d1))
 	surface.index()
 	surface.generate_normals()
 	return surface.commit()
@@ -181,8 +182,8 @@ static func _ribbon_mesh(curve: Curve3D, length: float, lane_offset: float, widt
 		var b0 := c0 + p0.basis.x.normalized() * width
 		var a1 := c1 - p1.basis.x.normalized() * width
 		var b1 := c1 + p1.basis.x.normalized() * width
-		_add_triangle(surface, a0, b0, b1, Color.WHITE, Vector2.ZERO, Vector2.RIGHT, Vector2.ONE)
-		_add_triangle(surface, a0, b1, a1, Color.WHITE, Vector2.ZERO, Vector2.ONE, Vector2.DOWN)
+		_add_triangle(surface, a0, b1, b0, Color.WHITE, Vector2.ZERO, Vector2.ONE, Vector2.RIGHT)
+		_add_triangle(surface, a0, a1, b1, Color.WHITE, Vector2.ZERO, Vector2.DOWN, Vector2.ONE)
 	surface.generate_normals()
 	return surface.commit()
 

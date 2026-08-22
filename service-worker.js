@@ -1,4 +1,4 @@
-const CACHE = 'mecha-overdrive-cz-v1.1.1';
+const CACHE = 'mecha-overdrive-cz-v1.2.0';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest', './media/icon.svg',
   './media/openai/mecha-overdrive-hero.png', './js/core.js', './js/data.js', './js/storage.js',
@@ -17,7 +17,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  const url = new URL(event.request.url);
+  const isGodot3D = url.pathname === '/godot3d' || url.pathname.startsWith('/godot3d/');
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin || isGodot3D) return;
   if (event.request.mode === 'navigate') {
     event.respondWith(fetch(event.request).catch(async () => {
       // Vercel cleanUrls redirects /index.html to /. A redirected cached

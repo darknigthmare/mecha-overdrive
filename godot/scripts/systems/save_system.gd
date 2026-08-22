@@ -14,9 +14,18 @@ const SAVE_VERSION := 2
 const SAVE_PATH := "user://mecha_overdrive_profile.json"
 const TEMP_PATH := "user://mecha_overdrive_profile.tmp"
 const BACKUP_PATH := "user://mecha_overdrive_profile.backup.json"
+const CORRUPT_PATH := "user://mecha_overdrive_profile.corrupt.json"
+const BACKUP_CORRUPT_PATH := "user://mecha_overdrive_profile.backup.corrupt.json"
 const MAX_UPGRADE_LEVEL := 4
+const CHAMPIONSHIP_TRACKS: Array[String] = ["foundry", "dunes", "glacier", "orbital"]
+const CHAMPIONSHIP_RACER_COUNT := 8
 
 var profile: Dictionary = {}
+var _save_path := SAVE_PATH
+var _temp_path := TEMP_PATH
+var _backup_path := BACKUP_PATH
+var _corrupt_path := CORRUPT_PATH
+var _backup_corrupt_path := BACKUP_CORRUPT_PATH
 
 
 func _ready() -> void:
@@ -25,23 +34,30 @@ func _ready() -> void:
 
 func load_profile() -> Dictionary:
 	var source: Dictionary = {}
-	var had_invalid_file := false
-	if FileAccess.file_exists(SAVE_PATH):
-		var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-		if file == null:
-			had_invalid_file = true
-		else:
-			var decoded: Variant = JSON.parse_string(file.get_as_text())
-			if decoded is Dictionary:
-				source = decoded
-			else:
-				had_invalid_file = true
+	var primary := _read_profile_candidate(_save_path)
+	var backup: Dictionary = {}
+	var recovered_from_backup := false
+	if bool(primary.get("valid", false)):
+		source = Dictionary(primary.get("data", {}))
+	else:
+		backup = _read_profile_candidate(_backup_path)
+		if bool(backup.get("valid", false)):
+			source = Dictionary(backup.get("data", {}))
+			recovered_from_backup = true
+
+	var invalid_primary := bool(primary.get("exists", false)) and not bool(primary.get("valid", false))
+	var invalid_backup := bool(backup.get("exists", false)) and not bool(backup.get("valid", false))
+	if invalid_primary:
+		_archive_invalid_file(_save_path, _corrupt_path)
+	if invalid_backup:
+		_archive_invalid_file(_backup_path, _backup_corrupt_path)
 
 	profile = _sanitize_profile(source)
-	if had_invalid_file:
-		_archive_invalid_save()
-		save_failed.emit("Profil illisible : une sauvegarde saine a été recréée")
-	if source.is_empty() or int(source.get("version", 0)) != SAVE_VERSION:
+	if invalid_primary and not recovered_from_backup:
+		save_failed.emit("Profil et backup illisibles : un profil sain a été recréé")
+	elif invalid_backup and source.is_empty():
+		save_failed.emit("Backup illisible : un profil sain a été recréé")
+	if not bool(primary.get("valid", false)) or recovered_from_backup or source.is_empty() or int(source.get("version", 0)) != SAVE_VERSION:
 		save_profile()
 	profile_loaded.emit(profile.duplicate(true))
 	return profile.duplicate(true)
@@ -49,7 +65,7 @@ func load_profile() -> Dictionary:
 
 func save_profile() -> bool:
 	profile["version"] = SAVE_VERSION
-	var file := FileAccess.open(TEMP_PATH, FileAccess.WRITE)
+	var file := FileAccess.open(_temp_path, FileAccess.WRITE)
 	if file == null:
 		_report_save_failure("Impossible d’ouvrir le fichier temporaire")
 		return false
@@ -61,19 +77,24 @@ func save_profile() -> bool:
 		_report_save_failure("Écriture incomplète du profil")
 		return false
 
-	var target_absolute := ProjectSettings.globalize_path(SAVE_PATH)
-	var temp_absolute := ProjectSettings.globalize_path(TEMP_PATH)
-	var backup_absolute := ProjectSettings.globalize_path(BACKUP_PATH)
-	if FileAccess.file_exists(BACKUP_PATH):
-		DirAccess.remove_absolute(backup_absolute)
-	if FileAccess.file_exists(SAVE_PATH):
+	var target_absolute := ProjectSettings.globalize_path(_save_path)
+	var temp_absolute := ProjectSettings.globalize_path(_temp_path)
+	var backup_absolute := ProjectSettings.globalize_path(_backup_path)
+	var secured_previous_save := false
+	if FileAccess.file_exists(_save_path):
+		if FileAccess.file_exists(_backup_path):
+			var remove_error := DirAccess.remove_absolute(backup_absolute)
+			if remove_error != OK:
+				_report_save_failure("Impossible de remplacer le backup précédent")
+				return false
 		var backup_error := DirAccess.rename_absolute(target_absolute, backup_absolute)
 		if backup_error != OK:
 			_report_save_failure("Impossible de sécuriser l’ancienne sauvegarde")
 			return false
+		secured_previous_save = true
 	var replace_error := DirAccess.rename_absolute(temp_absolute, target_absolute)
 	if replace_error != OK:
-		if FileAccess.file_exists(BACKUP_PATH):
+		if secured_previous_save and FileAccess.file_exists(_backup_path):
 			DirAccess.rename_absolute(backup_absolute, target_absolute)
 		_report_save_failure("Impossible de finaliser la sauvegarde")
 		return false
@@ -171,7 +192,30 @@ func set_pilot_name(pilot_name: String) -> bool:
 	return _commit_profile()
 
 
+func get_championship() -> Dictionary:
+	var value: Variant = profile.get("championship", {})
+	if value is Dictionary:
+		var championship_data: Dictionary = value
+		return championship_data.duplicate(true)
+	return {}
+
+
+func save_championship(championship_data: Dictionary) -> bool:
+	profile["championship"] = _sanitize_championship(championship_data)
+	return _commit_profile()
+
+
+func clear_championship() -> bool:
+	var current: Variant = profile.get("championship", {})
+	if current is Dictionary and Dictionary(current).is_empty():
+		return true
+	profile["championship"] = {}
+	return _commit_profile()
+
+
 func record_race_result(result: Dictionary) -> bool:
+	if result.has("championship") and result["championship"] is Dictionary:
+		profile["championship"] = _sanitize_championship(result["championship"])
 	var finished := bool(result.get("finished", false)) and not bool(result.get("dnf", false))
 	var stats: Dictionary = profile.get("stats", {})
 	stats["races"] = maxi(0, int(stats.get("races", 0))) + 1
@@ -238,6 +282,7 @@ func _default_profile() -> Dictionary:
 		"unlocked_paints": GameDatabase.DEFAULT_PAINTS.duplicate(),
 		"upgrades": upgrades,
 		"records": {},
+		"championship": {},
 		"stats": {"races": 0, "wins": 0, "podiums": 0, "championships": 0, "credits_earned": 0},
 		"settings": {
 			"high_contrast": false, "reduced_motion": false, "large_text": false,
@@ -291,6 +336,7 @@ func _sanitize_profile(source: Dictionary) -> Dictionary:
 		new_stats[key] = clampi(int(old_stats.get(key, 0)), 0, 99999999)
 	clean["stats"] = new_stats
 	clean["records"] = _sanitize_records(source.get("records", {}))
+	clean["championship"] = _sanitize_championship(source.get("championship", {}))
 	clean["version"] = SAVE_VERSION
 	return clean
 
@@ -315,13 +361,84 @@ func _sanitize_records(value: Variant) -> Dictionary:
 	return clean
 
 
-func _archive_invalid_save() -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
+func _sanitize_championship(value: Variant) -> Dictionary:
+	if not value is Dictionary:
+		return {}
+	var source: Dictionary = value
+	if not bool(source.get("active", false)) or bool(source.get("abandoned", false)):
+		return {}
+	var difficulty := String(source.get("difficulty", "pilot"))
+	if not GameDatabase.has_difficulty(difficulty):
+		return {}
+	var round_index := int(source.get("round_index", -1))
+	if round_index < 0 or round_index >= CHAMPIONSHIP_TRACKS.size():
+		return {}
+
+	var entrants: Array[Dictionary] = []
+	var seen_ids: Dictionary = {}
+	var has_player := false
+	var raw_entrants: Variant = source.get("entrants", [])
+	if not raw_entrants is Array:
+		return {}
+	for raw_entrant: Variant in raw_entrants:
+		if not raw_entrant is Dictionary:
+			continue
+		var entrant: Dictionary = raw_entrant
+		var entrant_id := String(entrant.get("id", ""))
+		if entrant_id.is_empty() or seen_ids.has(entrant_id):
+			continue
+		seen_ids[entrant_id] = true
+		has_player = has_player or entrant_id == "player"
+		var entrant_name := String(entrant.get("name", "PILOTE")).strip_edges().substr(0, 24)
+		if entrant_name.is_empty():
+			entrant_name = "PILOTE"
+		entrants.append({
+			"id": entrant_id,
+			"name": entrant_name,
+			"points": clampi(int(entrant.get("points", 0)), 0, 9999),
+		})
+	if entrants.size() != CHAMPIONSHIP_RACER_COUNT or not has_player:
+		return {}
+
+	var completed_tracks: Array[String] = []
+	for track_index in range(round_index):
+		completed_tracks.append(CHAMPIONSHIP_TRACKS[track_index])
+	return {
+		"active": true,
+		"abandoned": false,
+		"difficulty": difficulty,
+		"round_index": round_index,
+		"tracks": CHAMPIONSHIP_TRACKS.duplicate(),
+		"completed_tracks": completed_tracks,
+		"entrants": entrants,
+		"champion_id": "",
+	}
+
+
+func _read_profile_candidate(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {"exists": false, "valid": false, "data": {}}
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return {"exists": true, "valid": false, "data": {}}
+	var parser := JSON.new()
+	var parse_error := parser.parse(file.get_as_text())
+	file.close()
+	if parse_error != OK:
+		return {"exists": true, "valid": false, "data": {}}
+	var decoded: Variant = parser.data
+	if decoded is Dictionary:
+		return {"exists": true, "valid": true, "data": decoded}
+	return {"exists": true, "valid": false, "data": {}}
+
+
+func _archive_invalid_file(source_path: String, corrupt_path: String) -> void:
+	if not FileAccess.file_exists(source_path):
 		return
-	var invalid_path := ProjectSettings.globalize_path("user://mecha_overdrive_profile.corrupt.json")
-	if FileAccess.file_exists("user://mecha_overdrive_profile.corrupt.json"):
-		DirAccess.remove_absolute(invalid_path)
-	DirAccess.rename_absolute(ProjectSettings.globalize_path(SAVE_PATH), invalid_path)
+	var corrupt_absolute := ProjectSettings.globalize_path(corrupt_path)
+	if FileAccess.file_exists(corrupt_path):
+		DirAccess.remove_absolute(corrupt_absolute)
+	DirAccess.rename_absolute(ProjectSettings.globalize_path(source_path), corrupt_absolute)
 
 
 func _report_save_failure(message: String) -> void:

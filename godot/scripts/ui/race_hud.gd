@@ -10,6 +10,7 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 var _config: Dictionary = {}
 var _paused := false
 var _built := false
+var _countdown_revision := 0
 var _focus_before_pause: Control
 
 var _mode_label: Label
@@ -117,6 +118,8 @@ func update_race(snapshot: Dictionary) -> void:
 func show_countdown(value: Variant) -> void:
 	if not is_node_ready() or not _built:
 		return
+	_countdown_revision += 1
+	var revision := _countdown_revision
 	if value == null or str(value).is_empty():
 		_countdown_panel.visible = false
 		return
@@ -131,6 +134,14 @@ func show_countdown(value: Variant) -> void:
 		_countdown_panel.scale = Vector2(1.18, 1.18)
 		_countdown_panel.pivot_offset = _countdown_panel.size * 0.5
 		create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).tween_property(_countdown_panel, "scale", Vector2.ONE, duration)
+	if (value is int or value is float) and float(value) <= 0.0:
+		_hide_countdown_after_delay(revision)
+
+
+func _hide_countdown_after_delay(revision: int) -> void:
+	await get_tree().create_timer(0.85, true, false, true).timeout
+	if revision == _countdown_revision and is_instance_valid(_countdown_panel):
+		_countdown_panel.visible = false
 
 
 func show_pause(paused: bool) -> void:

@@ -12,6 +12,11 @@ const BASE_ARMOR := 100.0
 const MAX_LANE := 1.75
 const RESET_STUCK_DELAY := 2.25
 const RESET_COOLDOWN := 7.0
+const QUADRUPED_RECOVERY_DURATION := 0.85
+const MONOWHEEL_EXIT_THRUST_DURATION := 0.32
+const BOOST_PAD_COOLING := 0.38
+const BIPED_CONTROL_FACTOR := 0.60
+const TRIPOD_CONTROL_FACTOR := 0.42
 
 var racer_id := "racer"
 var display_name := "RACER"
@@ -55,6 +60,10 @@ var _impact_velocity := 0.0
 var _stuck_time := 0.0
 var _reset_cooldown := 0.0
 var _last_elapsed := 0.0
+var _recovery_time := 0.0
+var _was_drifting := false
+var _drift_exit_thrust_time := 0.0
+var _last_impact_thrust := 0.0
 
 
 func configure(spec: Dictionary) -> RacerState:
@@ -111,6 +120,10 @@ func configure(spec: Dictionary) -> RacerState:
 	_stuck_time = 0.0
 	_reset_cooldown = 0.0
 	_last_elapsed = 0.0
+	_recovery_time = 0.0
+	_was_drifting = false
+	_drift_exit_thrust_time = 0.0
+	_last_impact_thrust = 0.0
 	return self
 
 
@@ -122,6 +135,9 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 	_shield_time = maxf(0.0, _shield_time - dt)
 	_emp_time = maxf(0.0, _emp_time - dt)
 	_reset_cooldown = maxf(0.0, _reset_cooldown - dt)
+	_recovery_time = maxf(0.0, _recovery_time - dt)
+	_drift_exit_thrust_time = maxf(0.0, _drift_exit_thrust_time - dt)
+	_last_impact_thrust = move_toward(_last_impact_thrust, 0.0, dt * acceleration * 2.0)
 	boosting = false
 
 	if finished or dnf or eliminated:
@@ -134,14 +150,26 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 	var steer := clampf(float(controls.get("steer", 0.0)), -1.0, 1.0)
 	var drifting := bool(controls.get("drift", false)) and speed > top_speed * 0.25
 	var grip := clampf(float(context.get("grip", 1.0)), 0.35, 1.35)
+	var hazard_value: Variant = context.get("hazard", "")
 	var curvature := clampf(float(context.get("curvature", 0.0)), -1.0, 1.0)
 	var speed_multiplier := clampf(float(context.get("speed_multiplier", 1.0)), 0.25, 1.75)
-	var hazard_drag := _hazard_drag(context.get("hazard", ""))
+	var hazard_drag := _hazard_drag(hazard_value)
+	if chassis_id == "centurion" and String(hazard_value) in ["debris", "gravity"]:
+		grip = maxf(grip, 0.98)
 	if _emp_time > 0.0:
 		grip *= 0.55
 		throttle *= 0.72
 
+	if chassis_id == "monowheel":
+		if _was_drifting and not drifting:
+			_drift_exit_thrust_time = MONOWHEEL_EXIT_THRUST_DURATION
+			speed = minf(top_speed * 1.06, speed + acceleration * 0.16)
+		_was_drifting = drifting
+
 	var steering_power := handling * grip * (1.25 if drifting else 0.92)
+	var current_speed_ratio := speed / maxf(1.0, top_speed)
+	if chassis_id == "hexapod" and current_speed_ratio < 0.45:
+		steering_power *= 1.30
 	var desired_lane_velocity := steer * steering_power * (1.2 + speed / maxf(1.0, top_speed))
 	lane_velocity = move_toward(lane_velocity, desired_lane_velocity, (4.4 if drifting else 6.8) * dt)
 	lane_velocity += _impact_velocity * dt
@@ -149,10 +177,13 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 	lane = clampf(lane + lane_velocity * dt, -MAX_LANE, MAX_LANE)
 
 	var offroad_amount := clampf((absf(lane) - 0.92) / (MAX_LANE - 0.92), 0.0, 1.0)
+	if chassis_id == "quadruped" and brake > 0.45 and speed > top_speed * 0.15:
+		_recovery_time = maxf(_recovery_time, QUADRUPED_RECOVERY_DURATION)
 	var drive_force := acceleration * throttle
+	drive_force *= 1.22 if chassis_id == "quadruped" and _recovery_time > 0.0 else 1.0
 	var brake_force := acceleration * (1.5 + 0.25 / mass) * brake
 	var aerodynamic_drag := (0.012 + 0.010 * hazard_drag) * speed * speed / maxf(1.0, top_speed)
-	var rolling_drag := 1.2 + offroad_amount * (13.0 / offroad_efficiency)
+	var rolling_drag := 1.2 + offroad_amount * (13.0 / offroad_efficiency) * offroad_drag_factor()
 	var corner_drag := absf(curvature) * speed * (0.055 if drifting else 0.085) / maxf(0.65, handling)
 	speed += (drive_force - brake_force - aerodynamic_drag - rolling_drag - corner_drag) * dt
 
@@ -163,13 +194,14 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 		speed += acceleration * 1.38 * dt
 	elif drifting and absf(steer) > 0.25:
 		boost_energy = minf(1.0, boost_energy + dt * 0.028)
-		heat = maxf(0.0, heat - dt * 0.075 / heat_generation)
+		heat = maxf(0.0, heat - dt * (0.145 if chassis_id == "monowheel" else 0.075) / heat_generation)
 	else:
 		heat = maxf(0.0, heat - dt * (0.105 if throttle < 0.6 else 0.055) / heat_generation)
 
 	if heat >= 0.985:
 		speed = minf(speed, top_speed * 0.72)
-	var allowed_speed := top_speed * (1.23 if boosting else 1.0)
+	var ability_speed_factor := 1.06 if chassis_id == "monowheel" and _drift_exit_thrust_time > 0.0 else 1.0
+	var allowed_speed := top_speed * maxf(1.23 if boosting else 1.0, ability_speed_factor)
 	speed = clampf(speed, 0.0, allowed_speed)
 	distance += speed * speed_multiplier * dt
 	_update_lap_and_finish()
@@ -212,15 +244,105 @@ func apply_hit(damage: float, lateral_impulse: float = 0.0) -> void:
 	if finished or dnf or eliminated:
 		return
 	var shield_factor := 0.15 if _shield_time > 0.0 else 1.0
-	armor = maxf(0.0, armor - maxf(0.0, damage) * shield_factor)
-	_impact_velocity += lateral_impulse / maxf(0.5, mass) * shield_factor
-	speed *= clampf(1.0 - maxf(0.0, damage) * 0.003 / mass, 0.68, 1.0)
+	var applied_damage := maxf(0.0, damage)
+	var control_factor := 1.0
+	var momentum_loss_factor := 1.0
+	match chassis_id:
+		"biped":
+			control_factor = BIPED_CONTROL_FACTOR
+		"tripod":
+			control_factor = TRIPOD_CONTROL_FACTOR
+			applied_damage *= 0.88
+		"octopod":
+			control_factor = 0.72
+			momentum_loss_factor = 0.45
+		"orb":
+			control_factor = 0.36
+	armor = maxf(0.0, armor - applied_damage * shield_factor)
+	_impact_velocity += lateral_impulse / maxf(0.5, mass) * shield_factor * control_factor
+	speed *= clampf(1.0 - applied_damage * 0.003 / mass * momentum_loss_factor, 0.68, 1.0)
+	if chassis_id == "quadruped":
+		_recovery_time = maxf(_recovery_time, QUADRUPED_RECOVERY_DURATION)
+	elif chassis_id == "orb" and not is_zero_approx(lateral_impulse):
+		_last_impact_thrust = absf(lateral_impulse) * acceleration * 0.42 * shield_factor
+		speed = minf(top_speed * 1.08, speed + _last_impact_thrust)
 	_stuck_time = 0.0
 
 
 func apply_emp(duration: float = 1.8) -> void:
 	if _shield_time <= 0.0:
 		_emp_time = maxf(_emp_time, maxf(0.0, duration))
+
+
+## Boost pads recharge the reactor directly and never touch the held item slot.
+func apply_boost_pad() -> bool:
+	if finished or dnf or eliminated:
+		return false
+	boost_energy = 1.0
+	heat = maxf(0.0, heat - BOOST_PAD_COOLING)
+	return true
+
+
+func apply_ground_mine(damage: float = 18.0, lateral_impulse: float = 0.48) -> bool:
+	if chassis_id == "hover" or finished or dnf or eliminated:
+		return false
+	apply_hit(damage, lateral_impulse)
+	return true
+
+
+func contact_damage_multiplier() -> float:
+	match chassis_id:
+		"octopod": return 1.65
+		"tracked": return 1.38
+		_: return 1.0
+
+
+func offroad_drag_factor() -> float:
+	match chassis_id:
+		"hexapod": return 0.38
+		"hover": return 0.16
+		_: return 1.0
+
+
+func chassis_ability_id() -> String:
+	match chassis_id:
+		"biped": return "gyro_correction"
+		"tripod": return "vector_anchor"
+		"quadruped": return "predator_stride"
+		"hexapod": return "adaptive_steps"
+		"octopod": return "distributed_ram"
+		"hover": return "magnetic_cushion"
+		"tracked": return "heavy_transmission"
+		"monowheel": return "gyro_drift"
+		"orb": return "inertial_rebound"
+		"centurion": return "walking_wave"
+		_: return "standard"
+
+
+func chassis_ability_snapshot() -> Dictionary:
+	var ability := {"id": chassis_ability_id(), "active": false}
+	match chassis_id:
+		"biped":
+			ability.merge({"control_loss_factor": BIPED_CONTROL_FACTOR, "control_disruption": absf(_impact_velocity)}, true)
+		"tripod":
+			ability.merge({"control_loss_factor": TRIPOD_CONTROL_FACTOR, "control_disruption": absf(_impact_velocity)}, true)
+		"quadruped":
+			ability.merge({"active": _recovery_time > 0.0, "recovery_time": _recovery_time, "drive_factor": 1.22}, true)
+		"hexapod":
+			ability.merge({"low_speed_steering_factor": 1.30, "offroad_drag_factor": offroad_drag_factor()}, true)
+		"octopod":
+			ability.merge({"contact_damage_factor": contact_damage_multiplier(), "momentum_loss_factor": 0.45}, true)
+		"hover":
+			ability.merge({"mine_immune": true, "offroad_drag_factor": offroad_drag_factor()}, true)
+		"tracked":
+			ability.merge({"contact_damage_factor": contact_damage_multiplier(), "sand_debris_drag": 0.0}, true)
+		"monowheel":
+			ability.merge({"active": _drift_exit_thrust_time > 0.0, "exit_thrust_time": _drift_exit_thrust_time, "drift_cooling": 0.145}, true)
+		"orb":
+			ability.merge({"active": _last_impact_thrust > 0.0, "impact_thrust": _last_impact_thrust, "control_loss_factor": 0.36}, true)
+		"centurion":
+			ability.merge({"debris_drag": _hazard_drag("debris"), "gravity_drag": _hazard_drag("gravity")}, true)
+	return ability
 
 
 func grant_item(item_id: String) -> bool:
@@ -258,6 +380,8 @@ func reset_to_checkpoint(checkpoint_distance: float, checkpoint_lane: float = 0.
 	heat = minf(heat, 0.55)
 	_stuck_time = 0.0
 	_reset_cooldown = RESET_COOLDOWN
+	if chassis_id == "quadruped":
+		_recovery_time = maxf(_recovery_time, QUADRUPED_RECOVERY_DURATION)
 	return true
 
 
@@ -314,6 +438,7 @@ func snapshot() -> Dictionary:
 		"item": item,
 		"boosting": boosting,
 		"shielded": _shield_time > 0.0,
+		"ability": chassis_ability_snapshot(),
 		"finished": finished,
 		"finish_time": finish_time,
 		"dnf": dnf,
@@ -343,7 +468,17 @@ func _hazard_drag(hazard: Variant) -> float:
 	if hazard is Dictionary:
 		var hazard_data: Dictionary = hazard
 		return clampf(float(hazard_data.get("drag", hazard_data.get("strength", 0.0))), 0.0, 1.0)
-	match String(hazard):
+	var hazard_id := String(hazard)
+	if chassis_id == "tracked" and hazard_id in ["sand", "debris"]:
+		return 0.0
+	if chassis_id == "hover" and hazard_id == "sand":
+		return 0.03
+	if chassis_id == "centurion":
+		if hazard_id == "debris":
+			return 0.06
+		if hazard_id == "gravity":
+			return 0.09
+	match hazard_id:
 		"sand": return 0.60 / offroad_efficiency
 		"ice": return 0.28
 		"gravity": return 0.36
