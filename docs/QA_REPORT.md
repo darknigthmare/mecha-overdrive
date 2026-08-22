@@ -76,4 +76,14 @@ Les huit nouvelles textures sont des créations originales OpenAI de 1254 × 125
 
 ## Publication distante
 
-Les identifiants du commit d’implémentation, du run GitHub Actions, du déploiement Vercel et de la release seront ajoutés après leur validation distante. Cette section n’est pas un substitut aux gates locales ci-dessus.
+| Gate distante | Preuve |
+|---|---|
+| Commit d’implémentation | `a036310f0e11172ebbafef22bd862a962dbfb72a` |
+| GitHub Actions | `Quality` réussi — [run 32582335959](https://github.com/darknigthmare/mecha-overdrive/actions/runs/32582335959) |
+| Déploiement Vercel | `dpl_BTvk8XHcZ3BVtxAbLrz5nkkNdKZG` — `READY`, production, source Git `a036310` |
+| URL immuable | `https://mecha-overdrive-34pbt6qb0-darknigthmares-projects.vercel.app` |
+| Alias public | [mecha-overdrive.vercel.app](https://mecha-overdrive.vercel.app) |
+| Release | [MECHA OVERDRIVE 2.2.0 — Godot 3D Web](https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.2.0) |
+| Archive | `mecha-overdrive-godot-web-v2.2.0.zip` — SHA-256 `28bdbb733f2855798426da631819e6da1415a63c2105832c8b97345fbbe84c44` |
+
+L’alias public a été rejoué dans Chromium à 1280 × 720 après promotion : HTTP 200, garage ouvert, WebGL2 actif, build `2.2.0`/Godot `4.7.2`, empreinte source `411e995089295f28f8f44dbc929c97198bf030bca10df34e831febd883a92004`, zéro erreur console, zéro erreur page et zéro requête échouée.
