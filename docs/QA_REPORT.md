@@ -21,9 +21,9 @@ Un fichier de test présent dans le dépôt indique une couverture prévue, pas 
 | Flux runtime Godot | `godot --headless --path godot --script res://tests/runtime_flow_test.gd` | **PASS** — menu, course 3D, HUD, audio stream, caméra, 8 pilotes, mouvement, DNF, résultats et retour menu |
 | Export Godot Web | preset `Web`, sortie `godot3d/` | **PASS** — profil mono-thread, 9 artefacts, tailles et SHA-256 contrôlés |
 | Parcours Godot Web local | Chromium/Playwright HTTP, 1280 × 720 | **PASS** — menu puis vraie course 3D, 0 erreur console/page/réseau et 0 requête échouée |
-| Déploiement Vercel 2.0.1 | `https://mecha-overdrive.vercel.app` | **EN ATTENTE** — publication et contrôle de production à exécuter après le push de la révision |
+| Déploiement Vercel 2.0.1 | `https://mecha-overdrive.vercel.app` | **PASS** — `dpl_8kUjsp3967aRN6282assVWkpPDYm` READY, commit `90eb594`, HTTP/MIME/CSP et parcours publics validés |
 
-Les statuts locaux ci-dessus proviennent d’exécutions réelles sur la révision courante. Le statut Vercel reste volontairement en attente tant que le build 2.0.1 n’est pas publié et contrôlé sur l’URL publique.
+Tous les statuts ci-dessus proviennent d’exécutions réelles. La CI Linux et la production Vercel ont été contrôlées sur le commit `90eb594c85aa6d78f41a2d0bacc8e6f182cffd94`.
 
 ## 3. QA Godot 3D
 
@@ -192,18 +192,20 @@ Résultat confirmé : **PASS** — neuf artefacts cohérents. Chromium a chargé
 
 ### 4.4 Déploiement Vercel
 
-URL cible : [`https://mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app).
+Production vérifiée : [`https://mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app).
 
-Le push et le déploiement de la révision 2.0.1 n’étaient pas encore exécutés au moment de ce rapport. La production ne doit être déclarée conforme qu’après avoir vérifié :
+Le déploiement automatique GitHub → Vercel `dpl_8kUjsp3967aRN6282assVWkpPDYm` est `READY` et `PROMOTED` sur le commit complet `90eb594c85aa6d78f41a2d0bacc8e6f182cffd94`. Son URL immuable est [`https://mecha-overdrive-6vstxeo6r-darknigthmares-projects.vercel.app`](https://mecha-overdrive-6vstxeo6r-darknigthmares-projects.vercel.app).
 
-- état du déploiement `READY` et association au commit publié ;
-- HTTP `200` sur `/`, le lanceur Godot, le JS, le WASM, le PCK et les worklets ;
-- MIME `application/wasm` pour le module WebAssembly ;
-- CSP stricte à la racine et CSP Godot autorisant uniquement les besoins WebAssembly prévus ;
-- parcours public menu Godot → vraie course, sans erreur console/page/réseau ;
-- non-régression du compagnon PWA, y compris le cache hors ligne après une première visite HTTPS.
+Contrôles publics confirmés :
 
-État de la gate 2.0.1 : **EN ATTENTE DE PUBLICATION**.
+- HTTP `200` sur `/`, le lanceur Godot, le JS, le WASM, le PCK et les deux worklets audio ;
+- MIME `application/wasm` pour le module WebAssembly et `application/octet-stream` pour le PCK ;
+- CSP stricte à la racine, et CSP Godot limitée avec `wasm-unsafe-eval` sous `/godot3d/` ;
+- Chromium 1280 × 720 : canvas visible, WebGL2 actif, menu chargé puis vraie course lancée, sans erreur console/page/réseau ni requête échouée ;
+- compagnon : menu, garage, course à huit, pause/reprise et neuf commandes tactiles validés sans erreur ;
+- PWA compagnon : nouveau chargement hors ligne validé avec service worker actif.
+
+État de la gate 2.0.1 : **PASS**.
 
 ## 5. Baseline web historique importée
 
