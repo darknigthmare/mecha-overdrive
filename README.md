@@ -200,7 +200,7 @@ MECHA_OVERDRIVE/
 
 ## Publication
 
-Vercel héberge l’édition web statique de la racine. La branche Godot reste le projet source principal à ouvrir dans Godot 4.7.2 ; un export jouable Godot doit faire l’objet d’un gate d’export séparé avant d’être annoncé comme livrable binaire.
+Vercel héberge l’édition web statique sur [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app). La branche Godot reste le projet source principal à ouvrir dans Godot 4.7.2 ; un export jouable Godot doit faire l’objet d’un gate d’export séparé avant d’être annoncé comme livrable binaire.
 
 ## Licence
 

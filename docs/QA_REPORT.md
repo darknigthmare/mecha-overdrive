@@ -20,9 +20,9 @@ Un fichier de test présent dans le dépôt indique une couverture prévue, pas 
 | Smoke Godot | `godot --headless --path godot --script res://tests/smoke_test.gd` | **PASS** — code 0, marqueur de succès observé |
 | Flux runtime Godot | `godot --headless --path godot --script res://tests/runtime_flow_test.gd` | **PASS** — menu, course 3D, HUD, mouvement, DNF, résultats et retour menu ; code 0, aucun avertissement |
 | Parcours navigateur local | Chromium/Playwright HTTP, bureau + mobile | **PASS** — 0 erreur et 0 requête échouée |
-| Déploiement Vercel | HTTP, assets, manifeste, service worker | à vérifier après déploiement |
+| Déploiement Vercel | `https://mecha-overdrive.vercel.app` | **PASS** — production READY, HTTP 200, assets/PWA, parcours bureau/mobile et navigation hors ligne |
 
-Le commit et la date de publication doivent être ajoutés au moment de la release. Le statut des gates Godot runtime et Vercel ne doit pas être déduit des validations statiques.
+La production web a été vérifiée le 22 août 2026. Les statuts runtime et Vercel ci-dessus proviennent d’exécutions réelles, pas d’une déduction des validations statiques.
 
 ## 3. QA Godot 3D
 
@@ -171,7 +171,7 @@ Résultat local confirmé : **PASS** sous Chromium/Playwright via HTTP en vues b
 
 ### 4.3 Déploiement statique
 
-Après publication Vercel, contrôler l’URL de production :
+Production vérifiée : [`https://mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app).
 
 - réponse HTTP 200 de `/` et `/index.html` ;
 - chargement du key art, du manifeste et du service worker ;
@@ -179,7 +179,11 @@ Après publication Vercel, contrôler l’URL de production :
 - parcours menu → course → pause → retour ;
 - comportement hors ligne après une première ouverture HTTPS.
 
-Ce gate reste à confirmer après déploiement.
+Résultat confirmé : **PASS**. Le déploiement `dpl_Cbx6DRzWJ6TaYfJivJ5z6Rwrxc2a` est `READY` et aliased sur l’URL publique. `/`, le key art, le manifeste et le service worker répondent correctement ; `/index.html` redirige proprement vers l’URL canonique `/`.
+
+Le parcours Chromium de production confirme menu, garage, Course rapide à huit concurrents, pause/reprise et interface tactile, sans erreur console ni requête échouée.
+
+La navigation PWA hors ligne a été validée après installation et prise de contrôle du service worker : les requêtes réseau ont été bloquées, puis un rechargement initié par la page a restauré le menu depuis le cache canonique.
 
 ## 5. Baseline web historique importée
 
