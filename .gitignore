@@ -1,0 +1,27 @@
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+node_modules/
+.env
+.env.*
+*.log
+coverage/
+playwright-report/
+test-results/
+dist/
+.vercel/
+.tmp/
+.patch-probe*
+
+# Godot-generated state and export artifacts
+godot/.godot/
+godot/export/
+*.import
+*.translation
+*.pck
+
+# One-shot reconstruction intermediates
+*.codex-new
+*.stub
+*.precanonical

@@ -1,0 +1,372 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/garage.gd" id="1_garage"]
+
+[node name="Garage" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_garage")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.018, 0.031, 0.055, 1)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 28
+
+[node name="Page" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Header" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="TitleBlock" type="VBoxContainer" parent="SafeArea/Page/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Eyebrow" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "NEXUS TECHNICAL BAY // CONFIGURATION"
+
+[node name="Title" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "GARAGE"
+
+[node name="CreditsBlock" type="VBoxContainer" parent="SafeArea/Page/Header"]
+layout_mode = 2
+
+[node name="CreditsLabel" type="Label" parent="SafeArea/Page/Header/CreditsBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "SOLDE DISPONIBLE"
+horizontal_alignment = 2
+
+[node name="CreditsValue" type="Label" parent="SafeArea/Page/Header/CreditsBlock"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "0 CR"
+horizontal_alignment = 2
+
+[node name="BackButton" type="Button" parent="SafeArea/Page/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(190, 56)
+layout_mode = 2
+tooltip_text = "Retour au menu principal"
+text = "←  RETOUR"
+
+[node name="Content" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="RosterPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+
+[node name="Roster" type="VBoxContainer" parent="SafeArea/Page/Content/RosterPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RosterTitle" type="Label" parent="SafeArea/Page/Content/RosterPanel/Roster"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "10 ARCHITECTURES"
+
+[node name="RosterHelp" type="Label" parent="SafeArea/Page/Content/RosterPanel/Roster"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Naviguez avec ↑ ↓ puis validez."
+
+[node name="ChassisList" type="ItemList" parent="SafeArea/Page/Content/RosterPanel/Roster"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+tooltip_text = "Liste des architectures de course"
+allow_reselect = true
+fixed_icon_size = Vector2i(0, 0)
+
+[node name="DetailPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeroPanel"
+
+[node name="Detail" type="VBoxContainer" parent="SafeArea/Page/Content/DetailPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IdentityTop" type="HBoxContainer" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+layout_mode = 2
+
+[node name="ChassisCategory" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/IdentityTop"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"EyebrowLabel"
+text = "BIPÈDE"
+
+[node name="SelectedBadge" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/IdentityTop"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "ACTIF"
+horizontal_alignment = 2
+
+[node name="ChassisName" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "RAPTOR R2"
+
+[node name="ChassisSubtitle" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "Polyvalence tactique"
+
+[node name="ChassisDescription" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Architecture gyrostabilisée prête pour tous les environnements."
+autowrap_mode = 2
+
+[node name="AbilityPanel" type="PanelContainer" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+
+[node name="Ability" type="VBoxContainer" parent="SafeArea/Page/Content/DetailPanel/Detail/AbilityPanel"]
+layout_mode = 2
+
+[node name="AbilityName" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/AbilityPanel/Ability"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "GYRO-CORRECTION"
+
+[node name="AbilityDescription" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/AbilityPanel/Ability"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Réduit les pertes de contrôle causées par les impacts."
+autowrap_mode = 2
+
+[node name="StatsTitle" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "TÉLÉMÉTRIE DE BASE"
+
+[node name="Stats" type="GridContainer" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="SpeedLabel" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "VITESSE"
+[node name="SpeedBar" type="ProgressBar" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 22)
+layout_mode = 2
+max_value = 100.0
+value = 74.0
+
+[node name="AccelerationLabel" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "ACCÉLÉRATION"
+[node name="AccelerationBar" type="ProgressBar" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 22)
+layout_mode = 2
+max_value = 100.0
+value = 75.0
+
+[node name="HandlingLabel" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "MANIABILITÉ"
+[node name="HandlingBar" type="ProgressBar" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 22)
+layout_mode = 2
+max_value = 100.0
+value = 78.0
+
+[node name="ArmorLabel" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "BLINDAGE"
+[node name="ArmorBar" type="ProgressBar" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 22)
+layout_mode = 2
+max_value = 100.0
+value = 64.0
+
+[node name="StabilityLabel" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "STABILITÉ"
+[node name="StabilityBar" type="ProgressBar" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 22)
+layout_mode = 2
+max_value = 100.0
+value = 72.0
+
+[node name="ReactorLabel" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "RÉACTEUR"
+[node name="ReactorBar" type="ProgressBar" parent="SafeArea/Page/Content/DetailPanel/Detail/Stats"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 22)
+layout_mode = 2
+max_value = 100.0
+value = 74.0
+
+[node name="SelectButton" type="Button" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "CHÂSSIS ACTIF"
+
+[node name="WorkshopPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
+custom_minimum_size = Vector2(390, 0)
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+
+[node name="Workshop" type="VBoxContainer" parent="SafeArea/Page/Content/WorkshopPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WorkshopTitle" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "ATELIER"
+
+[node name="PaintLabel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "PEINTURE ACTIVE"
+
+[node name="PaintRow" type="HBoxContainer" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PaintPreview" type="ColorRect" parent="SafeArea/Page/Content/WorkshopPanel/Workshop/PaintRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 54)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.369, 0.906, 1, 1)
+
+[node name="PaintOption" type="OptionButton" parent="SafeArea/Page/Content/WorkshopPanel/Workshop/PaintRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Choisir une peinture de châssis"
+
+[node name="UpgradeTitle" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "AMÉLIORATIONS PERMANENTES"
+
+[node name="EngineName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "MOTEUR VECTORIEL"
+[node name="EngineLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "NIVEAU 0 / 4"
+[node name="EngineButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "INSTALLER  •  650 CR"
+
+[node name="ServosName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "SERVOMOTEURS"
+[node name="ServosLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "NIVEAU 0 / 4"
+[node name="ServosButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "INSTALLER  •  600 CR"
+
+[node name="ReactorName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "REFROIDISSEMENT"
+[node name="ReactorLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "NIVEAU 0 / 4"
+[node name="ReactorButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "INSTALLER  •  700 CR"
+
+[node name="ArmorName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "BLINDAGE COMPOSITE"
+[node name="ArmorLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "NIVEAU 0 / 4"
+[node name="ArmorButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "INSTALLER  •  600 CR"
+
+[node name="WorkshopSpacer" type="Control" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="StatusMessage" type="Label" parent="SafeArea/Page"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "ATELIER PRÊT"
+horizontal_alignment = 1
+

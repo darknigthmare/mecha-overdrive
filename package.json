@@ -1,0 +1,23 @@
+{
+  "name": "mecha-overdrive-circuit-zero",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jeu de course-combat de méchas pseudo-3D, autonome et sans dépendance d’exécution.",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/server.mjs",
+    "serve": "node tools/server.mjs",
+    "serve:python": "python3 tools/serve.py",
+    "check": "node tools/check.mjs",
+    "validate": "node tools/validate.mjs",
+    "test:engine": "node tests/run-tests.mjs",
+    "test:integration": "node tests/smoke.mjs",
+    "test:browser": "python3 tests/browser_smoke.py",
+    "test:flow": "python3 tests/full_flow_qa.py",
+    "test": "npm run check && npm run validate && npm run test:engine && npm run test:integration"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}

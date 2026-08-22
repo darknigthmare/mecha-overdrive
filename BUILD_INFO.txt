@@ -1,0 +1,22 @@
+MECHA OVERDRIVE — CIRCUIT ZERO
+Version : 1.0.0
+Build : 10 août 2026
+Propriétaire du projet : Darknigthmare
+
+CONTENU
+- Jeu navigateur HTML5/Canvas autonome et sans dépendance d’exécution
+- Course rapide, Grand Prix de quatre manches et Contre-la-montre
+- 8 architectures, 4 circuits, 8 objets, garage et progression locale
+- Clavier, manette, tactile, audio procédural et PWA hors ligne
+- Code source, documentation, tests, lanceurs et configuration Vercel
+
+VALIDATION FINALE
+- 16 fichiers JavaScript/MJS syntaxiquement valides
+- 73/73 contrôles structure/cache/données réussis
+- 10/10 tests moteur réussis
+- 21/21 contrôles d’intégration réussis
+- QA Chromium bureau sans erreur ni avertissement
+- QA complète des quatre manches du Grand Prix réussie
+- QA mobile paysage : 6/6 commandes tactiles validées
+- 41/41 références locales et liens de documentation valides
+- Serveurs Node et Python testés, avec sélection automatique d’un port libre

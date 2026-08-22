@@ -1,0 +1,177 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/codex_screen.gd" id="1_codex"]
+
+[node name="Codex" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_codex")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.012, 0.025, 0.047, 1)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 32
+
+[node name="Page" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TitleBlock" type="VBoxContainer" parent="SafeArea/Page/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+[node name="Eyebrow" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "NEXUS KNOWLEDGE CORE // DONNÉES HOMOLOGUÉES"
+[node name="Title" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "CODEX CIRCUIT ZERO"
+[node name="CountSummary" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "10 ARCHITECTURES   •   4 CIRCUITS   •   8 OBJETS"
+
+[node name="BackButton" type="Button" parent="SafeArea/Page/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(190, 56)
+layout_mode = 2
+text = "←  RETOUR"
+
+[node name="Tabs" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ChassisTab" type="Button" parent="SafeArea/Page/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+button_pressed = true
+text = "ARCHITECTURES  //  10"
+[node name="TracksTab" type="Button" parent="SafeArea/Page/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "CIRCUITS  //  4"
+[node name="ItemsTab" type="Button" parent="SafeArea/Page/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "OBJETS  //  8"
+
+[node name="Content" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="ListPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
+custom_minimum_size = Vector2(490, 0)
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+[node name="EntriesList" type="ItemList" parent="SafeArea/Page/Content/ListPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Entrées du codex. Utilisez Page précédente et Page suivante pour changer de catégorie."
+allow_reselect = true
+
+[node name="DetailPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeroPanel"
+[node name="Detail" type="VBoxContainer" parent="SafeArea/Page/Content/DetailPanel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+[node name="DetailHeader" type="HBoxContainer" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+layout_mode = 2
+[node name="DetailEyebrow" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/DetailHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"EyebrowLabel"
+text = "ARCHITECTURE // BIPÈDE"
+[node name="IndexValue" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/DetailHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "01 / 10"
+horizontal_alignment = 2
+[node name="DetailTitle" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DisplayLabel"
+text = "RAPTOR R2"
+autowrap_mode = 2
+[node name="DetailSubtitle" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "Polyvalence tactique"
+[node name="DetailDescription" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Deux jambes gyrostabilisées et un équilibre sans faiblesse majeure."
+autowrap_mode = 2
+
+[node name="FeaturePanel" type="PanelContainer" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+[node name="Feature" type="VBoxContainer" parent="SafeArea/Page/Content/DetailPanel/Detail/FeaturePanel"]
+layout_mode = 2
+[node name="FeatureName" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/FeaturePanel/Feature"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "GYRO-CORRECTION"
+[node name="FeatureDescription" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail/FeaturePanel/Feature"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Réduit les pertes de contrôle causées par les impacts."
+autowrap_mode = 2
+
+[node name="TelemetryTitle" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "TÉLÉMÉTRIE / PROTOCOLE"
+[node name="TelemetryLabel" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"SectionLabel"
+text = "VITESSE  74     ACCÉL.  75     MANIABILITÉ  78\nBLINDAGE 64     STABILITÉ 72     RÉACTEUR     74"
+vertical_alignment = 1
+autowrap_mode = 2
+

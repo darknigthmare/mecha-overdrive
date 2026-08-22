@@ -1,0 +1,26 @@
+MECHA OVERDRIVE — CIRCUIT ZERO 1.0.0
+====================================
+
+WINDOWS
+1. Double-cliquer sur LANCER_JEU.bat.
+2. Le navigateur s’ouvre sur un port local disponible à partir de 8080.
+3. Laisser la fenêtre du serveur ouverte pendant la partie.
+
+MACOS / LINUX
+1. Ouvrir un terminal dans ce dossier.
+2. Exécuter : chmod +x LANCER_JEU.sh
+3. Exécuter : ./LANCER_JEU.sh
+
+NODE.JS
+- npm start
+- Puis ouvrir l’adresse affichée.
+
+PYTHON 3
+- python3 tools/serve.py
+
+TESTS
+- npm test
+- npm run test:browser  (Playwright facultatif)
+- npm run test:flow     (QA complète bureau + mobile)
+
+Le guide complet se trouve dans README.md.

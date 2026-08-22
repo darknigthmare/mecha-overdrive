@@ -1,0 +1,284 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_menu"]
+[ext_resource type="Texture2D" path="res://assets/mecha-overdrive-hero.png" id="2_hero"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="HeroArtwork" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_hero")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Atmosphere" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.008, 0.016, 0.031, 0.72)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 38
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 32
+
+[node name="Page" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="TopBar" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="Identity" type="VBoxContainer" parent="SafeArea/Page/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Series" type="Label" parent="SafeArea/Page/TopBar/Identity"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "NEXUS RACING AUTHORITY  //  SAISON 01"
+
+[node name="GameTitle" type="Label" parent="SafeArea/Page/TopBar/Identity"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "MECHA OVERDRIVE"
+
+[node name="Subtitle" type="Label" parent="SafeArea/Page/TopBar/Identity"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "CIRCUIT ZERO  •  GODOT 3D EDITION"
+
+[node name="ProfilePanel" type="PanelContainer" parent="SafeArea/Page/TopBar"]
+custom_minimum_size = Vector2(390, 0)
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+
+[node name="ProfileRow" type="HBoxContainer" parent="SafeArea/Page/TopBar/ProfilePanel"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="PilotBlock" type="VBoxContainer" parent="SafeArea/Page/TopBar/ProfilePanel/ProfileRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PilotLabel" type="Label" parent="SafeArea/Page/TopBar/ProfilePanel/ProfileRow/PilotBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "PILOTE"
+
+[node name="PilotValue" type="Label" parent="SafeArea/Page/TopBar/ProfilePanel/ProfileRow/PilotBlock"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "PILOTE 01"
+
+[node name="CreditsBlock" type="VBoxContainer" parent="SafeArea/Page/TopBar/ProfilePanel/ProfileRow"]
+layout_mode = 2
+
+[node name="CreditsLabel" type="Label" parent="SafeArea/Page/TopBar/ProfilePanel/ProfileRow/CreditsBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "CRÉDITS"
+horizontal_alignment = 2
+
+[node name="CreditsValue" type="Label" parent="SafeArea/Page/TopBar/ProfilePanel/ProfileRow/CreditsBlock"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "0 CR"
+horizontal_alignment = 2
+
+[node name="Content" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="ActionsPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+theme_type_variation = &"HeroPanel"
+
+[node name="Actions" type="VBoxContainer" parent="SafeArea/Page/Content/ActionsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 11
+
+[node name="Prompt" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "CHOISISSEZ UN PROTOCOLE"
+
+[node name="QuickButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+tooltip_text = "Course complète de trois tours contre sept rivaux"
+text = "COURSE RAPIDE   //   8 PILOTES"
+alignment = 0
+
+[node name="GrandPrixButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+tooltip_text = "Championnat en quatre manches avec points persistants"
+text = "GRAND PRIX   //   4 MANCHES"
+alignment = 0
+
+[node name="TimeTrialButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+tooltip_text = "Contre-la-montre sans adversaire ni objet offensif"
+text = "CONTRE-LA-MONTRE   //   SOLO"
+alignment = 0
+
+[node name="EliminationButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+tooltip_text = "À chaque intervalle, le dernier pilote est éliminé"
+text = "ÉLIMINATION   //   DERNIER EXCLU"
+alignment = 0
+
+[node name="SectionGap" type="Control" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SecondaryActions" type="HBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GarageButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions/SecondaryActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Sélectionner et améliorer une architecture"
+text = "GARAGE"
+
+[node name="CodexButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions/SecondaryActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Consulter les architectures, circuits et objets"
+text = "CODEX"
+
+[node name="QuitButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_type_variation = &"DangerButton"
+text = "QUITTER"
+
+[node name="HeroPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeroPanel"
+
+[node name="Telemetry" type="VBoxContainer" parent="SafeArea/Page/Content/HeroPanel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Eyebrow" type="Label" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "CHÂSSIS ACTIF"
+
+[node name="ChassisClass" type="Label" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "BIPÈDE"
+
+[node name="ChassisName" type="Label" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DisplayLabel"
+text = "RAPTOR R2"
+autowrap_mode = 2
+
+[node name="ChassisTrait" type="Label" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "Polyvalence tactique"
+
+[node name="TelemetrySpacer" type="Control" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="CareerLabel" type="Label" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "DOSSIER DE CARRIÈRE"
+
+[node name="CareerSummary" type="Label" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "0 COURSES   •   0 VICTOIRES\n0 PODIUMS   •   0 CHAMPIONNATS"
+
+[node name="AccessibilityLabel" type="Label" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "ACCESSIBILITÉ"
+
+[node name="Accessibility" type="HBoxContainer" parent="SafeArea/Page/Content/HeroPanel/Telemetry"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ContrastToggle" type="CheckButton" parent="SafeArea/Page/Content/HeroPanel/Telemetry/Accessibility"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Augmente le contraste des surfaces et contours"
+text = "CONTRASTE"
+
+[node name="MotionToggle" type="CheckButton" parent="SafeArea/Page/Content/HeroPanel/Telemetry/Accessibility"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Réduit les mouvements et animations de l’interface"
+text = "MOUVEMENTS RÉDUITS"
+
+[node name="TextToggle" type="CheckButton" parent="SafeArea/Page/Content/HeroPanel/Telemetry/Accessibility"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Agrandit le texte de l’interface"
+text = "TEXTE +"
+
+[node name="StatusMessage" type="Label" parent="SafeArea/Page"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "SYSTÈMES PRÊTS // SAISON 01"
+horizontal_alignment = 1
+

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070a12">
+  <meta name="description" content="MECHA OVERDRIVE — Circuit Zero, jeu de course et combat de méchas pseudo-3D.">
+  <title>MECHA OVERDRIVE — Circuit Zero</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="media/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <canvas id="gameCanvas" aria-label="Zone de jeu MECHA OVERDRIVE"></canvas>
+
+    <div id="scanlines" aria-hidden="true"></div>
+    <div id="vignette" aria-hidden="true"></div>
+
+    <header id="topBar" class="top-bar">
+      <button id="homeButton" class="icon-button hidden" type="button" aria-label="Retour au menu">⌂</button>
+      <div class="brand-mini">MO<span>//</span>CZ</div>
+      <div class="wallet"><span>CRÉDITS</span><strong id="creditsValue">0</strong></div>
+      <button id="audioButton" class="icon-button" type="button" aria-label="Activer ou couper le son">♫</button>
+    </header>
+
+    <main id="screens" class="screens">
+      <section id="screen-main" class="screen active" data-screen="main">
+        <div class="hero-panel glass-panel">
+          <p class="eyebrow">CHAMPIONNAT MÉCANIQUE // SAISON 01</p>
+          <h1>MECHA<br><span>OVERDRIVE</span></h1>
+          <p class="subtitle">Circuit Zero</p>
+          <p class="lead">Pilotez huit architectures de méchas, maîtrisez la dérive et poussez le réacteur au-delà de sa limite.</p>
+          <div class="menu-grid">
+            <button class="menu-button primary" data-action="quick-race" type="button"><span>COURSE RAPIDE</span><small>1 circuit · 7 rivaux</small></button>
+            <button class="menu-button" data-action="grand-prix" type="button"><span>GRAND PRIX</span><small>4 circuits · classement</small></button>
+            <button class="menu-button" data-action="time-trial" type="button"><span>CONTRE-LA-MONTRE</span><small>record personnel</small></button>
+            <button class="menu-button" data-action="garage" type="button"><span>GARAGE</span><small>châssis · peinture · améliorations</small></button>
+            <button class="menu-button" data-action="help" type="button"><span>PILOTAGE</span><small>commandes et règles</small></button>
+            <button class="menu-button" data-action="settings" type="button"><span>PARAMÈTRES</span><small>audio · affichage · accessibilité</small></button>
+          </div>
+        </div>
+
+        <aside class="main-side glass-panel">
+          <div class="status-line"><span>PILOTE</span><strong id="pilotName">DARKNIGTHMARE</strong></div>
+          <div id="featuredMech" class="featured-mech" aria-hidden="true"></div>
+          <div class="selected-summary">
+            <span id="selectedClassLabel">BIPÈDE</span>
+            <strong id="selectedMechName">RAPTOR R2</strong>
+            <p id="selectedMechTrait">Polyvalence tactique</p>
+          </div>
+          <div class="news-card">
+            <span class="live-dot"></span>
+            <p><strong>CIRCUIT ZERO OUVERT</strong><br>Les huit divisions sont homologuées. Aucun permis de survie requis.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section id="screen-mode" class="screen" data-screen="mode">
+        <div class="wide-panel glass-panel">
+          <div class="section-heading">
+            <div><p class="eyebrow" id="modeEyebrow">CONFIGURATION DE COURSE</p><h2 id="modeTitle">Course rapide</h2></div>
+            <button class="text-button" data-action="back-main" type="button">← RETOUR</button>
+          </div>
+          <div class="mode-layout">
+            <div>
+              <h3>Choisissez un circuit</h3>
+              <div id="trackCards" class="track-grid"></div>
+            </div>
+            <aside class="race-config">
+              <h3>Paramètres</h3>
+              <label class="field-label">Difficulté
+                <select id="difficultySelect">
+                  <option value="rookie">Recrue</option>
+                  <option value="pilot" selected>Pilote</option>
+                  <option value="ace">As</option>
+                </select>
+              </label>
+              <label class="field-label">Tours
+                <select id="lapsSelect">
+                  <option value="1">1 tour</option>
+                  <option value="2">2 tours</option>
+                  <option value="3" selected>3 tours</option>
+                  <option value="4">4 tours</option>
+                  <option value="5">5 tours</option>
+                </select>
+              </label>
+              <div class="config-mech">
+                <span>CHÂSSIS ACTIF</span>
+                <strong id="configMechName">RAPTOR R2</strong>
+                <button class="text-button" data-action="garage" type="button">MODIFIER AU GARAGE</button>
+              </div>
+              <button id="launchRaceButton" class="launch-button" type="button">LANCER LA COURSE</button>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-garage" class="screen" data-screen="garage">
+        <div class="wide-panel glass-panel garage-panel">
+          <div class="section-heading">
+            <div><p class="eyebrow">ATELIER // HANGAR 08</p><h2>Garage des architectures</h2></div>
+            <button class="text-button" data-action="back-main" type="button">← RETOUR</button>
+          </div>
+          <div class="garage-layout">
+            <div id="chassisList" class="chassis-list" role="listbox" aria-label="Liste des châssis"></div>
+            <div class="garage-preview">
+              <canvas id="garageCanvas" width="700" height="520" aria-label="Aperçu du mécha"></canvas>
+              <div class="paint-row">
+                <span>PEINTURE</span>
+                <div id="paintSwatches" class="paint-swatches"></div>
+              </div>
+            </div>
+            <aside class="garage-details">
+              <p class="eyebrow" id="garageClass">DIVISION BIPÈDE</p>
+              <h3 id="garageName">Raptor R2</h3>
+              <p id="garageDescription"></p>
+              <div id="garageStats" class="stats"></div>
+              <div class="trait-box"><span>APTITUDE</span><strong id="garageAbility"></strong><p id="garageAbilityDescription"></p></div>
+              <div class="upgrade-heading"><h4>AMÉLIORATIONS</h4><span id="upgradeCredits">0 CR</span></div>
+              <div id="upgradeList" class="upgrade-list"></div>
+              <button id="selectChassisButton" class="launch-button" type="button">ÉQUIPER CE CHÂSSIS</button>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-help" class="screen" data-screen="help">
+        <div class="medium-panel glass-panel">
+          <div class="section-heading">
+            <div><p class="eyebrow">MANUEL DU PILOTE</p><h2>Commandes et tactiques</h2></div>
+            <button class="text-button" data-action="back-main" type="button">← RETOUR</button>
+          </div>
+          <div class="help-grid">
+            <article><h3>Clavier</h3><p><kbd>Z</kbd>/<kbd>↑</kbd> Accélérer<br><kbd>S</kbd>/<kbd>↓</kbd> Freiner<br><kbd>Q</kbd>/<kbd>D</kbd> ou <kbd>←</kbd>/<kbd>→</kbd> Diriger<br><kbd>Maj</kbd> Surcharge réacteur<br><kbd>Espace</kbd> Utiliser l’objet<br><kbd>Ctrl</kbd> Dérive assistée<br><kbd>R</kbd> Réinitialiser<br><kbd>Échap</kbd> Pause</p></article>
+            <article><h3>Manette</h3><p>Stick gauche pour diriger, gâchette droite pour accélérer, gauche pour freiner. <kbd>A</kbd> utilise l’objet, <kbd>X</kbd> active la surcharge, <kbd>B</kbd> déclenche la dérive.</p></article>
+            <article><h3>Réacteur</h3><p>La surcharge donne une poussée massive mais remplit la jauge thermique. À 100 %, le réacteur se verrouille jusqu’au refroidissement.</p></article>
+            <article><h3>Combat</h3><p>Collectez les caisses jaunes. Les objets les plus puissants favorisent les pilotes en retard, tandis que le premier reçoit surtout des outils défensifs.</p></article>
+            <article><h3>Architectures</h3><p>Chaque châssis possède une physique et une aptitude passive : stabilité, adhérence, blindage, franchissement ou vitesse pure.</p></article>
+            <article><h3>Mobile</h3><p>Les commandes tactiles apparaissent automatiquement sur téléphone et tablette. Le jeu fonctionne aussi hors ligne après la première ouverture via un serveur local.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-settings" class="screen" data-screen="settings">
+        <div class="medium-panel glass-panel">
+          <div class="section-heading">
+            <div><p class="eyebrow">SYSTÈMES DE BORD</p><h2>Paramètres</h2></div>
+            <button class="text-button" data-action="back-main" type="button">← RETOUR</button>
+          </div>
+          <div class="settings-grid">
+            <label class="setting-row"><span>Volume général</span><input id="volumeRange" type="range" min="0" max="1" step="0.05"></label>
+            <label class="setting-row"><span>Qualité d’affichage</span><select id="qualitySelect"><option value="low">Économie</option><option value="medium">Équilibrée</option><option value="high">Haute</option></select></label>
+            <label class="setting-row switch-row"><span>Réduction des secousses</span><input id="reducedMotionCheck" type="checkbox"></label>
+            <label class="setting-row switch-row"><span>Contraste renforcé</span><input id="highContrastCheck" type="checkbox"></label>
+            <label class="setting-row switch-row"><span>Afficher les commandes tactiles</span><input id="touchControlsCheck" type="checkbox"></label>
+          </div>
+          <div class="danger-zone">
+            <div><strong>Réinitialiser la progression</strong><p>Crédits, améliorations, records et réglages seront effacés.</p></div>
+            <button id="resetSaveButton" class="danger-button" type="button">RÉINITIALISER</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-results" class="screen" data-screen="results">
+        <div class="medium-panel glass-panel results-panel">
+          <p class="eyebrow" id="resultsEyebrow">COURSE TERMINÉE</p>
+          <h2 id="resultsTitle">Classement</h2>
+          <p id="resultsSubtitle" class="lead"></p>
+          <div id="resultsTable" class="results-table"></div>
+          <div id="rewardSummary" class="reward-summary"></div>
+          <div class="results-actions">
+            <button id="resultsPrimaryButton" class="launch-button" type="button">REJOUER</button>
+            <button class="menu-button" data-action="back-main" type="button"><span>MENU PRINCIPAL</span></button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <section id="hud" class="hud hidden" aria-live="polite">
+      <div class="hud-left">
+        <div class="position-block"><strong id="hudPosition">1</strong><span id="hudPositionSuffix">er</span><small>/ <span id="hudRacers">8</span></small></div>
+        <div class="lap-block"><span>TOUR</span><strong><span id="hudLap">1</span>/<span id="hudLaps">3</span></strong></div>
+      </div>
+      <div class="hud-center-top"><div id="raceMessage" class="race-message"></div></div>
+      <div class="hud-right">
+        <div class="speed-block"><strong id="hudSpeed">000</strong><span>KM/H</span></div>
+        <div class="item-slot" id="itemSlot"><span>OBJET</span><strong id="hudItem">—</strong></div>
+      </div>
+      <div class="hud-bars">
+        <div class="bar-line"><span>BLINDAGE</span><div class="bar"><i id="armorBar"></i></div><strong id="armorValue">100</strong></div>
+        <div class="bar-line"><span>RÉACTEUR</span><div class="bar heat"><i id="heatBar"></i></div><strong id="heatValue">0%</strong></div>
+      </div>
+      <canvas id="minimapCanvas" width="260" height="180" aria-label="Mini-carte du circuit"></canvas>
+      <div id="bestTimeHud" class="best-time hidden"><span>MEILLEUR</span><strong id="bestTimeValue">--:--.---</strong></div>
+    </section>
+
+    <div id="countdown" class="countdown hidden" aria-live="assertive"></div>
+    <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+    <div id="pauseOverlay" class="pause-overlay hidden">
+      <div class="pause-card glass-panel">
+        <p class="eyebrow">COURSE SUSPENDUE</p>
+        <h2>Pause</h2>
+        <button id="resumeButton" class="launch-button" type="button">REPRENDRE</button>
+        <button id="restartButton" class="menu-button" type="button"><span>RECOMMENCER</span></button>
+        <button id="quitRaceButton" class="menu-button" type="button"><span>QUITTER LA COURSE</span></button>
+      </div>
+    </div>
+
+    <div id="touchControls" class="touch-controls hidden" aria-hidden="true">
+      <div class="touch-steer">
+        <button data-touch="left" aria-label="Tourner à gauche">◀</button>
+        <button data-touch="right" aria-label="Tourner à droite">▶</button>
+      </div>
+      <div class="touch-actions">
+        <button data-touch="brake" aria-label="Freiner">FREIN</button>
+        <button data-touch="item" class="item" aria-label="Utiliser l’objet">OBJET</button>
+        <button data-touch="boost" class="boost" aria-label="Surcharge réacteur">BOOST</button>
+        <button data-touch="accelerate" class="accelerate" aria-label="Accélérer">GAZ</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript>JavaScript est nécessaire pour piloter MECHA OVERDRIVE.</noscript>
+
+  <script defer src="js/core.js"></script>
+  <script defer src="js/data.js"></script>
+  <script defer src="js/storage.js"></script>
+  <script defer src="js/audio.js"></script>
+  <script defer src="js/input.js"></script>
+  <script defer src="js/track.js"></script>
+  <script defer src="js/renderer.js"></script>
+  <script defer src="js/game.js"></script>
+  <script defer src="js/ui.js"></script>
+  <script defer src="js/main.js"></script>
+</body>
+</html>

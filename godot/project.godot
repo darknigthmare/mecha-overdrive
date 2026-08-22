@@ -1,0 +1,41 @@
+; Engine configuration file.
+; MECHA OVERDRIVE: Circuit Zero - Godot 4.7.2 migration branch.
+config_version=5
+
+[application]
+
+config/name="MECHA OVERDRIVE: Circuit Zero"
+config/description="Arcade combat racer built around ten distinct mecha locomotion architectures."
+config/version="2.0.0-dev"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+run/main_scene="res://scenes/app.tscn"
+
+[autoload]
+
+SaveSystem="*res://scripts/systems/save_system.gd"
+GameSession="*res://scripts/systems/game_session.gd"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/handheld/orientation=6
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+
+[audio]
+
+driver/enable_input=false
+
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/unsafe_method_access=2
+gdscript/warnings/unsafe_property_access=2

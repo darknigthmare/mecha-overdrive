@@ -1,0 +1,187 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/results_screen.gd" id="1_results"]
+
+[node name="Results" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_results")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.008, 0.018, 0.035, 0.96)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 150
+theme_override_constants/margin_top = 54
+theme_override_constants/margin_right = 150
+theme_override_constants/margin_bottom = 46
+
+[node name="ContentPanel" type="PanelContainer" parent="SafeArea"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeroPanel"
+
+[node name="Content" type="VBoxContainer" parent="SafeArea/ContentPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ResultEyebrow" type="Label" parent="SafeArea/ContentPanel/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "COURSE RAPIDE // CIRCUIT ZERO"
+horizontal_alignment = 1
+
+[node name="ResultTitle" type="Label" parent="SafeArea/ContentPanel/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DisplayLabel"
+text = "ARRIVÉE HOMOLOGUÉE"
+horizontal_alignment = 1
+
+[node name="Metrics" type="HBoxContainer" parent="SafeArea/ContentPanel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PositionPanel" type="PanelContainer" parent="SafeArea/ContentPanel/Content/Metrics"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"CardPanel"
+[node name="Position" type="VBoxContainer" parent="SafeArea/ContentPanel/Content/Metrics/PositionPanel"]
+layout_mode = 2
+[node name="PositionLabel" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/PositionPanel/Position"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "CLASSEMENT"
+horizontal_alignment = 1
+[node name="PositionValue" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/PositionPanel/Position"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "-- / 08"
+horizontal_alignment = 1
+
+[node name="TimePanel" type="PanelContainer" parent="SafeArea/ContentPanel/Content/Metrics"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"CardPanel"
+[node name="Time" type="VBoxContainer" parent="SafeArea/ContentPanel/Content/Metrics/TimePanel"]
+layout_mode = 2
+[node name="TimeLabel" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/TimePanel/Time"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "TEMPS TOTAL"
+horizontal_alignment = 1
+[node name="TimeValue" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/TimePanel/Time"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "--:--.---"
+horizontal_alignment = 1
+
+[node name="BestPanel" type="PanelContainer" parent="SafeArea/ContentPanel/Content/Metrics"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"CardPanel"
+[node name="Best" type="VBoxContainer" parent="SafeArea/ContentPanel/Content/Metrics/BestPanel"]
+layout_mode = 2
+[node name="BestLabel" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/BestPanel/Best"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "MEILLEUR TOUR"
+horizontal_alignment = 1
+[node name="BestValue" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/BestPanel/Best"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "--:--.---"
+horizontal_alignment = 1
+
+[node name="RewardPanel" type="PanelContainer" parent="SafeArea/ContentPanel/Content/Metrics"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"CardPanel"
+[node name="Reward" type="VBoxContainer" parent="SafeArea/ContentPanel/Content/Metrics/RewardPanel"]
+layout_mode = 2
+[node name="RewardLabel" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/RewardPanel/Reward"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "RÉCOMPENSE"
+horizontal_alignment = 1
+[node name="RewardValue" type="Label" parent="SafeArea/ContentPanel/Content/Metrics/RewardPanel/Reward"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "+0 CR"
+horizontal_alignment = 1
+
+[node name="ResultSummary" type="Label" parent="SafeArea/ContentPanel/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Course validée. Analysez les écarts puis ajustez votre architecture au garage."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Classification" type="HBoxContainer" parent="SafeArea/ContentPanel/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="StandingsList" type="ItemList" parent="SafeArea/ContentPanel/Content/Classification"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 245)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Classement final de la course"
+
+[node name="ChampionshipPanel" type="PanelContainer" parent="SafeArea/ContentPanel/Content/Classification"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+[node name="ChampionshipSummary" type="Label" parent="SafeArea/ContentPanel/Content/Classification/ChampionshipPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SectionLabel"
+text = "MANCHE 1 / 4"
+vertical_alignment = 1
+
+[node name="Actions" type="HBoxContainer" parent="SafeArea/ContentPanel/Content"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+[node name="RetryButton" type="Button" parent="SafeArea/ContentPanel/Content/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(290, 58)
+layout_mode = 2
+text = "RECOMMENCER"
+[node name="NextButton" type="Button" parent="SafeArea/ContentPanel/Content/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(290, 58)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "MANCHE SUIVANTE"
+[node name="MenuButton" type="Button" parent="SafeArea/ContentPanel/Content/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(290, 58)
+layout_mode = 2
+text = "MENU PRINCIPAL"
+
