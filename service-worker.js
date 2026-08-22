@@ -1,4 +1,4 @@
-const CACHE = 'mecha-overdrive-cz-v1.1.0';
+const CACHE = 'mecha-overdrive-cz-v1.1.1';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest', './media/icon.svg',
   './media/openai/mecha-overdrive-hero.png', './js/core.js', './js/data.js', './js/storage.js',
@@ -19,7 +19,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(() => caches.match('./index.html')));
+    event.respondWith(fetch(event.request).catch(async () => {
+      // Vercel cleanUrls redirects /index.html to /. A redirected cached
+      // response cannot safely satisfy an offline navigation, so use the
+      // canonical root document installed in CORE as the app-shell fallback.
+      const root = await caches.match('./');
+      return root || caches.match('./index.html');
+    }));
     return;
   }
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
