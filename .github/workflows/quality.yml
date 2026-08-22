@@ -1,0 +1,49 @@
+name: Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web-and-godot-structure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GODOT_VERSION: "4.7.2"
+      GODOT_DOWNLOAD_URL: "https://downloads.godotengine.org/?flavor=stable&platform=linux.64&slug=linux.x86_64.zip&version=4.7.2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate web game
+        run: npm test
+      - name: Validate Godot source structure
+        run: npm run test:godot-structure
+      - name: Cache Godot 4.7.2
+        uses: actions/cache@v4
+        with:
+          path: .godot-bin
+          key: godot-linux-x86_64-${{ env.GODOT_VERSION }}-stable
+      - name: Install official Godot 4.7.2 binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .godot-bin
+          if [[ ! -x .godot-bin/godot ]]; then
+            curl --fail --location --retry 3 --output /tmp/godot.zip "$GODOT_DOWNLOAD_URL"
+            unzip -q /tmp/godot.zip -d .godot-bin
+            mv ".godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64" .godot-bin/godot
+            chmod +x .godot-bin/godot
+          fi
+          .godot-bin/godot --version
+      - name: Import Godot project headlessly
+        run: .godot-bin/godot --headless --path godot --editor --quit
+      - name: Run Godot smoke test
+        run: .godot-bin/godot --headless --path godot --script res://tests/smoke_test.gd
+      - name: Run Godot runtime flow
+        run: .godot-bin/godot --headless --path godot --script res://tests/runtime_flow_test.gd

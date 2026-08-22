@@ -25,3 +25,6 @@ godot/export/
 *.codex-new
 *.stub
 *.precanonical
+
+# Local Godot binary cache used by the quality workflow
+.godot-bin/

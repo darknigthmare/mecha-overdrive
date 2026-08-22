@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#070a12">
   <meta name="description" content="MECHA OVERDRIVE — Circuit Zero, jeu de course et combat de méchas pseudo-3D.">
+  <meta property="og:image" content="media/openai/mecha-overdrive-hero.png">
   <title>MECHA OVERDRIVE — Circuit Zero</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="media/icon.svg" type="image/svg+xml">
@@ -212,8 +213,11 @@
       <div class="touch-steer">
         <button data-touch="left" aria-label="Tourner à gauche">◀</button>
         <button data-touch="right" aria-label="Tourner à droite">▶</button>
+        <button data-touch="drift" class="drift" aria-label="Déraper">DRIFT</button>
       </div>
       <div class="touch-actions">
+        <button data-touch="pause" class="utility" aria-label="Mettre en pause">PAUSE</button>
+        <button data-touch="reset" class="utility" aria-label="Recaler le mécha">RESET</button>
         <button data-touch="brake" aria-label="Freiner">FREIN</button>
         <button data-touch="item" class="item" aria-label="Utiliser l’objet">OBJET</button>
         <button data-touch="boost" class="boost" aria-label="Surcharge réacteur">BOOST</button>

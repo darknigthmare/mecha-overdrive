@@ -1,0 +1,13 @@
+.git
+.github
+.tmp
+.vercel
+godot
+tests
+tools
+docs
+*.bat
+*.sh
+*.codex-new
+*.precanonical
+*.stub

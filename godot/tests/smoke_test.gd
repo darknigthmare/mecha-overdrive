@@ -39,12 +39,12 @@ func _test_database() -> void:
 	for track: Dictionary in DatabaseScript.TRACKS:
 		_expect(float(track.get("verticality", 0.0)) >= 4.0, "relief trop faible : %s" % track.get("id", "?"))
 		var palette: Dictionary = track.get("palette", {})
-		for key in ["sky", "ground", "road", "shoulder", "glow", "accent", "key"]:
+		for key: String in ["sky", "ground", "road", "shoulder", "glow", "accent", "key"]:
 			_expect(palette.has(key), "palette %s incomplète : %s" % [track.get("id", "?"), key])
 
 
 func _test_profile_contract() -> void:
-	var service = SaveScript.new()
+	var service: SaveSystemService = SaveScript.new()
 	var clean: Dictionary = service._sanitize_profile({
 		"version": -4,
 		"credits": -900,
@@ -60,7 +60,7 @@ func _test_profile_contract() -> void:
 
 func _test_session_modes() -> void:
 	for mode in SessionScript.MODES:
-		var service = SessionScript.new()
+		var service: GameSessionService = SessionScript.new()
 		var configured: Dictionary = service.configure({"mode": mode, "track_id": "foundry", "difficulty": "pilot"})
 		_expect(String(configured.get("mode", "")) == mode, "mode non configurable : %s" % mode)
 		_expect(int(configured.get("racer_count", 0)) == (1 if mode == "time_trial" else 8), "grille incorrecte : %s" % mode)
@@ -72,8 +72,8 @@ func _test_deterministic_racer() -> void:
 		"racer_id": "test", "display_name": "TEST", "chassis_id": "biped",
 		"difficulty": "pilot", "track_length": 400.0, "total_laps": 1, "seed": 441,
 	}
-	var first = RacerScript.new().configure(spec)
-	var second = RacerScript.new().configure(spec)
+	var first: RacerState = RacerScript.new().configure(spec)
+	var second: RacerState = RacerScript.new().configure(spec)
 	var controls := {"throttle": 1.0, "brake": 0.0, "steer": 0.12, "drift": false, "boost": true}
 	for tick in range(300):
 		var elapsed := (tick + 1) / 60.0

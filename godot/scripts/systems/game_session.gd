@@ -179,7 +179,10 @@ func _apply_championship_result(result: Dictionary) -> void:
 		championship["active"] = false
 		var sorted_entrants := entrants.duplicate(true)
 		sorted_entrants.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.get("points", 0)) > int(b.get("points", 0)))
-		var champion_id := String(sorted_entrants[0].get("id", "")) if not sorted_entrants.is_empty() else ""
+		var champion_id := ""
+		if not sorted_entrants.is_empty():
+			var champion: Dictionary = sorted_entrants[0]
+			champion_id = String(champion.get("id", ""))
 		championship["champion_id"] = champion_id
 		result["championship_won"] = champion_id == "player"
 	championship_changed.emit(championship.duplicate(true))
@@ -210,14 +213,15 @@ func _sanitize_classification(value: Variant) -> Array[Dictionary]:
 	for raw_entry: Variant in value:
 		if not raw_entry is Dictionary:
 			continue
-		var racer_id := String(raw_entry.get("racer_id", raw_entry.get("id", "")))
+		var entry: Dictionary = raw_entry
+		var racer_id := String(entry.get("racer_id", entry.get("id", "")))
 		if racer_id.is_empty() or seen.has(racer_id):
 			continue
 		seen[racer_id] = true
 		output.append({
 			"racer_id": racer_id,
 			"position": output.size() + 1,
-			"elapsed": maxf(0.0, float(raw_entry.get("elapsed", 0.0))),
+			"elapsed": maxf(0.0, float(entry.get("elapsed", 0.0))),
 		})
 	return output
 

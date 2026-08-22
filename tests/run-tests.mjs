@@ -183,6 +183,35 @@ test('Le Grand Prix attribue les points et passe au circuit suivant', () => {
   assert.equal(game.championship.round, 1);
 });
 
+test('Un DNF ne crée ni record ni récompense', () => {
+  MO.Storage.reset();
+  const game = new MO.Game({ input: createInput(), audio: silentAudio, store: MO.Storage });
+  game.start({ mode: 'time-trial', trackId: 'orbital', laps: 1 });
+  game.state = 'racing';
+  game.raceTime = 901;
+  const credits = MO.Storage.get().credits;
+  game.completeRace(true);
+  assert.equal(game.lastResult.dnf, true);
+  assert.equal(game.lastResult.reward, 0);
+  assert.equal(game.lastResult.newBest, false);
+  assert.equal(MO.Storage.get().bestTimes.orbital, null);
+  assert.equal(MO.Storage.get().credits, credits);
+});
+
+test('Le recalage manuel exige un blocage et applique un délai', () => {
+  MO.Storage.reset();
+  const game = new MO.Game({ input: createInput(), audio: silentAudio, store: MO.Storage });
+  game.start({ mode: 'time-trial', trackId: 'foundry', laps: 1 });
+  game.state = 'racing';
+  assert.equal(game.resetRacer(game.player, true), false);
+  game.player.offroad = true;
+  game.player.x = 1.2;
+  assert.equal(game.resetRacer(game.player, true), true);
+  assert.equal(game.player.manualResetCooldown, 5);
+  game.player.offroad = true;
+  assert.equal(game.resetRacer(game.player, true), false);
+});
+
 test('Tous les objets distribués appartiennent au catalogue', () => {
   MO.Storage.reset();
   const game = new MO.Game({ input: createInput(), audio: silentAudio, store: MO.Storage });

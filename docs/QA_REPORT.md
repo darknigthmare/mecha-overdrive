@@ -1,36 +1,131 @@
-# Rapport QA — MECHA OVERDRIVE: Circuit Zero 1.0.0
+# Rapport QA — MECHA OVERDRIVE: Circuit Zero
 
-**Date de validation : 10 août 2026**  
-**Statut : validé — aucun défaut bloquant détecté.**
+## 1. Portée et règle de preuve
 
-## 1. Environnement de référence
+Ce rapport distingue les deux surfaces du dépôt :
 
-- Node.js **22.16.0** et npm **10.9.2** ;
-- Python **3.13.5** ;
-- Chromium **144.0.7559.96** en mode headless ;
-- bureau simulé en **1440 × 900** ;
-- mobile paysage simulé en **844 × 390**, tactile activé ;
-- application chargée sans ressource distante et sans étape de compilation.
+- **Godot 3D**, édition principale sous Godot **4.7.2** ;
+- **web**, édition compagnon statique à la racine.
 
-## 2. Résumé chiffré
+Un fichier de test présent dans le dépôt indique une couverture prévue, pas un résultat. Un gate n’est marqué comme réussi qu’après exécution sur la révision courante. La QA Node, le validateur statique, l’import strict, le smoke et le flux runtime Godot ainsi que les parcours Chromium locaux ont été confirmés.
 
-| Domaine | Résultat |
-|---|---:|
-| Fichiers JavaScript/MJS contrôlés récursivement | **16/16 valides** |
-| Contrôles structure, données, manifeste, cache et circuits | **73/73 réussis** |
-| Tests moteur ciblés | **10/10 réussis** |
-| Contrôles d’intégration Node | **21/21 réussis** |
-| Erreurs JavaScript dans Chromium | **0** |
-| Erreurs console Chromium | **0** |
-| Avertissements console Chromium | **0** |
-| Architectures détectées | **8/8** |
-| Circuits détectés | **4/4** |
-| Objets détectés | **8/8** |
-| Grand Prix parcouru | **4/4 manches** |
-| Commandes tactiles visibles et actives | **6/6** |
-| Références locales et liens de documentation | **41/41 valides** |
+## 2. Matrice de release courante
 
-## 3. Validation complète sans navigateur
+| Gate | Commande ou surface | État documenté |
+|---|---|---|
+| Validation web Node | `npm test` | **PASS** — 17 JS, 79 contrôles structure/PWA, 12/12 moteur, 21 intégration |
+| Contrat structurel Godot | `node tools/validate-godot.mjs` | **PASS** — 10 châssis, 4 circuits, 8 objets, 4 modes |
+| Agrégat web + structure Godot | `npm run qa` | **PASS** — agrège les deux gates précédents |
+| Import et parse Godot | `godot --headless --path godot --editor --quit` | **PASS** — Godot 4.7.2, code 0, aucune erreur |
+| Smoke Godot | `godot --headless --path godot --script res://tests/smoke_test.gd` | **PASS** — code 0, marqueur de succès observé |
+| Flux runtime Godot | `godot --headless --path godot --script res://tests/runtime_flow_test.gd` | **PASS** — menu, course 3D, HUD, mouvement, DNF, résultats et retour menu ; code 0, aucun avertissement |
+| Parcours navigateur local | Chromium/Playwright HTTP, bureau + mobile | **PASS** — 0 erreur et 0 requête échouée |
+| Déploiement Vercel | HTTP, assets, manifeste, service worker | à vérifier après déploiement |
+
+Le commit et la date de publication doivent être ajoutés au moment de la release. Le statut des gates Godot runtime et Vercel ne doit pas être déduit des validations statiques.
+
+## 3. QA Godot 3D
+
+### 3.1 Environnement cible
+
+- Godot **4.7.2 stable** ;
+- renderer **GL Compatibility** ;
+- scène principale `res://scenes/app.tscn` ;
+- résolution de référence 1280 × 720, viewport logique 1920 × 1080 ;
+- profil de sauvegarde v2 dans `user://mecha_overdrive_profile.json`.
+
+### 3.2 Validation structurelle sans moteur
+
+Commande :
+
+```bash
+node tools/validate-godot.mjs
+```
+
+Le validateur contrôle le contrat statique du projet, notamment :
+
+- projet Godot et scène principale présents ;
+- catalogue canonique de dix châssis ;
+- quatre circuits avec relief et palettes complètes ;
+- quatre modes `quick`, `time_trial`, `elimination`, `grand_prix` ;
+- huit objets et sauvegarde version 2 ;
+- présence des scènes, scripts et tests nécessaires ;
+- contrat `max_armor` du snapshot de pilote ;
+- absence de fichiers de reconstruction temporaires connus.
+
+Résultat confirmé : **PASS** — 10 châssis, 4 circuits, 8 objets et 4 modes détectés.
+
+Ce gate ne parse pas le GDScript et ne lance pas la simulation.
+
+### 3.3 Import et parse Godot
+
+Commande :
+
+```bash
+godot --headless --path godot --editor --quit
+```
+
+Ce passage doit terminer sans erreur de parse, ressource manquante ni erreur d’import. Les avertissements ne doivent pas masquer une erreur réelle. Résultat confirmé : **PASS** avec Godot 4.7.2, code de sortie `0` et aucune erreur.
+
+### 3.4 Smoke test headless
+
+Commande :
+
+```bash
+godot --headless --path godot --script res://tests/smoke_test.gd
+```
+
+Le script `godot/tests/smoke_test.gd` vérifie :
+
+1. dix châssis avec leurs identifiants et noms attendus ;
+2. quatre circuits, huit objets, relief minimum et palettes complètes ;
+3. migration/normalisation du profil v2 ;
+4. rejet des crédits et chronos invalides ;
+5. configuration des quatre modes ;
+6. grille solo en contre-la-montre et grille à huit ailleurs ;
+7. déterminisme d’un pilote simulé pendant 300 ticks ;
+8. présence de `max_armor` et progression positive du pilote.
+
+Le succès attendu est un code de sortie `0` avec le marqueur :
+
+```text
+MECHA GODOT SMOKE: PASS (catalogue, save, modes, deterministic racer)
+```
+
+Résultat confirmé : **PASS** avec code de sortie `0` et marqueur de succès observé.
+
+### 3.5 Flux runtime automatisé et QA manuelle
+
+Commande exécutée :
+
+```bash
+godot --headless --path godot --script res://tests/runtime_flow_test.gd
+```
+
+Le test instancie `app.tscn`, lance une vraie course à huit pilotes, vérifie Track/HUD/mouvement, force un DNF, contrôle Results et revient au menu. La sauvegarde est isolée puis restaurée.
+
+Résultat confirmé : **PASS**, code `0`, marqueur `MECHA GODOT RUNTIME FLOW: PASS`, sans avertissement ni fuite ObjectDB.
+
+Après les gates headless, vérifier au minimum :
+
+1. ouverture du menu principal ;
+2. navigation garage et codex ;
+3. sélection de chacun des dix châssis ;
+4. lancement d’une Course rapide ;
+5. accélération, direction, dérive, boost, objet, pause et recalage ;
+6. passage d’un tour et mise à jour du classement ;
+7. résultat terminé puis retour au menu ;
+8. DNF sans crédits ni record ;
+9. Contre-la-montre solo sans objets ;
+10. cadence d’élimination ;
+11. progression des quatre manches du Grand Prix ;
+12. relecture d’un profil v2 après redémarrage.
+
+Le noyau automatisé est confirmé. La liste manuelle étendue ci-dessus reste recommandée avant tout export binaire desktop.
+
+## 4. QA de l’édition web
+
+### 4.1 Agrégat Node
 
 Commande :
 
@@ -38,182 +133,92 @@ Commande :
 npm test
 ```
 
-La commande enchaîne quatre couches.
-
-### 3.1 Syntaxe récursive
+Elle enchaîne :
 
 ```bash
 npm run check
-```
-
-`tools/check.mjs` parcourt le projet et lance `node --check` sur tous les fichiers `.js` et `.mjs`.
-
-Résultat : **16 fichiers valides**.
-
-### 3.2 Validation de livraison
-
-```bash
 npm run validate
-```
-
-`tools/validate.mjs` vérifie :
-
-- la présence de tous les fichiers d’exécution ;
-- l’ordre contractuel des dix scripts ;
-- les éléments DOM indispensables ;
-- le manifeste PWA et son icône ;
-- la présence de chaque asset dans le cache du service worker ;
-- la version et l’unicité des identifiants ;
-- huit châssis, quatre circuits, huit objets, trois difficultés et quatre améliorations ;
-- la génération, la longueur et la mini‑carte de chaque circuit ;
-- l’absence de dépendance réseau dans le runtime.
-
-Résultat : **73 contrôles réussis**.
-
-### 3.3 Tests moteur
-
-```bash
 npm run test:engine
-```
-
-Cas couverts :
-
-1. présence et unicité des huit architectures ;
-2. validité des statistiques et multiplicateurs physiques ;
-3. construction, décoration et cartographie des quatre circuits ;
-4. formatage du temps et déterminisme du RNG ;
-5. normalisation de sauvegarde et opérations de crédits ;
-6. création solo et progression physique du contre‑la‑montre ;
-7. réparation, bouclier et absorption d’impact ;
-8. grille de huit châssis uniques en course rapide ;
-9. points de Grand Prix et passage à la manche suivante ;
-10. validité de tous les objets distribués.
-
-Résultat : **10/10 tests réussis**.
-
-### 3.4 Intégration du noyau
-
-```bash
 npm run test:integration
 ```
 
-Cette suite vérifie notamment l’achat et l’équipement au garage, la création des trois modes, l’accélération, la chaleur, le bouclier, la pause, les récompenses, les records, les points de championnat et la sortie propre d’une session.
+La couverture vise la syntaxe JS/MJS, les références statiques, le manifeste et le cache PWA, les huit châssis web, les quatre circuits, les objets, la physique, le garage, les sauvegardes, le contre-la-montre, le Grand Prix et les non-régressions DNF/recalage.
 
-Résultat : **21 contrôles réussis**.
+Résultat confirmé : **PASS** — 17 fichiers JavaScript/MJS, 79 contrôles de structure/PWA, 12/12 tests moteur et 21 contrôles d’intégration.
 
-## 4. Parcours Chromium bureau
+### 4.2 Parcours navigateur
 
-Commande facultative :
+Commandes disponibles :
 
 ```bash
 npm run test:browser
-```
-
-Scénario validé :
-
-- démarrage sur le menu principal ;
-- catalogue de huit châssis ;
-- quatre améliorations et huit peintures ;
-- quatre cartes de circuit ;
-- lancement d’une course rapide à huit concurrents ;
-- sortie normale du compte à rebours ;
-- accélération et progression ;
-- attribution et utilisation d’un Overdrive ;
-- pause et reprise ;
-- fin de course, récompense et huit lignes de classement ;
-- lancement d’un contre‑la‑montre solo ;
-- initialisation d’un Grand Prix à quatre manches.
-
-Résultat : **aucune erreur, aucun avertissement console**.
-
-Les captures de référence sont enregistrées dans `media/` : menu, garage, sélection du circuit, course et résultats.
-
-## 5. QA approfondie bureau et mobile
-
-Commande facultative :
-
-```bash
 npm run test:flow
 ```
 
-### 5.1 Garage et paramètres
+Le parcours de release couvre :
 
-- sélection et persistance du Mantis H6 ;
-- sauvegarde du volume à 0,35 ;
-- qualité élevée ;
-- contraste renforcé appliqué immédiatement ;
-- tactile forcé persisté.
+- rendu du menu et du key art ;
+- démarrage d’une Course rapide ;
+- absence d’erreur console ;
+- pause, reprise et recalage sans spam ;
+- interaction manette sans conflit sur le bouton `A` ;
+- commandes tactiles en paysage ;
+- DNF par limite de temps ;
+- persistance du Grand Prix web ;
+- écran de résultats puis retour au menu.
 
-### 5.2 Course rapide
+Résultat local confirmé : **PASS** sous Chromium/Playwright via HTTP en vues bureau et mobile. Le menu et le key art répondent correctement (`200`), le service worker est actif, le garage expose 8 châssis, 4 améliorations et 8 peintures, la course démarre avec 8 concurrents, pause/reprise fonctionne et 9 commandes tactiles sont présentes. Le parcours n’a relevé aucune erreur ni requête échouée.
 
-- difficulté As ;
-- huit concurrents ;
-- utilisation d’un objet ;
-- pause et reprise ;
-- arrivée en première position ;
-- récompense calculée ;
-- huit résultats générés.
+### 4.3 Déploiement statique
 
-### 5.3 Contre‑la‑montre
+Après publication Vercel, contrôler l’URL de production :
 
-- deux tours ;
-- un seul pilote ;
-- difficulté désactivée dans l’interface ;
-- meilleur tour calculé à **45,5 s** dans le scénario contrôlé.
+- réponse HTTP 200 de `/` et `/index.html` ;
+- chargement du key art, du manifeste et du service worker ;
+- absence de ressource distante requise par le runtime ;
+- parcours menu → course → pause → retour ;
+- comportement hors ligne après une première ouverture HTTPS.
 
-### 5.4 Grand Prix complet
+Ce gate reste à confirmer après déploiement.
 
-Ordre validé :
+## 5. Baseline web historique importée
 
-1. Fonderie Néon ;
-2. Faille Écarlate ;
-3. Arc Polaire ;
-4. Cimetière Orbital.
+Le paquet web d’origine contenait un rapport daté du **10 août 2026** avec les résultats annoncés suivants : 16 fichiers JS/MJS valides, 73 contrôles de structure, 10 tests moteur, 21 contrôles d’intégration, un parcours Chromium bureau et un parcours tactile paysage.
 
-Le roster reste stable, les huit classements sont produits, les points sont cumulés, les trois boutons **Manche suivante** apparaissent au bon moment, puis **Nouveau Grand Prix** redémarre correctement à la manche zéro.
+Ces chiffres expliquent la couverture historique, mais les preuves de la révision courante sont les résultats confirmés aux sections 2 et 4.
 
-### 5.5 Mobile tactile
+## 6. Critères bloquants
 
-Configuration : **844 × 390**, `is_mobile` et `has_touch` activés.
+La release est bloquée si l’un de ces cas est observé :
 
-- commandes tactiles automatiquement visibles ;
-- six boutons présents : gauche, droite, frein, objet, boost et gaz ;
-- événements `pointerdown`/`pointerup` acceptés ;
-- utilisation d’un bouclier depuis le bouton tactile ;
-- aucune erreur de page.
+- erreur de parse ou import Godot ;
+- smoke test Godot avec code non nul ;
+- scène principale qui ne s’ouvre pas ;
+- catalogue incomplet ou divergence des dix châssis ;
+- mode impossible à démarrer ou à terminer ;
+- DNF récompensé ou enregistré comme record ;
+- sauvegarde v2 corrompue sans récupération ;
+- exception JavaScript, test Node en échec ou référence statique manquante ;
+- déploiement non `READY`, HTTP non 200 ou asset essentiel absent.
 
-Résultat global : **QA approfondie réussie**.
+## 7. Limites connues du périmètre
 
-## 6. Serveurs locaux et robustesse de livraison
+- Le multijoueur réseau, l’écran partagé et les fantômes ne font pas partie de cette édition.
+- L’édition web utilise un rendu Canvas pseudo-3D ; elle n’est pas un export Web de Godot.
+- Les sauvegardes Godot et web sont indépendantes.
+- Vercel publie l’édition web statique, pas un binaire desktop Godot.
+- Un export Godot Windows/Linux/Web exige un gate d’export et un smoke test du binaire produit.
 
-Les deux solutions de lancement ont été testées :
+## 8. Gabarit de consignation finale
 
-- `tools/server.mjs` sert les fichiers avec les bons types MIME, protège contre les chemins invalides et sélectionne automatiquement le port suivant lorsque le port demandé est occupé ;
-- `tools/serve.py` sert correctement l’HTML, le CSS, les scripts, le manifeste et l’icône, puis ouvre le navigateur sur le port réellement choisi.
-
-Un test d’occupation forcée du port a confirmé le basculement automatique de **8120 vers 8121**. Un chemin URL malformé renvoie **HTTP 403** sans interrompre le serveur.
-
-## 7. Références et propreté du paquet
-
-Un audit final a vérifié :
-
-- les `src` et `href` de `index.html` ;
-- les éventuelles ressources CSS ;
-- le manifeste et `vercel.json` ;
-- tous les assets listés par le service worker ;
-- les liens relatifs des fichiers Markdown ;
-- l’absence de `node_modules`, `__pycache__`, journaux ou fichiers système parasites.
-
-Résultat : **41 références valides, aucun fichier manquant**.
-
-## 8. Limites connues non bloquantes
-
-- Le service worker exige HTTP/HTTPS, conformément aux règles des navigateurs.
-- Les records et améliorations restent locaux au navigateur.
-- Le tactile est conçu prioritairement pour le paysage.
-- La physique est volontairement arcade et pseudo‑3D, sans moteur rigide externe.
-- Le multijoueur réseau, l’écran partagé, les fantômes et les vibrations de manette ne font pas partie du périmètre 1.0.
-
-## 9. Conclusion
-
-La version 1.0.0 est jouable de bout en bout dans ses trois modes, possède un garage persistant, huit architectures réellement différenciées, quatre circuits, une IA complète, un système d’objets et un championnat à quatre manches. Les flux bureau, tactile, serveurs locaux, cache PWA, sauvegarde et packaging sont validés.
+```text
+Commit : <sha>
+Date : <ISO-8601>
+Godot : 4.7.2 stable
+npm run qa : PASS/FAIL
+Import Godot : PASS/FAIL
+Smoke Godot : PASS/FAIL
+Runtime Godot : PASS/FAIL + surface vérifiée
+Navigateur local : PASS/FAIL + viewport
+Vercel : READY/FAIL + URL
+```

@@ -2,7 +2,7 @@ class_name GameDatabase
 extends RefCounted
 ## Immutable canonical catalogue. Public getters always return deep copies.
 
-const CHASSIS: Array[Dictionary] = [
+static var CHASSIS: Array[Dictionary] = [
 	_chassis("biped", "BIPÈDE", "Raptor R2", "Polyvalence tactique", "Gyro-correction", "Réduit de 40 % les pertes de contrôle causées par les impacts.", "#5EE7FF", "#D9FBFF", [74, 75, 78, 64, 72, 74], [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00]),
 	_chassis("tripod", "TRIPODE", "Triarch T3", "Stabilité absolue", "Ancrage vectoriel", "Résiste aux impacts et conserve son cap dans les courbes rapides.", "#9B8CFF", "#EFEAFF", [68, 66, 80, 80, 97, 65], [0.94, 0.91, 1.05, 1.18, 1.04, 0.98, 1.25]),
 	_chassis("quadruped", "QUADRUPÈDE", "Fenrir Q4", "Sprint prédateur", "Foulée prédatrice", "Déclenche une reprise temporaire après freinage, impact ou retour en piste.", "#FF765E", "#FFE2D9", [81, 91, 84, 58, 84, 70], [1.05, 1.20, 1.08, 0.91, 1.13, 1.04, 0.90]),
@@ -19,28 +19,28 @@ const TRACKS: Array[Dictionary] = [
 	{
 		"id": "foundry", "name": "Fonderie Néon", "region": "NEXUS INDUSTRIEL 7", "difficulty": 2,
 		"default_laps": 3, "par_time": 77.0, "seed": 1707, "radius": 92.0, "width": 15.0,
-		"verticality": 0.22, "fog_density": 0.014, "description": "Courbes techniques, fours ouverts et transferts magnétiques.",
+		"verticality": 5.5, "fog_density": 0.014, "description": "Courbes techniques, fours ouverts et transferts magnétiques.",
 		"tags": ["TECHNIQUE", "CHALEUR", "3,8 KM"], "hazards": ["vent", "debris"],
 		"palette": {"primary": "#FF6A42", "secondary": "#F2C84B", "fog": "#6F3429", "sky": "#130A12", "ground": "#241015", "road": "#201D22", "shoulder": "#752D1F", "glow": "#FF5B31", "accent": "#F2C84B", "key": "#FFB46A"},
 	},
 	{
 		"id": "dunes", "name": "Faille Écarlate", "region": "DÉSERT DE VERMILLON", "difficulty": 3,
 		"default_laps": 3, "par_time": 86.0, "seed": 3229, "radius": 126.0, "width": 18.0,
-		"verticality": 0.48, "fog_density": 0.021, "description": "Longues lignes, dunes aveuglantes et ravins à haute vitesse.",
+		"verticality": 13.0, "fog_density": 0.021, "description": "Longues lignes, dunes aveuglantes et ravins à haute vitesse.",
 		"tags": ["VITESSE", "SABLE", "5,1 KM"], "hazards": ["sand", "debris"],
 		"palette": {"primary": "#F26D3D", "secondary": "#FFD45B", "fog": "#D8693D", "sky": "#3E1518", "ground": "#6E2C1D", "road": "#33221D", "shoulder": "#C6532B", "glow": "#FF7C3D", "accent": "#FFD45B", "key": "#FFE0A3"},
 	},
 	{
 		"id": "glacier", "name": "Arc Polaire", "region": "LUNE CRYO KHEPRI", "difficulty": 4,
 		"default_laps": 3, "par_time": 81.0, "seed": 4811, "radius": 101.0, "width": 13.5,
-		"verticality": 0.34, "fog_density": 0.028, "description": "Épingles sur glace, tunnels bleus et vents latéraux.",
+		"verticality": 8.0, "fog_density": 0.028, "description": "Épingles sur glace, tunnels bleus et vents latéraux.",
 		"tags": ["GLACE", "ÉPINGLES", "4,2 KM"], "hazards": ["ice", "debris"],
 		"palette": {"primary": "#65E9FF", "secondary": "#A9F3FF", "fog": "#8CC9DA", "sky": "#061A2B", "ground": "#B9DCE4", "road": "#193544", "shoulder": "#6AAEC2", "glow": "#51E9FF", "accent": "#D8FAFF", "key": "#F4FFFF"},
 	},
 	{
 		"id": "orbital", "name": "Cimetière Orbital", "region": "ANNEAU DE MORRIGAN", "difficulty": 5,
 		"default_laps": 3, "par_time": 84.0, "seed": 7709, "radius": 114.0, "width": 12.0,
-		"verticality": 0.82, "fog_density": 0.006, "description": "Épaves en apesanteur et virages suspendus au-dessus du vide.",
+		"verticality": 22.0, "fog_density": 0.006, "description": "Épaves en apesanteur et virages suspendus au-dessus du vide.",
 		"tags": ["EXPERT", "VIDE", "4,7 KM"], "hazards": ["gravity", "debris"],
 		"palette": {"primary": "#D85BFF", "secondary": "#40DFFC", "fog": "#191A42", "sky": "#02030D", "ground": "#090B1D", "road": "#15172B", "shoulder": "#3D245C", "glow": "#D85BFF", "accent": "#40DFFC", "key": "#D8EEFF"},
 	},

@@ -107,7 +107,8 @@ func _bind_save_events() -> void:
 	if save == null:
 		return
 	var callback := Callable(self, "_on_profile_changed")
-	for signal_name in [&"profile_loaded", &"profile_changed"]:
+	var profile_signals: Array[StringName] = [&"profile_loaded", &"profile_changed"]
+	for signal_name: StringName in profile_signals:
 		if save.has_signal(signal_name) and not save.is_connected(signal_name, callback):
 			save.connect(signal_name, callback)
 	var failure := Callable(self, "_on_save_failed")
@@ -176,12 +177,13 @@ func _on_paint_selected(index: int) -> void:
 	paint_preview.color = Color(paint)
 	var save := _save_system()
 	if save != null and save.has_method(&"set_paint"):
-		save.call(&"set_paint", paint)
+		save.call(&"set_paint", _current_id, paint)
 	status_message.text = "PEINTURE %s APPLIQUÉE" % paint_option.get_item_text(index)
 
 
 func _sync_paint(chassis: Dictionary) -> void:
-	var paint := _string(_profile, "paint", String(chassis.get("paint", "#5EE7FF")))
+	var paints: Dictionary = _profile.get("paints", {})
+	var paint := String(paints.get(_current_id, chassis.get("paint", "#5EE7FF")))
 	var closest := 0
 	for index in range(paint_option.item_count):
 		if String(paint_option.get_item_metadata(index)).to_upper() == paint.to_upper():
@@ -238,16 +240,22 @@ func _update_upgrade_ui(upgrade_id: String, level_label: Label, button: Button) 
 func _upgrade_level(upgrade_id: String) -> int:
 	var upgrades: Variant = _profile.get("upgrades", {})
 	if upgrades is Dictionary:
-		if upgrades.has(_current_id) and upgrades[_current_id] is Dictionary:
-			return int(upgrades[_current_id].get(upgrade_id, 0))
-		return int(upgrades.get(upgrade_id, 0))
+		var upgrades_dictionary: Dictionary = upgrades
+		var chassis_upgrades: Variant = upgrades_dictionary.get(_current_id, {})
+		if chassis_upgrades is Dictionary:
+			var chassis_upgrade_dictionary: Dictionary = chassis_upgrades
+			if not chassis_upgrade_dictionary.is_empty():
+				return int(chassis_upgrade_dictionary.get(upgrade_id, 0))
+		return int(upgrades_dictionary.get(upgrade_id, 0))
 	return 0
 
 
 func _is_unlocked(chassis_id: String) -> bool:
 	var unlocked: Variant = _profile.get("unlocked_chassis", _profile.get("unlockedChassis", []))
-	if unlocked is Array and not unlocked.is_empty():
-		return chassis_id in unlocked
+	if unlocked is Array:
+		var unlocked_chassis: Array = unlocked
+		if not unlocked_chassis.is_empty():
+			return chassis_id in unlocked_chassis
 	return true
 
 
@@ -289,7 +297,10 @@ func _read_profile() -> Dictionary:
 	if save == null:
 		return {}
 	var value: Variant = save.get("profile")
-	return value.duplicate(true) if value is Dictionary else {}
+	if value is Dictionary:
+		var profile_dictionary: Dictionary = value
+		return profile_dictionary.duplicate(true)
+	return {}
 
 
 func _settings() -> Dictionary:

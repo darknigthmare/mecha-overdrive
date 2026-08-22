@@ -102,17 +102,21 @@ func _apply_result() -> void:
 func _populate_standings(player_position: int, total: int) -> void:
 	standings_list.clear()
 	var entries: Variant = _value(["standings", "classification", "racers"], [])
-	if entries is Array and not entries.is_empty():
-		for index in range(entries.size()):
-			var entry: Variant = entries[index]
+	var has_entries := false
+	if entries is Array:
+		var entries_array: Array = entries
+		has_entries = not entries_array.is_empty()
+		for index in range(entries_array.size()):
+			var entry: Variant = entries_array[index]
 			if entry is Dictionary:
-				var rank := int(entry.get("position", entry.get("rank", index + 1)))
-				var pilot := String(entry.get("pilot", entry.get("name", "PILOTE %02d" % (index + 1))))
-				var delta := String(entry.get("delta", entry.get("gap", "")))
+				var entry_dictionary: Dictionary = entry
+				var rank := int(entry_dictionary.get("position", entry_dictionary.get("rank", index + 1)))
+				var pilot := String(entry_dictionary.get("pilot", entry_dictionary.get("name", "PILOTE %02d" % (index + 1))))
+				var delta := String(entry_dictionary.get("delta", entry_dictionary.get("gap", "")))
 				standings_list.add_item("%02d   %-18s   %s" % [rank, pilot.to_upper(), delta])
-				if bool(entry.get("player", false)) or rank == player_position:
+				if bool(entry_dictionary.get("player", false)) or rank == player_position:
 					standings_list.select(index)
-	else:
+	if not has_entries:
 		for rank in range(1, total + 1):
 			var pilot := "VOUS" if rank == player_position else "RIVAL %02d" % rank
 			standings_list.add_item("%02d   %s" % [rank, pilot])
@@ -123,18 +127,23 @@ func _populate_standings(player_position: int, total: int) -> void:
 
 func _populate_championship(mode: String) -> void:
 	var championship: Variant = _value(["championship", "series"], {})
-	championship_panel.visible = mode == "grand_prix" or championship is Dictionary and not championship.is_empty()
+	var championship_dictionary: Dictionary = {}
+	if championship is Dictionary:
+		championship_dictionary = championship
+	championship_panel.visible = mode == "grand_prix" or not championship_dictionary.is_empty()
 	if not championship_panel.visible:
 		return
-	var round_index := int(_dictionary_value(championship, "round", _value(["round"], 1)))
-	var round_total := int(_dictionary_value(championship, "total_rounds", 4))
-	var standings: Variant = _dictionary_value(championship, "standings", [])
+	var round_index := int(_dictionary_value(championship_dictionary, "round", _value(["round"], 1)))
+	var round_total := int(_dictionary_value(championship_dictionary, "total_rounds", 4))
+	var standings: Variant = _dictionary_value(championship_dictionary, "standings", [])
 	var lines := PackedStringArray(["MANCHE %d / %d" % [round_index, round_total]])
 	if standings is Array:
-		for index in range(mini(standings.size(), 5)):
-			var entry: Variant = standings[index]
+		var standings_array: Array = standings
+		for index in range(mini(standings_array.size(), 5)):
+			var entry: Variant = standings_array[index]
 			if entry is Dictionary:
-				lines.append("%02d  %-14s  %d PTS" % [index + 1, String(entry.get("pilot", entry.get("name", "PILOTE"))).to_upper(), int(entry.get("points", 0))])
+				var entry_dictionary: Dictionary = entry
+				lines.append("%02d  %-14s  %d PTS" % [index + 1, String(entry_dictionary.get("pilot", entry_dictionary.get("name", "PILOTE"))).to_upper(), int(entry_dictionary.get("points", 0))])
 	championship_summary.text = "\n".join(lines)
 
 
@@ -162,7 +171,10 @@ func _value(keys: Array[String], fallback: Variant) -> Variant:
 
 
 func _dictionary_value(source: Variant, key: String, fallback: Variant) -> Variant:
-	return source.get(key, fallback) if source is Dictionary else fallback
+	if source is Dictionary:
+		var source_dictionary: Dictionary = source
+		return source_dictionary.get(key, fallback)
+	return fallback
 
 
 func _mode_name(mode: String) -> String:
@@ -191,6 +203,7 @@ func _settings() -> Dictionary:
 		return {}
 	var profile: Variant = save.get("profile")
 	if profile is Dictionary:
-		var value: Variant = profile.get("settings", {})
+		var profile_dictionary: Dictionary = profile
+		var value: Variant = profile_dictionary.get("settings", {})
 		return value if value is Dictionary else {}
 	return {}

@@ -306,6 +306,7 @@ func snapshot() -> Dictionary:
 		"total_laps": total_laps,
 		"position": position,
 		"armor": armor,
+		"max_armor": armor_max,
 		"armor_ratio": clampf(armor / maxf(1.0, armor_max), 0.0, 1.0),
 		"heat": heat,
 		"heat_ratio": heat,
@@ -340,7 +341,8 @@ func _hazard_drag(hazard: Variant) -> float:
 	if hazard is int or hazard is float:
 		return clampf(float(hazard), 0.0, 1.0)
 	if hazard is Dictionary:
-		return clampf(float(hazard.get("drag", hazard.get("strength", 0.0))), 0.0, 1.0)
+		var hazard_data: Dictionary = hazard
+		return clampf(float(hazard_data.get("drag", hazard_data.get("strength", 0.0))), 0.0, 1.0)
 	match String(hazard):
 		"sand": return 0.60 / offroad_efficiency
 		"ice": return 0.28

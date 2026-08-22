@@ -180,6 +180,7 @@ func _settings() -> Dictionary:
 		return {}
 	var profile: Variant = save.get("profile")
 	if profile is Dictionary:
-		var value: Variant = profile.get("settings", {})
+		var profile_dictionary: Dictionary = profile
+		var value: Variant = profile_dictionary.get("settings", {})
 		return value if value is Dictionary else {}
 	return {}

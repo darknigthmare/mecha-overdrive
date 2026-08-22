@@ -7,7 +7,7 @@ import vm from 'node:vm';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const runtime = [
   'index.html', 'styles.css', 'manifest.webmanifest', 'service-worker.js',
-  'media/icon.svg',
+  'media/icon.svg', 'media/openai/mecha-overdrive-hero.png',
   'js/core.js', 'js/data.js', 'js/storage.js', 'js/audio.js', 'js/input.js',
   'js/track.js', 'js/renderer.js', 'js/game.js', 'js/ui.js', 'js/main.js',
 ];
@@ -36,6 +36,10 @@ check(JSON.stringify(loadedScripts) === JSON.stringify(scriptOrder), 'Ordre de c
 for (const id of ['gameCanvas', 'minimapCanvas', 'screen-main', 'screen-mode', 'screen-garage', 'screen-results', 'hud', 'pauseOverlay']) {
   check(html.includes(`id="${id}"`), `Élément d’interface : #${id}`);
 }
+for (const action of ['drift', 'pause', 'reset']) check(html.includes(`data-touch="${action}"`), `Commande tactile : ${action}`);
+
+const inputSource = readFileSync(join(ROOT, 'js/input.js'), 'utf8');
+check(!/accelerate:[^\n]+buttons\[0\]/.test(inputSource), 'La touche A de la manette ne déclenche pas aussi l’accélération');
 
 let manifest;
 try {

@@ -214,12 +214,13 @@
     launchRace() {
       this.elements.launch.disabled = true;
       window.setTimeout(() => { this.elements.launch.disabled = false; }, 450);
+      const resumableChampionship = this.mode === 'grand-prix' && this.store.get().activeChampionship;
       this.game.start({
         mode: this.mode,
         trackId: this.selectedTrackId,
         difficulty: this.elements.difficulty.value,
         laps: Number(this.elements.laps.value),
-        newChampionship: this.mode === 'grand-prix',
+        newChampionship: this.mode === 'grand-prix' && !resumableChampionship,
       });
     }
 
@@ -498,7 +499,11 @@
     renderResults(result) {
       const championship = result.championship;
       let rows = result.rows;
-      if (championship?.final) {
+      if (result.dnf) {
+        this.elements.resultsEyebrow.textContent = 'COURSE NON TERMINÉE';
+        this.elements.resultsTitle.textContent = 'DNF';
+        this.elements.resultsSubtitle.textContent = `${result.track.name} · limite de temps atteinte · aucun record ni crédit attribué.`;
+      } else if (championship?.final) {
         rows = championship.standings.map((entry, index) => ({
           ...entry,
           position: index + 1,
@@ -539,7 +544,7 @@
       this.elements.rewardSummary.innerHTML = `
         <div><span>RÉCOMPENSE</span><strong>+${U.formatNumber(result.reward)} CR</strong></div>
         <div><span>MEILLEUR TOUR</span><strong>${U.formatTime(result.bestLap)}</strong></div>
-        <div><span>MAÎTRISE</span><strong>${result.cleanRace ? 'PROPRE' : `${this.game.player?.stats.impacts || 0} IMPACTS`}</strong></div>
+        <div><span>STATUT</span><strong>${result.dnf ? 'DNF' : result.cleanRace ? 'PROPRE' : `${this.game.player?.stats.impacts || 0} IMPACTS`}</strong></div>
         ${result.newBest ? '<div><span>BONUS</span><strong>NOUVEAU RECORD</strong></div>' : ''}
         ${breakdown.championnat ? `<div><span>CHAMPIONNAT</span><strong>+${U.formatNumber(breakdown.championnat)} CR</strong></div>` : ''}`;
 

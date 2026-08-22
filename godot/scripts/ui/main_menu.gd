@@ -42,6 +42,8 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree():
+		if not is_node_ready():
+			return
 		_refresh_profile()
 		call_deferred("_restore_focus")
 
@@ -87,7 +89,8 @@ func _bind_services() -> void:
 	if save == null:
 		return
 	var refresh_callable := Callable(self, "_on_profile_changed")
-	for signal_name in [&"profile_loaded", &"profile_changed"]:
+	var profile_signals: Array[StringName] = [&"profile_loaded", &"profile_changed"]
+	for signal_name: StringName in profile_signals:
 		if save.has_signal(signal_name) and not save.is_connected(signal_name, refresh_callable):
 			save.connect(signal_name, refresh_callable)
 	var failure_callable := Callable(self, "_on_save_failed")
@@ -254,30 +257,31 @@ func _set_toggle_without_signal(toggle: CheckButton, value: bool) -> void:
 
 
 func _dictionary_value(source: Variant, keys: Array[String], fallback: Dictionary) -> Dictionary:
-	var value := _variant_value(source, keys, fallback)
+	var value: Variant = _variant_value(source, keys, fallback)
 	return value if value is Dictionary else fallback
 
 
 func _string_value(source: Variant, keys: Array[String], fallback: String) -> String:
-	var value := _variant_value(source, keys, fallback)
+	var value: Variant = _variant_value(source, keys, fallback)
 	return str(value) if value != null else fallback
 
 
 func _number_value(source: Variant, keys: Array[String], fallback: float) -> float:
-	var value := _variant_value(source, keys, fallback)
+	var value: Variant = _variant_value(source, keys, fallback)
 	return float(value) if value is int or value is float else fallback
 
 
 func _bool_value(source: Variant, keys: Array[String], fallback: bool) -> bool:
-	var value := _variant_value(source, keys, fallback)
+	var value: Variant = _variant_value(source, keys, fallback)
 	return bool(value) if value is bool else fallback
 
 
 func _variant_value(source: Variant, keys: Array[String], fallback: Variant) -> Variant:
 	if source is Dictionary:
+		var source_dictionary: Dictionary = source
 		for key in keys:
-			if source.has(key):
-				return source[key]
+			if source_dictionary.has(key):
+				return source_dictionary[key]
 	return fallback
 
 

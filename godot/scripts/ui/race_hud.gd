@@ -44,7 +44,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
-	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"pause"):
+	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"race_pause"):
 		get_viewport().set_input_as_handled()
 		show_pause(not _paused)
 		pause_requested.emit(_paused)
@@ -91,7 +91,8 @@ func update_race(snapshot: Dictionary) -> void:
 	var item: Variant = snapshot.get("item", snapshot.get("item_id", ""))
 	var item_name := "VIDE"
 	if item is Dictionary:
-		item_name = String(item.get("short", item.get("name", "MODULE"))).to_upper()
+		var held_item: Dictionary = item
+		item_name = String(held_item.get("short", held_item.get("name", "MODULE"))).to_upper()
 	elif not String(item).is_empty():
 		var item_data := GameDatabase.get_item(String(item))
 		item_name = String(item_data.get("short", item_data.get("name", item))).to_upper()
@@ -116,10 +117,10 @@ func update_race(snapshot: Dictionary) -> void:
 func show_countdown(value: Variant) -> void:
 	if not is_node_ready() or not _built:
 		return
-	if value == null or String(value).is_empty():
+	if value == null or str(value).is_empty():
 		_countdown_panel.visible = false
 		return
-	var text := String(value).to_upper()
+	var text := str(value).to_upper()
 	if value is int or value is float:
 		text = "OVERDRIVE !" if float(value) <= 0.0 else str(ceili(float(value)))
 	_countdown_label.text = text
@@ -153,7 +154,7 @@ func _build_interface() -> void:
 	var safe_margin := MarginContainer.new()
 	safe_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	safe_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in [&"margin_left", &"margin_top", &"margin_right", &"margin_bottom"]:
+	for side: StringName in [&"margin_left", &"margin_top", &"margin_right", &"margin_bottom"]:
 		safe_margin.add_theme_constant_override(side, 32)
 	add_child(safe_margin)
 
@@ -363,6 +364,7 @@ func _settings() -> Dictionary:
 		return {}
 	var profile: Variant = save.get("profile")
 	if profile is Dictionary:
-		var value: Variant = profile.get("settings", {})
+		var profile_data: Dictionary = profile
+		var value: Variant = profile_data.get("settings", {})
 		return value if value is Dictionary else {}
 	return {}

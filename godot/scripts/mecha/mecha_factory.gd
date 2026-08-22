@@ -78,8 +78,8 @@ static func _radial(root: Node3D, count: int, radius: float, primary: Material, 
 static func _hover(root: Node3D, primary: Material, dark: Material, glow: Material) -> void:
 	_box(root, Vector3(4.2, 0.75, 5.4), Vector3(0, 1.35, 0), primary)
 	_box(root, Vector3(2.5, 0.65, 3.5), Vector3(0, 1.9, -0.25), dark)
-	for x in [-1.75, 1.75]:
-		for z in [-1.55, 1.55]:
+	for x: float in [-1.75, 1.75]:
+		for z: float in [-1.55, 1.55]:
 			_cylinder(root, 0.52, 1.35, Vector3(x, 0.72, z), dark, Vector3(PI / 2.0, 0, 0))
 			_sphere(root, 0.34, Vector3(x, 0.55, z + 0.3), glow)
 	_reactor(root, Vector3(0, 1.25, 2.74), Vector3(3.4, 0.22, 0.18), glow)
@@ -87,9 +87,9 @@ static func _hover(root: Node3D, primary: Material, dark: Material, glow: Materi
 
 static func _tracked(root: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
 	_box(root, Vector3(3.5, 1.4, 4.4), Vector3(0, 1.55, -0.1), primary)
-	for x in [-1.72, 1.72]:
+	for x: float in [-1.72, 1.72]:
 		_box(root, Vector3(1.0, 0.95, 5.2), Vector3(x, 0.68, 0), dark)
-		for z in [-1.65, -0.55, 0.55, 1.65]:
+		for z: float in [-1.65, -0.55, 0.55, 1.65]:
 			_cylinder(root, 0.42, 0.95, Vector3(x, 0.65, z), joint, Vector3(0, 0, PI / 2.0))
 	_reactor(root, Vector3(0, 1.6, 2.2), Vector3(2.6, 0.3, 0.22), glow)
 
@@ -133,7 +133,7 @@ static func _centurion(root: Node3D, primary: Material, dark: Material, joint: M
 	for segment in range(6):
 		var z := (float(segment) - 2.5) * 0.95
 		_box(root, Vector3(2.0, 0.75, 1.05), Vector3(0, 1.45, z), primary if segment % 2 == 0 else dark)
-		for side in [-1.0, 1.0]:
+		for side: float in [-1.0, 1.0]:
 			var hip := Vector3(side * 0.82, 1.35, z)
 			var knee := Vector3(side * 1.55, 0.75, z + (0.2 if segment % 2 == 0 else -0.2))
 			var foot := Vector3(side * 2.05, 0.12, z)

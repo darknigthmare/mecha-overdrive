@@ -40,8 +40,8 @@ func _ready() -> void:
 func configure(settings: Dictionary) -> void:
 	master_gain = clampf(float(settings.get("master_volume", settings.get("volume", 0.72))), 0.0, 1.0)
 	music_gain = clampf(float(settings.get("music_volume", 0.46)), 0.0, 1.0)
-	sfx_gain = clampf(float(settings.get("sfx_volume", 0.8)), 0.0, 1.0)
-	engine_gain = clampf(float(settings.get("engine_volume", 0.72)), 0.0, 1.0)
+	sfx_gain = clampf(float(settings.get("effects_volume", settings.get("sfx_volume", 0.8))), 0.0, 1.0)
+	engine_gain = clampf(float(settings.get("engine_volume", settings.get("effects_volume", 0.72))), 0.0, 1.0)
 	muted = bool(settings.get("muted", false))
 
 
@@ -53,17 +53,19 @@ func set_motion(next_speed_ratio: float, boosting: bool, next_damage_ratio: floa
 
 
 func play_event(event_name: String) -> void:
-	var preset := {
-		"pickup": [880.0, 0.2, 0.35],
-		"boost": [135.0, 0.38, 0.5],
-		"impact": [72.0, 0.22, 0.7],
-		"shield": [520.0, 0.5, 0.32],
-		"emp": [94.0, 0.46, 0.55],
-		"finish": [660.0, 0.95, 0.42],
-		"count": [330.0, 0.16, 0.25],
-		"go": [760.0, 0.4, 0.42],
-	}.get(event_name, [440.0, 0.14, 0.22])
-	_events.append({"frequency": preset[0], "remaining": preset[1], "duration": preset[1], "gain": preset[2], "phase": 0.0})
+	var frequency := 440.0
+	var duration := 0.14
+	var gain := 0.22
+	match event_name:
+		"pickup": frequency = 880.0; duration = 0.2; gain = 0.35
+		"boost": frequency = 135.0; duration = 0.38; gain = 0.5
+		"impact": frequency = 72.0; duration = 0.22; gain = 0.7
+		"shield": frequency = 520.0; duration = 0.5; gain = 0.32
+		"emp": frequency = 94.0; duration = 0.46; gain = 0.55
+		"finish": frequency = 660.0; duration = 0.95; gain = 0.42
+		"count": frequency = 330.0; duration = 0.16; gain = 0.25
+		"go": frequency = 760.0; duration = 0.4; gain = 0.42
+	_events.append({"frequency": frequency, "remaining": duration, "duration": duration, "gain": gain, "phase": 0.0})
 
 
 func _process(_delta: float) -> void:

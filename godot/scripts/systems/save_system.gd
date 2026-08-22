@@ -153,10 +153,10 @@ func get_upgrade_cost(upgrade_id: String, chassis_id: String = "") -> int:
 
 func update_settings(changes: Dictionary) -> bool:
 	var settings: Dictionary = profile.get("settings", {})
-	for key in ["high_contrast", "reduced_motion", "large_text", "camera_shake", "metric_units"]:
+	for key: String in ["high_contrast", "reduced_motion", "large_text", "camera_shake", "metric_units"]:
 		if changes.has(key) and changes[key] is bool:
 			settings[key] = changes[key]
-	for key in ["master_volume", "music_volume", "effects_volume"]:
+	for key: String in ["master_volume", "music_volume", "effects_volume"]:
 		if changes.has(key) and (changes[key] is int or changes[key] is float):
 			settings[key] = clampf(float(changes[key]), 0.0, 1.0)
 	profile["settings"] = settings
@@ -299,13 +299,15 @@ func _sanitize_records(value: Variant) -> Dictionary:
 	var clean: Dictionary = {}
 	if not value is Dictionary:
 		return clean
-	for track_id: Variant in value.keys():
+	var records: Dictionary = value
+	for track_id: Variant in records.keys():
 		var track_key := String(track_id)
-		if not GameDatabase.has_track(track_key) or not value[track_id] is Dictionary:
+		if not GameDatabase.has_track(track_key) or not records[track_id] is Dictionary:
 			continue
+		var raw_track: Dictionary = records[track_id]
 		var track_records: Dictionary = {}
-		for mode: Variant in value[track_id].keys():
-			var seconds: Variant = value[track_id][mode]
+		for mode: Variant in raw_track.keys():
+			var seconds: Variant = raw_track[mode]
 			if (seconds is int or seconds is float) and float(seconds) > 0.0:
 				track_records[String(mode)] = float(seconds)
 		if not track_records.is_empty():

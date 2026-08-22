@@ -30,22 +30,25 @@ func _process(delta: float) -> void:
 	var bounce := 0.0 if reduced_motion else sin(_time * 2.0) * 0.045 * speed_ratio
 	position.y = bounce
 
-	for child in get_tree().get_nodes_in_group("mecha_limb"):
-		if not is_ancestor_of(child):
+	for child_node in get_tree().get_nodes_in_group("mecha_limb"):
+		var child := child_node as Node3D
+		if child == null or not is_ancestor_of(child):
 			continue
 		var phase := float(child.get_meta("phase", 0.0))
 		var stride := sin(_time + phase) * 0.2 * clampf(speed_ratio, 0.0, 1.0)
 		child.rotation.x = stride
 
-	for glow in get_tree().get_nodes_in_group("mecha_glow"):
-		if not is_ancestor_of(glow):
+	for glow_node in get_tree().get_nodes_in_group("mecha_glow"):
+		var glow := glow_node as Node3D
+		if glow == null or not is_ancestor_of(glow):
 			continue
 		var pulse := 1.0 + sin(_time * 1.7) * 0.05
 		if boosting:
 			pulse += 0.34
 		glow.scale = Vector3.ONE * pulse
 
-	for damaged in get_tree().get_nodes_in_group("mecha_damage_part"):
-		if not is_ancestor_of(damaged):
+	for damaged_node in get_tree().get_nodes_in_group("mecha_damage_part"):
+		var damaged := damaged_node as Node3D
+		if damaged == null or not is_ancestor_of(damaged):
 			continue
 		damaged.visible = damage_ratio < 0.88 or int(_time * 8.0 + damaged.get_instance_id()) % 3 != 0

@@ -11,7 +11,7 @@ const RESULTS_SCENE := preload("res://scenes/results.tscn")
 const RaceControllerType := preload("res://scripts/race/race_controller.gd")
 
 var _active_screen: Node
-var _race: Node
+var _race: RaceController
 var _last_config: Dictionary = {}
 
 
@@ -29,7 +29,10 @@ func _replace_screen(next_screen: Node) -> void:
 
 func _show_main_menu() -> void:
 	_end_race_node()
-	var menu := MAIN_MENU_SCENE.instantiate()
+	var menu := MAIN_MENU_SCENE.instantiate() as MainMenuScreen
+	if menu == null:
+		push_error("Main menu scene root must use MainMenuScreen.")
+		return
 	menu.race_requested.connect(_start_race)
 	menu.screen_requested.connect(_show_secondary_screen)
 	menu.quit_requested.connect(_quit_game)
@@ -37,14 +40,22 @@ func _show_main_menu() -> void:
 
 
 func _show_secondary_screen(screen_id: StringName) -> void:
-	var screen: Node
 	match screen_id:
-		&"garage": screen = GARAGE_SCENE.instantiate()
-		&"codex": screen = CODEX_SCENE.instantiate()
+		&"garage":
+			var garage := GARAGE_SCENE.instantiate() as GarageScreen
+			if garage == null:
+				push_error("Garage scene root must use GarageScreen.")
+				return
+			garage.back_requested.connect(_show_main_menu)
+			_replace_screen(garage)
+		&"codex":
+			var codex := CODEX_SCENE.instantiate() as CodexScreen
+			if codex == null:
+				push_error("Codex scene root must use CodexScreen.")
+				return
+			codex.back_requested.connect(_show_main_menu)
+			_replace_screen(codex)
 		_: return
-	if screen.has_signal(&"back_requested"):
-		screen.connect(&"back_requested", _show_main_menu)
-	_replace_screen(screen)
 
 
 func _start_race(config: Dictionary) -> void:
@@ -53,16 +64,26 @@ func _start_race(config: Dictionary) -> void:
 		_active_screen.queue_free()
 		_active_screen = null
 	_end_race_node()
-	_race = RaceControllerType.new()
-	_race.race_finished.connect(_show_results)
-	_race.menu_requested.connect(_show_main_menu)
-	add_child(_race)
-	_race.start(config)
+	var race := RaceControllerType.new() as RaceController
+	if race == null:
+		push_error("Race controller script must instantiate RaceController.")
+		_show_main_menu()
+		return
+	_race = race
+	race.race_finished.connect(_show_results)
+	race.menu_requested.connect(_show_main_menu)
+	race.retry_requested.connect(_start_race)
+	add_child(race)
+	race.start(config)
 
 
 func _show_results(result: Dictionary) -> void:
 	_end_race_node()
-	var results := RESULTS_SCENE.instantiate()
+	var results := RESULTS_SCENE.instantiate() as ResultsScreen
+	if results == null:
+		push_error("Results scene root must use ResultsScreen.")
+		_show_main_menu()
+		return
 	results.retry_requested.connect(_start_race.bind(_last_config))
 	results.menu_requested.connect(_show_main_menu)
 	results.next_requested.connect(_start_next_round)
@@ -71,12 +92,12 @@ func _show_results(result: Dictionary) -> void:
 
 
 func _start_next_round() -> void:
-	var session := get_node_or_null("/root/GameSession")
-	if session == null or not session.has_method(&"start_next_grand_prix_round"):
+	var session := get_node_or_null("/root/GameSession") as GameSessionService
+	if session == null:
 		_show_main_menu()
 		return
-	var config: Variant = session.call(&"start_next_grand_prix_round")
-	if config is Dictionary and not config.is_empty():
+	var config := session.start_next_grand_prix_round()
+	if not config.is_empty():
 		_start_race(config)
 	else:
 		_show_main_menu()
@@ -123,7 +144,7 @@ func _add_key_action(action: StringName, keys: Array[int]) -> void:
 		InputMap.action_add_event(action, event)
 
 
-func _add_joy_button(action: StringName, button: JoyButton) -> void:
+func _add_joy_button(action: StringName, button: int) -> void:
 	if not InputMap.has_action(action):
 		InputMap.add_action(action, 0.18)
 	var event := InputEventJoypadButton.new()
@@ -131,7 +152,7 @@ func _add_joy_button(action: StringName, button: JoyButton) -> void:
 	InputMap.action_add_event(action, event)
 
 
-func _add_joy_axis(action: StringName, axis: JoyAxis, value: float) -> void:
+func _add_joy_axis(action: StringName, axis: int, value: float) -> void:
 	if not InputMap.has_action(action):
 		InputMap.add_action(action, 0.18)
 	var event := InputEventJoypadMotion.new()

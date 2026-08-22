@@ -18,8 +18,8 @@ const GREEN := Color("#6df7ad")
 
 
 static func create_theme(settings: Dictionary = {}) -> Theme:
-	var high_contrast := _setting(settings, "high_contrast", "highContrast", false)
-	var large_text := _setting(settings, "large_text", "largeText", false)
+	var high_contrast: bool = bool(_setting(settings, "high_contrast", "highContrast", false))
+	var large_text: bool = bool(_setting(settings, "large_text", "largeText", false))
 	var scale := 1.18 if large_text else 1.0
 	var palette := _palette(high_contrast)
 	var theme := Theme.new()
@@ -38,7 +38,7 @@ static func create_theme(settings: Dictionary = {}) -> Theme:
 
 
 static func motion_duration(settings: Dictionary, normal_duration: float = 0.22) -> float:
-	return 0.0 if _setting(settings, "reduced_motion", "reducedMotion", false) else normal_duration
+	return 0.0 if bool(_setting(settings, "reduced_motion", "reducedMotion", false)) else normal_duration
 
 
 static func connect_focus_chain(controls: Array[Control], horizontal: bool = false) -> void:
@@ -135,7 +135,8 @@ static func _add_button_variations(theme: Theme, palette: Dictionary, scale: flo
 	var disabled := _button_box(Color(palette.surface, 0.6), Color(palette.line, 0.28), 8)
 	var focus := _focus_box(palette.focus, 8)
 
-	for state in [&"normal", &"hover", &"pressed", &"disabled", &"focus"]:
+	var button_states: Array[StringName] = [&"normal", &"hover", &"pressed", &"disabled", &"focus"]
+	for state: StringName in button_states:
 		var style: StyleBox = normal
 		if state == &"hover": style = hover
 		elif state == &"pressed": style = pressed
@@ -173,7 +174,8 @@ static func _add_button_variations(theme: Theme, palette: Dictionary, scale: flo
 
 
 static func _add_form_controls(theme: Theme, palette: Dictionary, scale: float) -> void:
-	for type_name in [&"CheckButton", &"OptionButton", &"LineEdit"]:
+	var form_control_types: Array[StringName] = [&"CheckButton", &"OptionButton", &"LineEdit"]
+	for type_name: StringName in form_control_types:
 		theme.set_font_size(&"font_size", type_name, roundi(17.0 * scale))
 		theme.set_color(&"font_color", type_name, palette.text)
 		theme.set_color(&"font_hover_color", type_name, Color.WHITE)

@@ -57,9 +57,9 @@ static func _build_curve(spec: Dictionary) -> Curve3D:
 	var verticality := float(spec.get("verticality", 8.0))
 	var seed := int(spec.get("seed", 1))
 	var harmonic_a := 2 + posmod(seed, 3)
-	var harmonic_b := 3 + posmod(seed / 3, 4)
+	var harmonic_b := 3 + posmod(int(seed / 3.0), 4)
 
-	for index in POINT_COUNT:
+	for index in range(POINT_COUNT):
 		var angle := TAU * float(index) / float(POINT_COUNT)
 		var radial_wave := sin(angle * harmonic_a + seed * 0.17) * radius * 0.16
 		radial_wave += cos(angle * harmonic_b - seed * 0.11) * radius * 0.08
@@ -137,7 +137,7 @@ static func _build_road(root: Node3D, curve: Curve3D, length: float, width: floa
 	root.add_child(shoulder)
 	root.move_child(shoulder, road.get_index())
 
-	for side in [-1.0, 1.0]:
+	for side: float in [-1.0, 1.0]:
 		var rail := MeshInstance3D.new()
 		rail.name = "GlowRail_%s" % ("L" if side < 0.0 else "R")
 		rail.mesh = _ribbon_mesh(curve, length, width * 0.5 * side, 0.22, 0.1)
@@ -149,7 +149,7 @@ static func _strip_mesh(curve: Curve3D, length: float, width: float, color: Colo
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var count := maxi(24, int(ceil(length / SAMPLE_STEP)))
-	for index in count:
+	for index in range(count):
 		var d0 := length * float(index) / float(count)
 		var d1 := length * float(index + 1) / float(count)
 		var p0 := curve.sample_baked_with_rotation(d0, true, true)
@@ -158,7 +158,7 @@ static func _strip_mesh(curve: Curve3D, length: float, width: float, color: Colo
 		var right0 := p0.origin + p0.basis.x.normalized() * width * 0.5 + Vector3.UP * y_offset
 		var left1 := p1.origin - p1.basis.x.normalized() * width * 0.5 + Vector3.UP * y_offset
 		var right1 := p1.origin + p1.basis.x.normalized() * width * 0.5 + Vector3.UP * y_offset
-		var stripe := color.lightened(0.055) if posmod(index / 4, 2) == 0 else color
+		var stripe := color.lightened(0.055) if posmod(int(index / 4.0), 2) == 0 else color
 		_add_triangle(surface, left0, right0, right1, stripe, Vector2(0, d0), Vector2(1, d0), Vector2(1, d1))
 		_add_triangle(surface, left0, right1, left1, stripe, Vector2(0, d0), Vector2(1, d1), Vector2(0, d1))
 	surface.index()
@@ -170,7 +170,7 @@ static func _ribbon_mesh(curve: Curve3D, length: float, lane_offset: float, widt
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var count := maxi(24, int(ceil(length / 6.0)))
-	for index in count:
+	for index in range(count):
 		var d0 := length * float(index) / float(count)
 		var d1 := length * float(index + 1) / float(count)
 		var p0 := curve.sample_baked_with_rotation(d0, true, true)
@@ -188,10 +188,12 @@ static func _ribbon_mesh(curve: Curve3D, length: float, lane_offset: float, widt
 
 
 static func _add_triangle(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, color: Color, uv_a: Vector2, uv_b: Vector2, uv_c: Vector2) -> void:
-	for entry in [[a, uv_a], [b, uv_b], [c, uv_c]]:
+	var vertices: Array[Vector3] = [a, b, c]
+	var uvs: Array[Vector2] = [uv_a, uv_b, uv_c]
+	for index in range(vertices.size()):
 		surface.set_color(color)
-		surface.set_uv(entry[1])
-		surface.add_vertex(entry[0])
+		surface.set_uv(uvs[index])
+		surface.add_vertex(vertices[index])
 
 
 static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: float, spec: Dictionary) -> void:
@@ -206,7 +208,7 @@ static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: f
 	rng.seed = seed
 	var count := clampi(int(length / 34.0), 18, 56)
 
-	for index in count:
+	for index in range(count):
 		var distance := length * (float(index) + 0.4) / float(count)
 		var pose := curve.sample_baked_with_rotation(distance, true, true)
 		var side := -1.0 if posmod(index + seed, 2) == 0 else 1.0
@@ -254,7 +256,7 @@ static func _build_gameplay_markers(root: Node3D, curve: Curve3D, length: float,
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed * 8191 + 17
 
-	for index in 18:
+	for index in range(18):
 		var kind := "boost" if index % 4 == 0 else "pickup"
 		var progress := fposmod(length * (float(index) + 1.25) / 19.0, length)
 		var lane := rng.randf_range(-0.72, 0.72)

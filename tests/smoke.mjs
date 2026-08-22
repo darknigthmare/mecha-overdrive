@@ -172,7 +172,10 @@ check('pause et reprise', () => {
 });
 
 const creditsBeforeFinish = MO.Storage.get().credits;
-quick.completeRace(true);
+quick.player.finished = true;
+quick.player.finishTime = quick.raceTime;
+quick.player.bestLap = quick.raceTime;
+quick.completeRace();
 check('classement et récompense de course rapide', () => {
   assert.equal(quick.active, false);
   assert.equal(quick.state, 'finished');
@@ -190,7 +193,9 @@ check('contre-la-montre solo', () => {
 });
 timeTrial.raceTime = 75;
 timeTrial.player.bestLap = 75;
-timeTrial.completeRace(true);
+timeTrial.player.finished = true;
+timeTrial.player.finishTime = 75;
+timeTrial.completeRace();
 check('record du contre-la-montre enregistré', () => {
   assert.ok(Number.isFinite(MO.Storage.get().bestTimes.glacier));
 });
@@ -203,7 +208,10 @@ check('création du Grand Prix', () => {
   assert.equal(grandPrix.championship.tracks.length, 4);
   assert.equal(grandPrix.racers.length, 8);
 });
-grandPrix.completeRace(true);
+grandPrix.player.finished = true;
+grandPrix.player.finishTime = 80;
+grandPrix.player.bestLap = 80;
+grandPrix.completeRace();
 check('points de la première manche', () => {
   const result = grandPrix.lastResult.championship;
   assert.equal(result.round, 1);

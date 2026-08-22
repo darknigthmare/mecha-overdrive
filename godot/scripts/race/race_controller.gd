@@ -7,6 +7,7 @@ extends Node3D
 
 signal race_finished(result: Dictionary)
 signal menu_requested
+signal retry_requested(config: Dictionary)
 
 const TrackFactoryType := preload("res://scripts/world/track_factory.gd")
 const MechaFactoryType := preload("res://scripts/mecha/mecha_factory.gd")
@@ -19,16 +20,20 @@ const GRID_SIZE := 8
 const MAX_RACE_SECONDS := 480.0
 const ELIMINATION_START := 42.0
 const ELIMINATION_INTERVAL := 34.0
+const AI_ITEM_PICKUP_DELAY := 0.45
+const AI_ITEM_REEVALUATE_INTERVAL := 0.30
+const AI_ITEM_REUSE_DELAY := 1.25
+const STRAIGHT_CURVATURE_LIMIT := 0.15
 
 var _config: Dictionary = {}
 var _track: Node3D
 var _track_length := 1.0
-var _racers: Array = []
-var _visuals: Dictionary = {}
+var _racers: Array[RefCounted] = []
+var _visuals: Dictionary[String, RacerVisual] = {}
 var _snapshots: Array[Dictionary] = []
 var _player: RefCounted
 var _camera: Camera3D
-var _hud: Node
+var _hud: RaceHUD
 var _audio: AudioDirector
 var _accumulator := 0.0
 var _elapsed := 0.0
@@ -38,7 +43,8 @@ var _finished := false
 var _paused := false
 var _item_was_pressed := false
 var _next_elimination := ELIMINATION_START
-var _marker_cooldowns: Dictionary = {}
+var _marker_cooldowns: Dictionary[String, float] = {}
+var _ai_item_cooldowns: Dictionary[String, float] = {}
 var _finish_order: Array[String] = []
 
 
@@ -112,6 +118,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _step_simulation(delta: float) -> void:
 	_elapsed += delta
 	_update_marker_cooldowns(delta)
+	_update_ai_item_cooldowns(delta)
 	var base_context := _race_context()
 	_snapshots.clear()
 
@@ -120,10 +127,10 @@ func _step_simulation(delta: float) -> void:
 		if bool(before.get("finished", false)) or bool(before.get("dnf", false)) or bool(before.get("eliminated", false)):
 			_snapshots.append(before)
 			continue
-		var controls := _player_controls() if bool(before.get("is_player", false)) else racer.call(&"ai_controls", base_context)
-		var context := base_context.duplicate(true)
+		var context: Dictionary = base_context.duplicate(true)
 		context["curvature"] = _curvature_at(float(before.get("distance", 0.0)))
 		context["hazard"] = _hazard_at(float(before.get("distance", 0.0)))
+		var controls: Dictionary = _player_controls() if bool(before.get("is_player", false)) else racer.call(&"ai_controls", context)
 		var after: Dictionary = racer.call(&"step", delta, controls, context)
 		_process_marker_contact(racer, after)
 		if bool(after.get("finished", false)):
@@ -134,6 +141,7 @@ func _step_simulation(delta: float) -> void:
 
 	_resolve_close_contacts()
 	_sort_and_rank_snapshots()
+	_handle_ai_items()
 	_handle_item_input()
 	_handle_elimination_mode()
 	_check_end_conditions()
@@ -159,13 +167,116 @@ func _handle_item_input() -> void:
 	_item_was_pressed = pressed
 
 
+## AI item decisions are evaluated on the fixed simulation clock. Racers keep
+## an item until its tactical condition is met, so render framerate never
+## changes consumption order and dense pickup sections cannot cause spam.
+func _handle_ai_items() -> void:
+	for racer: RefCounted in _racers:
+		if racer == _player:
+			continue
+		var state: Dictionary = racer.call(&"snapshot")
+		if not _is_active_racer_state(state):
+			continue
+		var racer_id := String(state.get("racer_id", ""))
+		if float(_ai_item_cooldowns.get(racer_id, 0.0)) > 0.0:
+			continue
+		var item_id := String(state.get("item", ""))
+		if item_id.is_empty():
+			continue
+		if not _should_ai_use_item(racer, state, item_id):
+			_ai_item_cooldowns[racer_id] = AI_ITEM_REEVALUATE_INTERVAL
+			continue
+		var used_item := String(racer.call(&"use_item"))
+		if used_item.is_empty():
+			continue
+		_apply_item(racer, used_item)
+		_ai_item_cooldowns[racer_id] = AI_ITEM_REUSE_DELAY
+
+
+func _should_ai_use_item(source: RefCounted, state: Dictionary, item_id: String) -> bool:
+	var armor_ratio := float(state.get("armor_ratio", 1.0))
+	var speed_ratio := float(state.get("speed_ratio", 0.0))
+	var distance := float(state.get("distance", 0.0))
+	var rank := _rank_for_racer(String(state.get("racer_id", "")))
+	var gap_ahead := _nearest_racer_gap(source, 1, 108.0)
+	var gap_behind := _nearest_racer_gap(source, -1, 28.0)
+	var nearby_count := _nearby_racer_count(source, 24.0)
+	match item_id:
+		"repair":
+			return armor_ratio <= 0.66
+		"shield":
+			var threatened := gap_ahead <= 24.0 or gap_behind <= 24.0
+			return not bool(state.get("shielded", false)) and armor_ratio <= 0.82 and (threatened or armor_ratio <= 0.48)
+		"overdrive":
+			var on_straight := absf(_curvature_at(distance)) <= STRAIGHT_CURVATURE_LIMIT
+			var needs_energy := float(state.get("boost_energy", 0.0)) <= 0.72
+			return on_straight and speed_ratio >= 0.45 and float(state.get("heat_ratio", 0.0)) < 0.88 and (needs_energy or rank > 1)
+		"emp", "shockwave":
+			# Chasers attack a nearby racer ahead; leaders only fire defensively
+			# against a close pursuer or when the pack is clustered.
+			return nearby_count >= 2 or (rank > 1 and gap_ahead <= 24.0) or (rank == 1 and gap_behind <= 12.0)
+		"mine":
+			return gap_behind <= 18.0
+		"ion":
+			return rank > 1 and gap_ahead <= 72.0
+		"rail":
+			return rank > 1 and gap_ahead <= 108.0
+		_:
+			return false
+
+
+func _rank_for_racer(racer_id: String) -> int:
+	for index in range(_snapshots.size()):
+		if String(_snapshots[index].get("racer_id", "")) == racer_id:
+			return index + 1
+	return maxi(1, _racers.size())
+
+
+func _nearest_racer_gap(source: RefCounted, direction: int, reach: float) -> float:
+	var source_state: Dictionary = source.call(&"snapshot")
+	var source_distance := float(source_state.get("distance", 0.0))
+	var best_gap := INF
+	for target: RefCounted in _racers:
+		if target == source:
+			continue
+		var state: Dictionary = target.call(&"snapshot")
+		if not _is_active_racer_state(state):
+			continue
+		var signed_gap := float(state.get("distance", 0.0)) - source_distance
+		if direction > 0 and signed_gap <= 0.0:
+			continue
+		if direction < 0 and signed_gap >= 0.0:
+			continue
+		var gap := absf(signed_gap)
+		if gap <= reach and gap < best_gap:
+			best_gap = gap
+	return best_gap
+
+
+func _nearby_racer_count(source: RefCounted, reach: float) -> int:
+	var source_state: Dictionary = source.call(&"snapshot")
+	var source_distance := float(source_state.get("distance", 0.0))
+	var count := 0
+	for target: RefCounted in _racers:
+		if target == source:
+			continue
+		var state: Dictionary = target.call(&"snapshot")
+		if _is_active_racer_state(state) and absf(float(state.get("distance", 0.0)) - source_distance) <= reach:
+			count += 1
+	return count
+
+
+func _is_active_racer_state(state: Dictionary) -> bool:
+	return not bool(state.get("finished", false)) and not bool(state.get("dnf", false)) and not bool(state.get("eliminated", false))
+
+
 func _apply_item(source: RefCounted, item_id: String) -> void:
 	var source_state: Dictionary = source.call(&"snapshot")
 	var source_distance := float(source_state.get("distance", 0.0))
 	var source_lane := float(source_state.get("lane", 0.0))
 	match item_id:
 		"repair":
-			source.call(&"apply_hit", -28.0, 0.0)
+			pass # RacerState.use_item() has already restored armor.
 		"shield", "overdrive":
 			pass # Timed defensive/mobility effects are activated inside RacerState.use_item().
 		"emp", "shockwave":
@@ -173,10 +284,13 @@ func _apply_item(source: RefCounted, item_id: String) -> void:
 				if target == source:
 					continue
 				var state: Dictionary = target.call(&"snapshot")
-				if absf(float(state.get("distance", 0.0)) - source_distance) < 24.0:
+				if _is_active_racer_state(state) and absf(float(state.get("distance", 0.0)) - source_distance) < 24.0:
 					target.call(&"apply_hit", 10.0 if item_id == "emp" else 16.0, signf(float(state.get("lane", 0.0)) - source_lane) * 0.35)
+					if item_id == "emp":
+						# EMP combines light impact damage with its authored control debuff.
+						target.call(&"apply_emp", 1.8)
 		"mine":
-			var target := _nearest_racer(source, false, 18.0)
+			var target := _nearest_racer_behind(source, 18.0)
 			if target != null:
 				target.call(&"apply_hit", 18.0, 0.48)
 		"ion", "rail":
@@ -208,11 +322,34 @@ func _nearest_racer(source: RefCounted, forward: bool, reach: float) -> RefCount
 	return best
 
 
+func _nearest_racer_behind(source: RefCounted, reach: float) -> RefCounted:
+	var source_state: Dictionary = source.call(&"snapshot")
+	var source_distance := float(source_state.get("distance", 0.0))
+	var best: RefCounted
+	var best_gap := INF
+	for target: RefCounted in _racers:
+		if target == source:
+			continue
+		var state: Dictionary = target.call(&"snapshot")
+		if not _is_active_racer_state(state):
+			continue
+		var signed_gap := float(state.get("distance", 0.0)) - source_distance
+		if signed_gap >= 0.0:
+			continue
+		var gap := absf(signed_gap)
+		if gap <= reach and gap < best_gap:
+			best_gap = gap
+			best = target
+	return best
+
+
 func _process_marker_contact(racer: RefCounted, snapshot: Dictionary) -> void:
+	if not bool(_config.get("items_enabled", true)):
+		return
 	var distance := float(snapshot.get("distance", 0.0))
 	var lap_distance := fposmod(distance, _track_length)
 	var lane := float(snapshot.get("lane", 0.0))
-	for marker in TrackFactoryType.gameplay_markers(_track):
+	for marker: Dictionary in TrackFactoryType.gameplay_markers(_track):
 		var marker_id := String(marker.get("id", ""))
 		var key := "%s:%s" % [String(snapshot.get("racer_id", "")), marker_id]
 		if float(_marker_cooldowns.get(key, 0.0)) > 0.0:
@@ -223,10 +360,15 @@ func _process_marker_contact(racer: RefCounted, snapshot: Dictionary) -> void:
 			continue
 		_marker_cooldowns[key] = 2.4
 		if String(marker.get("kind", "pickup")) == "pickup":
-			var item: Dictionary = GameDatabase.ITEMS[(String(snapshot.get("racer_id", "0")).hash() + roundi(distance)) % GameDatabase.ITEMS.size()]
-			racer.call(&"grant_item", String(item.get("id", "overdrive")))
-			if racer == _player:
+			var racer_id := String(snapshot.get("racer_id", "0"))
+			var item_index := posmod(racer_id.hash() + roundi(distance), GameDatabase.ITEMS.size())
+			var item: Dictionary = GameDatabase.ITEMS[item_index]
+			var granted := bool(racer.call(&"grant_item", String(item.get("id", "overdrive"))))
+			if granted and racer == _player:
 				_audio.play_event("pickup")
+			elif granted:
+				# Stable ID staggering avoids a whole pack firing on the same tick.
+				_ai_item_cooldowns[racer_id] = AI_ITEM_PICKUP_DELAY + float(posmod(racer_id.hash(), 4)) * 0.05
 		else:
 			# The pad is represented as a short-lived overdrive cell.
 			racer.call(&"grant_item", "overdrive")
@@ -237,12 +379,12 @@ func _process_marker_contact(racer: RefCounted, snapshot: Dictionary) -> void:
 
 func _resolve_close_contacts() -> void:
 	for first_index in range(_racers.size()):
-		var first := _racers[first_index]
+		var first: RefCounted = _racers[first_index]
 		var a: Dictionary = first.call(&"snapshot")
 		if bool(a.get("dnf", false)) or bool(a.get("finished", false)):
 			continue
 		for second_index in range(first_index + 1, _racers.size()):
-			var second := _racers[second_index]
+			var second: RefCounted = _racers[second_index]
 			var b: Dictionary = second.call(&"snapshot")
 			if bool(b.get("dnf", false)) or bool(b.get("finished", false)):
 				continue
@@ -269,7 +411,7 @@ func _sort_and_rank_snapshots() -> void:
 func _handle_elimination_mode() -> void:
 	if String(_config.get("mode", "quick")) != "elimination" or _elapsed < _next_elimination:
 		return
-	_next_elimination += ELIMINATION_INTERVAL
+	_next_elimination += float(_config.get("elimination_interval", ELIMINATION_INTERVAL))
 	var candidates: Array = []
 	for racer in _racers:
 		var state: Dictionary = racer.call(&"snapshot")
@@ -298,7 +440,7 @@ func _check_end_conditions() -> void:
 		_finish_race(player_state)
 	elif bool(player_state.get("finished", false)) or bool(player_state.get("dnf", false)) or bool(player_state.get("eliminated", false)):
 		_finish_race(player_state)
-	elif _elapsed >= MAX_RACE_SECONDS:
+	elif _elapsed >= float(_config.get("time_limit", MAX_RACE_SECONDS)):
 		_player.call(&"mark_dnf", "timeout")
 		_finish_race(_player.call(&"snapshot"))
 
@@ -334,7 +476,7 @@ func _player_position() -> int:
 	for index in range(_snapshots.size()):
 		if bool(_snapshots[index].get("is_player", false)):
 			return index + 1
-	return GRID_SIZE
+	return maxi(1, _racers.size())
 
 
 func _race_context() -> Dictionary:
@@ -385,17 +527,18 @@ func _build_track() -> void:
 func _build_racers() -> void:
 	var profile := _profile()
 	var selected_id := String(profile.get("selected_chassis", "biped"))
-	var selected_paint := Color(String(profile.get("paint", GameDatabase.get_chassis(selected_id).get("paint", "#5EE7FF"))))
+	var paints: Dictionary = profile.get("paints", {})
+	var selected_paint := Color(String(paints.get(selected_id, GameDatabase.get_chassis(selected_id).get("paint", "#5EE7FF"))))
 	var chassis_entries := GameDatabase.get_all_chassis()
 	var pilots := GameDatabase.get_all_pilots()
 	var player_index := 0
-	for index in range(GRID_SIZE):
+	for index in range(clampi(int(_config.get("racer_count", GRID_SIZE)), 1, GRID_SIZE)):
 		var is_player := index == player_index
 		var chassis: Dictionary = GameDatabase.get_chassis(selected_id) if is_player else chassis_entries[(index + 2) % chassis_entries.size()]
-		var pilot: Dictionary = pilots[0] if is_player else pilots[(index + 1) % pilots.size()]
+		var pilot: Dictionary = pilots[0] if is_player else pilots[(index - 1) % pilots.size()]
 		var racer := RacerStateType.new()
 		var spec := {
-			"racer_id": "player" if is_player else "rival_%02d" % index,
+			"racer_id": "player" if is_player else String(pilot.get("id", "rival_%02d" % index)),
 			"display_name": String(profile.get("pilot_name", "PILOTE 01")) if is_player else String(pilot.get("callsign", pilot.get("name", "RIVAL"))),
 			"chassis_id": String(chassis.get("id", "biped")),
 			"pilot_id": String(pilot.get("id", "vex")),
@@ -414,6 +557,9 @@ func _build_racers() -> void:
 		var paint := selected_paint if is_player else Color(String(pilot.get("paint", chassis.get("paint", "#5EE7FF"))))
 		var visual: RacerVisual = MechaFactoryType.build(chassis, paint, is_player)
 		visual.name = String(spec["racer_id"])
+		# Animate limbs first, then reapply the authored track elevation.
+		# This prevents visual bounce from flattening vertical circuits.
+		visual.process_priority = -10
 		add_child(visual)
 		_visuals[String(spec["racer_id"])] = visual
 
@@ -421,9 +567,11 @@ func _build_racers() -> void:
 func _player_upgrades(profile: Dictionary, chassis_id: String) -> Dictionary:
 	var all_upgrades: Variant = profile.get("upgrades", {})
 	if all_upgrades is Dictionary:
-		var selected: Variant = all_upgrades.get(chassis_id, all_upgrades)
+		var upgrades: Dictionary = all_upgrades
+		var selected: Variant = upgrades.get(chassis_id, upgrades)
 		if selected is Dictionary:
-			return selected.duplicate(true)
+			var selected_upgrades: Dictionary = selected
+			return selected_upgrades.duplicate(true)
 	return {}
 
 
@@ -440,7 +588,34 @@ func _build_feedback() -> void:
 	add_child(_audio)
 	_audio.configure(_profile().get("settings", {}))
 	_hud = RaceHUDType.new()
-	add_child(_hud)
+	var hud_layer := CanvasLayer.new()
+	hud_layer.layer = 20
+	add_child(hud_layer)
+	hud_layer.add_child(_hud)
+	_hud.pause_requested.connect(_on_hud_pause)
+	_hud.retry_requested.connect(_request_retry)
+	_hud.menu_requested.connect(_request_menu)
+
+
+func _on_hud_pause(paused: bool) -> void:
+	_paused = paused
+
+
+func _request_retry() -> void:
+	var next_config := _config.duplicate(true)
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method(&"configure"):
+		var configured: Variant = session.call(&"configure", next_config)
+		if configured is Dictionary:
+			next_config = configured
+	retry_requested.emit(next_config)
+
+
+func _request_menu() -> void:
+	var session := get_node_or_null("/root/GameSession")
+	if session != null and session.has_method(&"abort_race"):
+		session.call(&"abort_race", "abandoned")
+	menu_requested.emit()
 
 
 func _update_racer_visuals(_delta: float) -> void:
@@ -479,8 +654,9 @@ func _update_feedback() -> void:
 	if _hud != null and _hud.has_method(&"update_race"):
 		var hud_snapshot := player_state.duplicate(true)
 		hud_snapshot["elapsed"] = _elapsed
+		hud_snapshot["speed"] = float(player_state.get("speed", 0.0)) * 3.6
 		hud_snapshot["position"] = _player_position()
-		hud_snapshot["racer_count"] = GRID_SIZE
+		hud_snapshot["racer_count"] = _racers.size()
 		hud_snapshot["mode"] = String(_config.get("mode", "quick"))
 		hud_snapshot["next_elimination"] = maxf(0.0, _next_elimination - _elapsed)
 		_hud.call(&"update_race", hud_snapshot)
@@ -488,12 +664,21 @@ func _update_feedback() -> void:
 
 
 func _update_marker_cooldowns(delta: float) -> void:
-	for key in _marker_cooldowns.keys():
+	for key: String in _marker_cooldowns.keys():
 		var remaining := float(_marker_cooldowns[key]) - delta
 		if remaining <= 0.0:
 			_marker_cooldowns.erase(key)
 		else:
 			_marker_cooldowns[key] = remaining
+
+
+func _update_ai_item_cooldowns(delta: float) -> void:
+	for racer_id: String in _ai_item_cooldowns.keys():
+		var remaining := float(_ai_item_cooldowns[racer_id]) - delta
+		if remaining <= 0.0:
+			_ai_item_cooldowns.erase(racer_id)
+		else:
+			_ai_item_cooldowns[racer_id] = remaining
 
 
 func _chassis_tone(chassis_id: String) -> float:

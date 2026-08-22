@@ -30,7 +30,7 @@
   });
 
   const GRID_LANES = [-0.42, 0.42, -0.18, 0.18, -0.68, 0.68, -0.02, 0.02];
-  const CONTROL_KEYS = ['shieldTimer', 'empTimer', 'spinTimer', 'stunTimer', 'invulnerableTimer', 'overdriveTimer', 'padBoostTimer', 'miniBoostTimer', 'recoveryBoostTimer', 'slipTimer', 'itemCooldown'];
+  const CONTROL_KEYS = ['shieldTimer', 'empTimer', 'spinTimer', 'stunTimer', 'invulnerableTimer', 'overdriveTimer', 'padBoostTimer', 'miniBoostTimer', 'recoveryBoostTimer', 'slipTimer', 'itemCooldown', 'manualResetCooldown'];
 
   function down(value, dt) {
     return Math.max(0, (value || 0) - dt);
@@ -72,6 +72,31 @@
       this.pairCooldowns = new Map();
       this.finishDistance = 0;
       this._completing = false;
+      this.restoreChampionship();
+    }
+
+    restoreChampionship() {
+      const saved = this.store.get?.().activeChampionship;
+      if (!saved || !Array.isArray(saved.tracks) || !Array.isArray(saved.roster) || saved.round >= saved.tracks.length) return null;
+      this.championship = {
+        ...U.deepClone(saved),
+        scoredRounds: new Set(saved.scoredRounds || []),
+      };
+      return this.championship;
+    }
+
+    persistChampionship(clear = false) {
+      this.store.update?.((save) => {
+        save.activeChampionship = clear || !this.championship ? null : {
+          tracks: this.championship.tracks.slice(),
+          roster: U.deepClone(this.championship.roster),
+          round: this.championship.round,
+          points: { ...this.championship.points },
+          scoredRounds: [...this.championship.scoredRounds],
+          difficulty: this.championship.difficulty,
+          laps: this.championship.laps,
+        };
+      });
     }
 
     createChampionship(config) {
@@ -87,6 +112,7 @@
         difficulty: config.difficulty || 'pilot',
         laps: Math.max(1, Number(config.laps) || 3),
       };
+      this.persistChampionship();
       return this.championship;
     }
 
@@ -131,6 +157,7 @@
       this.difficulty = D.DIFFICULTIES[difficultyId];
 
       if (mode === 'grand-prix') {
+        if (!this.championship && !config.newChampionship) this.restoreChampionship();
         if (!this.championship || config.newChampionship || this.championship.round >= this.championship.tracks.length) {
           this.createChampionship({ ...config, difficulty: difficultyId });
         }
@@ -262,6 +289,8 @@
         slipTimer: 0,
         respawnTimer: 0,
         itemCooldown: 0,
+        manualResetCooldown: 0,
+        stuckTimer: 0,
         item: null,
         boostActive: false,
         drifting: false,
@@ -409,6 +438,10 @@
 
     updatePlayer(racer, controls, dt) {
       if (!racer || racer.finished) return;
+      const tryingToMove = !!(controls.accelerate || controls.brake);
+      racer.stuckTimer = racer.speed < 140 && tryingToMove
+        ? racer.stuckTimer + dt
+        : Math.max(0, racer.stuckTimer - dt * 2);
       if (controls.resetPressed) this.resetRacer(racer, true);
       if (controls.itemPressed) this.useItem(racer);
       this.applyDrive(racer, {
@@ -962,14 +995,27 @@
     }
 
     resetRacer(racer, manual = false) {
-      if (!racer || racer.finished) return;
+      if (!racer || racer.finished || racer.respawnTimer > 0) return false;
+      if (manual) {
+        if (racer.manualResetCooldown > 0) {
+          if (racer.isPlayer) this.toast(`RECALAGE EN RECHARGE — ${Math.ceil(racer.manualResetCooldown)} S`, 'warning');
+          return false;
+        }
+        const recoverable = racer.offroad || Math.abs(racer.x) > 0.95 || racer.stuckTimer >= 1.5 || racer.spinTimer >= 0.7;
+        if (!recoverable) {
+          if (racer.isPlayer) this.toast('RECALAGE DISPONIBLE HORS-PISTE OU UNITÉ BLOQUÉE', 'warning');
+          return false;
+        }
+        racer.manualResetCooldown = 5;
+      }
       racer.x = 0;
       racer.speed = Math.min(racer.speed, racer.topSpeed * 0.28);
       racer.spinTimer = 0;
       racer.slipTimer = 0;
+      racer.stuckTimer = 0;
       racer.heat = Math.min(racer.heat, 55);
-      racer.invulnerableTimer = Math.max(racer.invulnerableTimer, 0.8);
       if (manual && racer.isPlayer) this.toast('RECALAGE SUR LA TRAJECTOIRE', 'warning');
+      return true;
     }
 
     checkLaps(racer) {
@@ -1002,7 +1048,7 @@
 
     updatePositions() {
       const ordered = this.racers.slice().sort((a, b) => {
-        if (a.finished && b.finished) return a.finishTime - b.finishTime;
+        if (a.finished && b.finished) return (a.finishTime ?? Infinity) - (b.finishTime ?? Infinity);
         if (a.finished) return -1;
         if (b.finished) return 1;
         return b.distance - a.distance;
@@ -1015,14 +1061,20 @@
     completeRace(forced = false) {
       if (this._completing || !this.player) return;
       this._completing = true;
+      const dnf = !!forced && !this.player.finished;
 
-      if (!this.player.finished) {
+      if (!this.player.finished && !dnf) {
         this.player.finished = true;
         this.player.finishTime = this.raceTime;
       }
 
       for (const racer of this.racers) {
         if (racer.finished) continue;
+        if (racer.isPlayer && dnf) {
+          racer.finished = true;
+          racer.finishTime = null;
+          continue;
+        }
         const remaining = Math.max(0, this.finishDistance - racer.distance);
         const pace = Math.max(racer.topSpeed * 0.68, racer.speed || racer.topSpeed * 0.68);
         racer.finishTime = this.raceTime + remaining / pace * this.rng.range(0.96, 1.07);
@@ -1031,19 +1083,19 @@
       }
       this.updatePositions();
 
-      const ordered = this.racers.slice().sort((a, b) => a.finishTime - b.finishTime);
+      const ordered = this.racers.slice().sort((a, b) => (a.finishTime ?? Infinity) - (b.finishTime ?? Infinity));
       const playerPosition = ordered.findIndex((racer) => racer.isPlayer) + 1;
       const previousBest = this.store.get().bestTimes[this.track.id];
-      const playerBestLap = this.player.bestLap || this.player.finishTime / this.laps;
-      const newBest = this.store.recordBestTime(this.track.id, playerBestLap);
+      const playerBestLap = dnf ? null : (this.player.bestLap || this.player.finishTime / this.laps);
+      const newBest = !dnf && this.store.recordBestTime(this.track.id, playerBestLap);
       const cleanRace = this.player.stats.impacts <= 1;
       const beaten = Math.max(0, ordered.length - playerPosition);
       const rewardBase = this.mode === 'time-trial' ? 210 : D.REWARDS.base;
       const rewardBreakdown = {
-        participation: Math.round(rewardBase * this.difficulty.reward),
-        classement: Math.round(beaten * D.REWARDS.perOpponent * this.difficulty.reward),
-        maîtrise: cleanRace ? D.REWARDS.cleanRace : 0,
-        record: newBest ? D.REWARDS.bestTime : 0,
+        participation: dnf ? 0 : Math.round(rewardBase * this.difficulty.reward),
+        classement: dnf ? 0 : Math.round(beaten * D.REWARDS.perOpponent * this.difficulty.reward),
+        maîtrise: !dnf && cleanRace ? D.REWARDS.cleanRace : 0,
+        record: !dnf && newBest ? D.REWARDS.bestTime : 0,
         championnat: 0,
       };
 
@@ -1052,7 +1104,7 @@
         const roundIndex = this.championship.round;
         if (!this.championship.scoredRounds.has(roundIndex)) {
           ordered.forEach((racer, index) => {
-            this.championship.points[racer.id] += D.CHAMPIONSHIP_POINTS[index] || 0;
+            this.championship.points[racer.id] += racer.isPlayer && dnf ? 0 : D.CHAMPIONSHIP_POINTS[index] || 0;
           });
           this.championship.scoredRounds.add(roundIndex);
         }
@@ -1066,7 +1118,7 @@
           }))
           .sort((a, b) => b.points - a.points || (a.isPlayer ? -1 : 1));
         const won = final && standings[0]?.isPlayer;
-        if (won) rewardBreakdown.championnat = 1400;
+        if (won && !dnf) rewardBreakdown.championnat = 1400;
         championshipResult = {
           round: roundIndex + 1,
           totalRounds: this.championship.tracks.length,
@@ -1075,12 +1127,14 @@
           standings,
           won,
         };
+        this.persistChampionship(final);
       }
 
       const reward = Object.values(rewardBreakdown).reduce((sum, value) => sum + value, 0);
-      this.store.addCredits(reward);
+      if (reward > 0) this.store.addCredits(reward);
       this.store.addRaceStats({
         position: playerPosition,
+        dnf,
         distance: this.player.stats.distance,
         itemsUsed: this.player.stats.itemsUsed,
         impacts: this.player.stats.impacts,
@@ -1090,6 +1144,7 @@
       const result = {
         mode: this.mode,
         forced,
+        dnf,
         track: this.track.spec,
         laps: this.laps,
         raceTime: this.player.finishTime,
@@ -1178,7 +1233,10 @@
       this.audio.stopMusic?.();
       this.audio.updateEngine?.(0, 0, 0, false);
       this.input.reset?.();
-      if (wasChampionship) this.championship = null;
+      if (wasChampionship) {
+        this.championship = null;
+        this.persistChampionship(true);
+      }
       MO.Events.emit('race:quit', {});
     }
 
