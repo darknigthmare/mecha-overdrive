@@ -7,9 +7,9 @@ Empreinte source de l'export : `512776528e73433587d91206a4b140b7ecdd3748c716e64b
 
 ## Règle de preuve
 
-Un test présent dans le dépôt n'est pas une preuve de succès. Un gate n'est marqué **PASS** ci-dessous que s'il a été exécuté sur la révision 2.1.0 courante. La publication reste **EN ATTENTE** tant que le commit final, GitHub Actions et Vercel n'ont pas été contrôlés.
+Un test présent dans le dépôt n'est pas une preuve de succès. Un gate n'est marqué **PASS** ci-dessous que s'il a été exécuté sur la révision 2.1.0 courante. La révision fonctionnelle `c20f28bc5c0a5448ebca92bb7cc19c862a39834c` a été contrôlée localement, par GitHub Actions et sur la production Vercel.
 
-## Matrice locale 2.1.0
+## Matrice locale et publication 2.1.0
 
 | Gate | Résultat observé |
 |---|---|
@@ -21,8 +21,9 @@ Un test présent dans le dépôt n'est pas une preuve de succès. Un gate n'est 
 | Chargement direct du PCK | **PASS** — Godot ouvre le paquet exporté, code 0 |
 | Chromium local | **PASS** — 5 écrans distincts, ressources JS/WASM/PCK chargées, aucune erreur |
 | `git diff --check` | **PASS** — aucune erreur d'espace ou de fin de ligne |
-| GitHub Actions | **EN ATTENTE DE PUBLICATION** |
-| Vercel production | **EN ATTENTE DE PUBLICATION** |
+| GitHub Actions | **PASS** — run [`32577148607`](https://github.com/darknigthmare/mecha-overdrive/actions/runs/32577148607), commit `c20f28bc5c0a5448ebca92bb7cc19c862a39834c` |
+| Vercel production | **PASS** — `READY / PROMOTED`, déploiement `dpl_43sMTrJF4MokfoBdNturjsRs4a6J`, alias `mecha-overdrive.vercel.app` |
+| Chromium production | **PASS** — WebGL2, canvas 1280 × 720, JS/WASM/PCK HTTP 200, aucune erreur console/page/réseau |
 
 Marqueurs Godot observés :
 
@@ -114,12 +115,13 @@ La release doit être refusée si l'un des cas suivants apparaît :
 
 ## Consignation de publication
 
-À compléter uniquement après vérification publique :
+Consignation de la publication :
 
 ```text
-Commit final : EN ATTENTE
-GitHub Actions : EN ATTENTE
-Release GitHub v2.1.0 : EN ATTENTE
-Vercel production : EN ATTENTE
-URL Godot : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive.html
+Révision fonctionnelle validée : c20f28bc5c0a5448ebca92bb7cc19c862a39834c
+GitHub Actions : PASS — https://github.com/darknigthmare/mecha-overdrive/actions/runs/32577148607
+Archive v2.1.0 : PASS — SHA-256 17b7a05c6d86eae1dd3066339862afe01d689680ac492ccecefabdd22abdfd72
+Release GitHub v2.1.0 : tag de cette consignation après sa CI verte
+Vercel production : READY / PROMOTED — dpl_43sMTrJF4MokfoBdNturjsRs4a6J
+URL Godot : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
 ```
