@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "project": "MECHA OVERDRIVE",
+  "generated_at": "2026-08-22",
+  "generator": "OpenAI built-in image generation",
+  "mode": "new raster asset generation",
+  "license_note": "Original project assets generated for MECHA OVERDRIVE; no franchise logos, text, trademarks, or copied key art.",
+  "assets": [
+    {
+      "file": "mecha_armor.png",
+      "generation_id": "exec-16c591eb-ae6f-4299-8676-8b64e361df05",
+      "usage": ["all mecha primary armor", "modular body panels"],
+      "prompt": "Create an original seamless square PBR-style sci-fi racing mecha armor texture for the indie game MECHA OVERDRIVE. Orthographic flat material capture, neutral cool light-gray ceramic titanium panels with fine graphite seams, micro-scratches, subtle hexagonal fasteners, restrained cyan energy filaments, believable edge wear, high-frequency details that remain readable when tiled. Perfectly tileable on all four edges, evenly lit, no perspective, no large focal object, no baked shadows, no readable text, no letters, no numbers, no logo, no UI, no watermark, no trademark, no resemblance to existing franchise designs. Premium realistic stylized game material, square 1:1, texture-only image."
+    },
+    {
+      "file": "track_surface.png",
+      "generation_id": "exec-051ea44d-aee8-4ca1-af66-c742959fca37",
+      "usage": ["all racing surfaces", "track shoulders"],
+      "prompt": "Create an original seamless square PBR-style anti-gravity racing track surface texture for the indie game MECHA OVERDRIVE. Orthographic flat material capture, dark graphite composite asphalt with dense fine aggregate, interlocking technical plates, narrow cyan and warm amber luminous guide inlays arranged as abstract broken racing lines, subtle tire abrasion and heat scuffs. Perfectly tileable on all four edges, evenly lit, no perspective, no large focal object, no baked directional shadows, no readable text, no letters, no numbers, no arrows, no logo, no UI, no watermark, no trademark, no resemblance to existing game tracks. Premium realistic stylized game material, square 1:1, texture-only image."
+    },
+    {
+      "file": "cockpit_composite.png",
+      "generation_id": "exec-12d4b298-d001-412b-b218-70544aed3470",
+      "usage": ["all cockpit shells", "dark joints", "mobility modules"],
+      "prompt": "Create an original seamless square PBR-style futuristic racing cockpit composite texture for the indie game MECHA OVERDRIVE. Orthographic flat material capture of matte woven carbon composite, dark titanium ribs, compact rubberized padding zones, tiny recessed cyan status-light dots and subtle copper heat shielding, premium worn-but-maintained motorsport engineering. Perfectly tileable on all four edges, evenly lit, no perspective, no dashboard object, no readable text, no letters, no numbers, no symbols, no logo, no UI, no watermark, no trademark, no resemblance to any existing franchise cockpit. High-detail realistic stylized game material, square 1:1, texture-only image."
+    },
+    {
+      "file": "environment_panels.png",
+      "generation_id": "exec-02f22be6-b9a3-4b1f-9ab1-cdb51b864226",
+      "usage": ["trackside barriers", "environment props", "industrial scenery"],
+      "prompt": "Create an original seamless square PBR-style industrial environment panel texture pack surface for the indie game MECHA OVERDRIVE. Orthographic flat material capture, rugged dark gunmetal maintenance plating mixed with compact vents, ribbed service channels, ceramic hazard inserts in muted amber, subtle cyan conduits, dust, rain marks and controlled edge wear suitable for walls, barriers, props and trackside structures across foundry, desert, ice, orbital, jungle, megacity, abyss and reactor racing circuits. Perfectly tileable on all four edges, evenly lit, no perspective, no baked directional shadows, no readable text, no letters, no numbers, no conventional hazard stripes, no logo, no UI, no watermark, no trademark. Premium realistic stylized game material, square 1:1, texture-only image."
+    }
+  ]
+}

@@ -9,6 +9,7 @@ var steering := 0.0
 var boosting := false
 var damage_ratio := 0.0
 var reduced_motion := false
+var first_person := false
 var _time := 0.0
 
 
@@ -21,6 +22,23 @@ func set_motion(next_speed_ratio: float, next_steering: float, is_boosting: bool
 
 func set_accessibility(use_reduced_motion: bool) -> void:
 	reduced_motion = use_reduced_motion
+
+
+func camera_anchor(mode: String = "tps") -> Marker3D:
+	var anchor_name := "CameraFPS" if mode.to_lower() == "fps" else "CameraTPS"
+	return get_node_or_null(anchor_name) as Marker3D
+
+
+func set_camera_mode(mode: String) -> void:
+	first_person = mode.to_lower() == "fps"
+	for candidate in get_tree().get_nodes_in_group("mecha_fps_occluder"):
+		var occluder := candidate as Node3D
+		if occluder != null and is_ancestor_of(occluder):
+			occluder.visible = not first_person
+	for candidate in get_tree().get_nodes_in_group("mecha_cockpit_interior"):
+		var interior := candidate as Node3D
+		if interior != null and is_ancestor_of(interior):
+			interior.visible = first_person
 
 
 func _process(delta: float) -> void:
@@ -51,4 +69,9 @@ func _process(delta: float) -> void:
 		var damaged := damaged_node as Node3D
 		if damaged == null or not is_ancestor_of(damaged):
 			continue
-		damaged.visible = damage_ratio < 0.88 or int(_time * 8.0 + damaged.get_instance_id()) % 3 != 0
+		if damaged.is_in_group("mecha_cockpit_interior"):
+			damaged.visible = first_person
+		elif first_person and damaged.is_in_group("mecha_fps_occluder"):
+			damaged.visible = false
+		else:
+			damaged.visible = damage_ratio < 0.88 or int(_time * 8.0 + damaged.get_instance_id()) % 3 != 0

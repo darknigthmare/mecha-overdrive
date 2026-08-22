@@ -10,9 +10,23 @@ La première piste expérimentale reçut le nom de **Circuit Zero**. Son règlem
 
 ## La Saison 01
 
-La Saison 01 est la première à homologuer simultanément les huit divisions. Les équipes industrielles y voient une vitrine technologique. Les pilotes indépendants y voient la seule route vers la citoyenneté orbitale, la fortune ou l’effacement de leurs dettes.
+La Saison 01 est la première à homologuer simultanément cinq divisions regroupant dix architectures. Les équipes industrielles y voient une vitrine technologique. Les pilotes indépendants y voient la seule route vers la citoyenneté orbitale, la fortune ou l’effacement de leurs dettes.
 
 Chaque course est retransmise par le Réseau Kestrel. Les impacts sont réels, mais une matrice de récupération reconstruit les unités détruites à partir d’un noyau sécurisé. Le délai de reconstruction suffit toutefois à ruiner une course.
+
+### Les cinq divisions homologuées
+
+- **Commandement** réunit le Raptor R2 et le Centurion S12, deux machines adaptatives conçues pour lire une course avant de la dominer.
+- **Stabilisés** associe le Triarch T3 et le Fenrir Q4 : l’un conserve le cap, l’autre transforme chaque rupture de rythme en relance.
+- **Essaim** rassemble le Mantis H6 et l’Arachne O8, dont les appuis multiples distribuent en permanence adhérence, calcul et impact.
+- **Sol** oppose le couple du Bastion C2 à la dérive gyroscopique du Cyclops M1.
+- **Expérimental** ouvre la grille au Wraith V0 et à l’Orb S7, prototypes fondés sur la sustentation et la recomposition d’inertie.
+
+La Ligue organise une coupe de quatre manches pour chacune de ces divisions. Les concurrents y affrontent uniquement des machines homologuées dans leur propre catégorie, ce qui fait de chaque titre une mesure de pilotage et de préparation plutôt qu’un concours de formes incompatibles.
+
+Une exception est devenue l’épreuve reine : le **Grand Open du Nexus**. Ses huit manches accueillent les cinq divisions en classe Prototype. Le mélange y est annoncé, assumé et recherché ; aucune autre coupe ne peut l’imposer par accident.
+
+Trois niveaux d’homologation encadrent les machines. La classe **Série** impose l’équipement d’usine, la classe **Préparé** autorise une mise au point contrôlée, et la classe **Prototype** libère tout le potentiel d’amélioration.
 
 ## Les circuits
 
@@ -31,6 +45,22 @@ Un anneau de maintenance longe des glaciers artificiels. Les variations thermiqu
 ### Cimetière Orbital — Anneau de Morrigan
 
 Le tracé ultime serpente entre des épaves de stations et des secteurs à gravité intermittente. Certaines portions reposent sur des ponts assemblés quelques heures avant le départ. Une erreur de trajectoire déclenche un recalage d’urgence, mais le temps perdu est considérable.
+
+### Canopée d’Azura — Forêt-monde Elysia
+
+Les racines de la forêt-monde ont absorbé d’anciens corridors logistiques et les ouvrent au rythme de leur croissance. La boue bioluminescente ralentit les appuis mal préparés, tandis que des poches de spores transforment les raccourcis vivants en paris de visibilité.
+
+### Couronne Tempête — Mégalopole Stratos
+
+La piste relie les toits d’une cité construite au-dessus de ses propres nuages. Pluie, rails aériens et rafales latérales déplacent la trajectoire idéale d’un tour à l’autre. Les pilotes apprennent à lire les fenêtres de vent dans les enseignes de la ville.
+
+### Tranchée Hadale — Océan de Néréide
+
+Des tunnels pressurisés descendent jusqu’aux anciennes stations abyssales. Les courants latéraux, les marées de pression et les sas à faible gravité imposent une discipline de trajectoire que même les capteurs ne peuvent entièrement automatiser.
+
+### Caldeira Zéro — Réacteur Tellurique IX
+
+Le tracé entoure un réacteur géothermique assez puissant pour alimenter une colonie. Les ponts thermiques enjambent les coulées de plasma, et des cycles d’éruption redessinent les zones sûres. La Caldeira est devenue l’épreuve de clôture des coupes les plus violentes.
 
 ## Les pilotes officiels
 
@@ -52,6 +82,10 @@ Le joueur entre dans la compétition sous son propre indicatif et construit sa r
 ## Le Hangar 08
 
 Le Hangar 08 est un atelier neutre situé sous la tribune principale du Circuit Zero. Les crédits de course y sont convertis en pièces homologuées. Les peintures n’affectent pas les performances, mais les équipes les utilisent pour identifier leurs machines dans le nuage de poussière, la neige ou les projections thermiques.
+
+Chaque machine reçoit trois interfaces normalisées : **Noyau**, **Mobilité** et **Utilitaire**. Neuf modules homologués circulent entre les ateliers, mais leur assemblage reste propre à chaque châssis. Les commissaires inspectent la configuration avant chaque départ selon la classe de performance engagée.
+
+Les cockpits sont eux aussi adaptés à l’architecture. Certains pilotes exigent la vision tactique extérieure des drones TPS ; d’autres ne jurent que par la vue interne, au plus près des vibrations et de la chaleur. Le Hangar 08 conserve ce choix dans le profil de chaque machine.
 
 ## La règle fondamentale
 

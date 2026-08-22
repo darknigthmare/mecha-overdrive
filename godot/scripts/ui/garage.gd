@@ -16,6 +16,10 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 @onready var selected_badge: Label = %SelectedBadge
 @onready var paint_option: OptionButton = %PaintOption
 @onready var paint_preview: ColorRect = %PaintPreview
+@onready var core_option: OptionButton = %CoreOption
+@onready var mobility_option: OptionButton = %MobilityOption
+@onready var utility_option: OptionButton = %UtilityOption
+@onready var module_summary: Label = %ModuleSummary
 @onready var select_button: Button = %SelectButton
 @onready var back_button: Button = %BackButton
 @onready var status_message: Label = %StatusMessage
@@ -45,6 +49,7 @@ func _ready() -> void:
 	theme = ThemeFactory.create_theme(_settings())
 	_bind_actions()
 	_populate_paints()
+	_populate_modules()
 	_bind_save_events()
 	refresh()
 	call_deferred("_configure_focus")
@@ -78,7 +83,7 @@ func refresh() -> void:
 		var chassis_id := String(chassis.get("id", ""))
 		var locked := not _is_unlocked(chassis_id)
 		var prefix := "VERROUILLÉ  //  " if locked else ""
-		chassis_list.add_item("%s%s\n%s" % [prefix, String(chassis.get("category", "ARCHITECTURE")), String(chassis.get("name", chassis_id))])
+		chassis_list.add_item("%s%s  //  %s" % [prefix, String(chassis.get("category", "ARCHITECTURE")), String(chassis.get("name", chassis_id))])
 		chassis_list.set_item_metadata(index, chassis_id)
 		chassis_list.set_item_disabled(index, locked)
 		if chassis_id == previous_id:
@@ -94,6 +99,9 @@ func _bind_actions() -> void:
 	chassis_list.item_selected.connect(_show_chassis)
 	chassis_list.item_activated.connect(_activate_chassis)
 	paint_option.item_selected.connect(_on_paint_selected)
+	core_option.item_selected.connect(_on_module_selected.bind("core", core_option))
+	mobility_option.item_selected.connect(_on_module_selected.bind("mobility", mobility_option))
+	utility_option.item_selected.connect(_on_module_selected.bind("utility", utility_option))
 	select_button.pressed.connect(_select_current)
 	back_button.pressed.connect(func() -> void: back_requested.emit())
 	engine_button.pressed.connect(_buy_upgrade.bind("engine"))
@@ -124,15 +132,33 @@ func _populate_paints() -> void:
 		paint_option.set_item_metadata(index, GameDatabase.DEFAULT_PAINTS[index])
 
 
+func _populate_modules() -> void:
+	_populate_module_option("core", core_option)
+	_populate_module_option("mobility", mobility_option)
+	_populate_module_option("utility", utility_option)
+
+
+func _populate_module_option(slot_id: String, option_button: OptionButton) -> void:
+	option_button.clear()
+	var slot := GameDatabase.get_module_slot(slot_id)
+	for option: Dictionary in slot.get("options", []):
+		var index := option_button.item_count
+		option_button.add_item(String(option.get("name", "MODULE")).to_upper())
+		option_button.set_item_metadata(index, String(option.get("id", "")))
+		option_button.set_item_tooltip(index, String(option.get("description", "")))
+
+
 func _show_chassis(index: int) -> void:
 	if index < 0 or index >= _entries.size():
 		return
 	var chassis := _entries[index]
 	_current_id = String(chassis.get("id", ""))
-	chassis_category.text = String(chassis.get("category", "ARCHITECTURE")).to_upper()
+	var division := GameDatabase.get_division(String(chassis.get("division_id", "command")))
+	chassis_category.text = "%s  //  %s" % [String(chassis.get("category", "ARCHITECTURE")).to_upper(), String(division.get("name", "DIVISION")).to_upper()]
 	chassis_name.text = String(chassis.get("name", _current_id)).to_upper()
 	chassis_subtitle.text = String(chassis.get("subtitle", "Configuration de course"))
-	chassis_description.text = String(chassis.get("description", ""))
+	chassis_description.text = "%s  //  %s
+%s" % [String(chassis.get("manufacturer", "NEXUS WORKS")).to_upper(), String(division.get("short", "DIV")), String(chassis.get("lore", chassis.get("description", "")))]
 	ability_name.text = String(chassis.get("ability", "Système propriétaire")).to_upper()
 	ability_description.text = String(chassis.get("ability_description", ""))
 	var stats: Dictionary = chassis.get("stats", {})
@@ -150,6 +176,7 @@ func _show_chassis(index: int) -> void:
 	select_button.disabled = is_selected or not _is_unlocked(_current_id)
 	select_button.text = "CHÂSSIS ACTIF" if is_selected else "ÉQUIPER CE CHÂSSIS"
 	_sync_paint(chassis)
+	_sync_modules(chassis)
 	_refresh_upgrades()
 	status_message.text = "ARCHITECTURE %02d / %02d" % [index + 1, _entries.size()]
 
@@ -191,6 +218,60 @@ func _sync_paint(chassis: Dictionary) -> void:
 			break
 	paint_option.select(closest)
 	paint_preview.color = Color(paint)
+
+
+func _sync_modules(chassis: Dictionary) -> void:
+	var all_loadouts: Dictionary = _profile.get("loadouts", {}) if _profile.get("loadouts", {}) is Dictionary else {}
+	var loadout: Dictionary = all_loadouts.get(_current_id, chassis.get("default_loadout", {})) if all_loadouts.get(_current_id, {}) is Dictionary else {}
+	_select_module_value(core_option, String(loadout.get("core", "core_balanced")))
+	_select_module_value(mobility_option, String(loadout.get("mobility", "mobility_vector")))
+	_select_module_value(utility_option, String(loadout.get("utility", "utility_coolant")))
+	_refresh_module_summary()
+
+
+func _select_module_value(option_button: OptionButton, module_id: String) -> void:
+	for index in range(option_button.item_count):
+		if String(option_button.get_item_metadata(index)) == module_id:
+			option_button.select(index)
+			return
+	if option_button.item_count > 0:
+		option_button.select(0)
+
+
+func _on_module_selected(index: int, slot_id: String, option_button: OptionButton) -> void:
+	if _current_id.is_empty() or index < 0 or index >= option_button.item_count:
+		return
+	var module_id := String(option_button.get_item_metadata(index))
+	var save := _save_system()
+	if save == null or not save.has_method(&"set_module") or not bool(save.call(&"set_module", _current_id, slot_id, module_id)):
+		status_message.text = "MODULE REFUSÉ // CONFIGURATION INVALIDE"
+		status_message.theme_type_variation = &"WarningLabel"
+		return
+	_profile = _read_profile()
+	status_message.theme_type_variation = &"MutedLabel"
+	status_message.text = "%s // MODULE INSTALLÉ" % option_button.get_item_text(index)
+	_refresh_module_summary()
+
+
+func _refresh_module_summary() -> void:
+	var selected_ids := {
+		"core": String(core_option.get_item_metadata(core_option.selected)) if core_option.selected >= 0 else "",
+		"mobility": String(mobility_option.get_item_metadata(mobility_option.selected)) if mobility_option.selected >= 0 else "",
+		"utility": String(utility_option.get_item_metadata(utility_option.selected)) if utility_option.selected >= 0 else "",
+	}
+	var totals := {"speed": 0, "acceleration": 0, "handling": 0, "armor": 0, "stability": 0, "reactor": 0}
+	var names := PackedStringArray()
+	for slot_id: String in selected_ids.keys():
+		var option := GameDatabase.get_module_option(slot_id, selected_ids[slot_id])
+		names.append(String(option.get("name", "MODULE")).to_upper())
+		var stats: Dictionary = option.get("stats", {}) if option.get("stats", {}) is Dictionary else {}
+		for stat_id: String in totals.keys():
+			totals[stat_id] = int(totals[stat_id]) + int(stats.get(stat_id, 0))
+	module_summary.text = "%s
+VIT %+d  •  ACC %+d  •  MAN %+d  •  ARM %+d  •  STB %+d  •  RÉA %+d" % [
+		"  /  ".join(names), totals["speed"], totals["acceleration"], totals["handling"],
+		totals["armor"], totals["stability"], totals["reactor"],
+	]
 
 
 func _buy_upgrade(upgrade_id: String) -> void:
@@ -280,7 +361,7 @@ func _set_stat(bar: ProgressBar, value: Variant) -> void:
 
 func _configure_focus() -> void:
 	ThemeFactory.connect_focus_chain([
-		chassis_list, select_button, paint_option,
+		chassis_list, select_button, paint_option, core_option, mobility_option, utility_option,
 		engine_button, servos_button, reactor_button, armor_button, back_button,
 	])
 	chassis_list.grab_focus()

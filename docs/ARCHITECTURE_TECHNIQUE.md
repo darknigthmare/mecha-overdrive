@@ -26,6 +26,8 @@ Le dépôt contient deux runtimes indépendants qui partagent la même identité
 
 ## 2. Architecture de l’édition Godot 3D
 
+Cette section décrit le contrat de la release **Godot 2.1.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
+
 ### 2.1 Configuration du projet
 
 `godot/project.godot` cible Godot **4.7.2**, le renderer **GL Compatibility** et la scène principale `res://scenes/app.tscn`.
@@ -59,10 +61,14 @@ Le coordinateur écoute des signaux de haut niveau (`race_requested`, `screen_re
 `scripts/data/game_database.gd` centralise les données immuables :
 
 - dix châssis : Raptor R2, Triarch T3, Fenrir Q4, Mantis H6, Arachne O8, Wraith V0, Bastion C2, Cyclops M1, Orb S7 et Centurion S12 ;
-- quatre circuits : Fonderie Néon, Faille Écarlate, Arc Polaire et Cimetière Orbital ;
+- cinq divisions : `command`, `stabilized`, `swarm`, `ground` et `experimental` ;
+- huit circuits : Fonderie Néon, Faille Écarlate, Arc Polaire, Cimetière Orbital et les quatre ajouts `canopy`, `tempest`, `abyss`, `caldera` ;
 - huit objets ;
-- pilotes IA, trois difficultés et quatre familles d’améliorations ;
-- barème du championnat.
+- trois emplacements modulaires et neuf modules ;
+- trois classes de performance : `stock`, `tuned`, `unlimited` ;
+- trois règlements de grille : `division_locked`, `open_mixed`, `elite_open` ;
+- six championnats : cinq coupes dédiées à une division et `nexus_open`, seule coupe ouverte aux divisions mélangées ;
+- pilotes IA, trois difficultés, quatre familles d’améliorations et barème de championnat.
 
 Les consommateurs passent par les méthodes de recherche (`get_chassis`, `get_track`, `get_item`, `get_difficulty`) et reçoivent des copies profondes pour limiter les mutations accidentelles.
 
@@ -80,11 +86,15 @@ Les consommateurs passent par les méthodes de recherche (`get_chassis`, `get_tr
 
 La méthode `sample_pose(track, distance, lane)` fournit un `Transform3D` commun à la simulation, aux visuels et à la caméra. La distance de course reste monotone ; seul l’échantillonnage sur la boucle utilise un modulo.
 
+`scripts/visual/track_visual_profiles.gd` applique le profil de tracé, le grip, les accessoires et les dangers propres à chacun des huit circuits. `scripts/visual/material_library.gd` charge les textures raster originales générées avec OpenAI ; leur identifiant, leur prompt et leur usage sont attestés dans `assets/textures/openai/manifest.json`.
+
 ### 2.5 Construction procédurale des méchas
 
-`scripts/mecha/mecha_factory.gd` génère une silhouette 3D propre à chaque architecture avec les primitives Godot. `scripts/mecha/racer_visual.gd` anime les parties mobiles, le boost et l’état de dégâts.
+`scripts/mecha/mecha_factory.gd` génère une silhouette 3D propre à chaque architecture avec les primitives Godot. `scripts/visual/mecha_visual_modules.gd` installe les trois modules visibles de la configuration, et `scripts/mecha/racer_visual.gd` anime les parties mobiles, le boost et l’état de dégâts.
 
 Le visuel ne possède pas la vérité physique. Il reçoit à chaque trame un snapshot du pilote puis est replacé sur la pose de piste. La simulation peut ainsi rester déterministe et indépendante de la fréquence d’affichage.
+
+Chaque châssis expose des ancres TPS et cockpit. Le changement de vue masque les éléments extérieurs qui obstrueraient la vue interne, affiche l’habillage cockpit et persiste le choix par châssis.
 
 ### 2.6 Simulation de course
 
@@ -107,12 +117,12 @@ L’accumulateur est borné pour éviter une spirale de rattrapage lors d’un r
 
 `scripts/race/racer_state.gd` est un `RefCounted` sans dépendance directe au rendu. Son snapshot contient notamment :
 
-- identifiants pilote/châssis et rôle joueur/IA ;
+- identifiants pilote/châssis, division et rôle joueur/IA ;
 - distance, tour, voie, vitesse et position ;
 - chaleur, blindage courant et `max_armor` ;
 - boost, dérive, objet, bouclier et temporisations ;
 - fin, DNF, élimination et motif ;
-- paramètres physiques calculés depuis le châssis et les améliorations.
+- paramètres physiques calculés depuis le châssis, les améliorations, les modules et la classe de performance.
 
 L’IA utilise le même chemin de simulation que le joueur. Le contrôleur lui fournit la courbure, le danger, l’adhérence et la situation de course.
 
@@ -125,13 +135,15 @@ L’IA utilise le même chemin de simulation que le joueur. Le contrôleur lui f
 | `quick` | 2 à 8 pilotes, objets actifs |
 | `time_trial` | 1 pilote, objets désactivés |
 | `elimination` | grille, intervalle d’élimination borné |
-| `grand_prix` | quatre circuits dans l’ordre canonique et points cumulés |
+| `grand_prix` | huit concurrents, grille stable, circuits de la coupe choisie et points cumulés |
 
 Un résultat n’est commité qu’une fois par session. `complete_race` normalise position, temps, tours, classement et récompense avant de transmettre une copie à `SaveSystem`. Un abandon passe par le même contrat avec `finished=false` et `dnf=true`.
 
-### 2.9 Sauvegarde v2
+Par défaut, `GameSession` construit une grille de la division du châssis sélectionné. Le mélange n’est autorisé que par une demande explicite compatible avec `open_mixed` ou `elite_open`. Les classes appliquent aussi une politique réelle : configuration d’usine et améliorations nulles en `stock`, plafond de niveau 2 en `tuned`, plafond de niveau 4 en `unlimited`.
 
-Le schéma courant est `SAVE_VERSION = 2` et le fichier principal :
+### 2.9 Sauvegarde v3
+
+Le schéma courant est `SAVE_VERSION = 3` et le fichier principal :
 
 ```text
 user://mecha_overdrive_profile.json
@@ -148,16 +160,19 @@ owned_chassis[]
 paints[chassis_id]
 unlocked_paints[]
 upgrades[chassis_id][engine|servos|reactor|armor]
+loadouts[chassis_id][slot_id]
+camera_modes[chassis_id]
 records[track_id][mode]
 stats[races|wins|podiums|championships|credits_earned]
 settings[accessibilité|audio]
+championship[id|round|tracks|division_id|ruleset_id|grid_policy|performance_class|roster]
 ```
 
-À chaque lecture, le service reconstruit un profil par défaut puis n’accepte que les valeurs valides et bornées. L’écriture suit un flux temporaire → backup → remplacement. Un JSON invalide est archivé en `.corrupt.json`. Les DNF n’accordent ni crédits ni record.
+À chaque lecture, le service reconstruit un profil par défaut puis n’accepte que les valeurs valides et bornées. Une sauvegarde v2 est migrée vers un chargement par châssis, une vue persistante et la coupe dédiée correspondant à la division sélectionnée. Les propriétés immuables d’un championnat sont ensuite recopiées depuis le catalogue canonique : une sauvegarde modifiée ne peut pas injecter des circuits, une division ou un règlement arbitraires. L’écriture suit un flux temporaire → backup → remplacement. Un JSON invalide est archivé en `.corrupt.json`. Les DNF n’accordent ni crédits ni record.
 
 ### 2.10 UI, accessibilité et audio
 
-Les scripts `scripts/ui/` construisent les écrans de menu, garage, codex, HUD et résultats. `ui_theme.gd` centralise la direction visuelle. Les réglages persistants couvrent contraste élevé, mouvement réduit, texte agrandi, secousse caméra, unités métriques et volumes.
+Les scripts `scripts/ui/` construisent les écrans de menu, garage, codex, HUD et résultats. Le menu expose division, politique de grille, championnat et classe de performance ; le garage expose les trois emplacements modulaires et leur effet sur les statistiques. `ui_theme.gd` centralise la direction visuelle. Les réglages persistants couvrent contraste élevé, mouvement réduit, texte agrandi, secousse caméra, unités métriques et volumes.
 
 `scripts/audio/audio_director.gd` génère l’ambiance moteur et les événements de course à l’exécution. Aucun fichier audio externe n’est requis par cette branche.
 
@@ -167,9 +182,9 @@ Les scripts `scripts/ui/` construisent les écrans de menu, garage, codex, HUD e
 
 - `race_accelerate`, `race_brake`, `race_left`, `race_right` ;
 - `race_drift`, `race_boost`, `race_item` ;
-- `race_reset`, `race_pause`.
+- `race_reset`, `race_pause`, `race_camera`.
 
-La manette utilise le stick gauche, `LB`/`RB`, `A`, `B`, `X` et `Start`. Le système repose sur l’InputMap Godot : un remapping futur peut être ajouté sans modifier `RaceController`.
+La vue bascule entre TPS et cockpit avec `V`/`Tab` ou le bouton `Y` de la manette. Le système repose sur l’InputMap Godot : un remapping futur peut être ajouté sans modifier `RaceController`.
 
 ## 3. Flux Godot de bout en bout
 
@@ -196,9 +211,9 @@ GameSession.complete_race
 ResultsScreen
 ```
 
-## 4. Architecture de l’édition compagnon web
+## 4. Architecture historique de l’édition compagnon web
 
-L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
+Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.1.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
 
 | Fichier | Responsabilité |
 |---|---|
@@ -227,7 +242,7 @@ La clé navigateur reste :
 mecha_overdrive_circuit_zero_save_v1
 ```
 
-Elle conserve crédits, châssis, peintures, améliorations, meilleurs temps, statistiques, paramètres et état du Grand Prix web. Elle n’est ni migrée vers le profil Godot v2 ni partagée avec lui.
+Elle conserve crédits, châssis, peintures, améliorations, meilleurs temps, statistiques, paramètres et état du Grand Prix web. Elle n’est ni migrée vers le profil Godot v3 ni partagée avec lui.
 
 ### 4.3 PWA, export Godot Web et Vercel
 
@@ -246,8 +261,8 @@ Les deux surfaces sont publiées ensemble :
 ### Godot
 
 - `tools/validate-godot.mjs` : contrat statique des ressources et données Godot.
-- `godot/tests/smoke_test.gd` : catalogue, sauvegarde v2, quatre modes et déterminisme.
-- `godot/tests/runtime_flow_test.gd` : vraie scène, course 3D, HUD, mouvement, résultats et retour menu avec sauvegarde isolée.
+- `godot/tests/smoke_test.gd` : 10 châssis, 5 divisions, 8 circuits, 6 coupes, 9 modules, sauvegarde v3, migration/canonicalisation, classes, dangers et déterminisme.
+- `godot/tests/runtime_flow_test.gd` : vraie scène, grille par division, modules, vues TPS/cockpit, mouvement, DNF, résultats et coupes dédiée/ouverte avec sauvegarde isolée.
 - `godot --headless --path godot --editor --quit` : import et parse par le vrai moteur.
 
 ### Web
@@ -272,16 +287,16 @@ Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le valida
 ### Nouveau châssis
 
 1. Ajouter une entrée canonique dans `GameDatabase.CHASSIS`.
-2. Fournir statistiques, multiplicateurs physiques, aptitude et couleurs.
-3. Ajouter ou adapter la géométrie dans `MechaFactory`.
+2. Fournir division, statistiques, multiplicateurs physiques, aptitude, chargement par défaut, ancres de caméra et textures.
+3. Ajouter ou adapter la géométrie dans `MechaFactory` et les points modulaires dans `MechaVisualModules`.
 4. Implémenter l’effet spécialisé dans `RacerState` si les multiplicateurs ne suffisent pas.
 5. Étendre le smoke test et le validateur structurel.
 
 ### Nouveau circuit
 
 1. Ajouter la spécification dans `GameDatabase.TRACKS`.
-2. Définir seed, rayon, largeur, relief, palette, dangers et temps de référence.
-3. Étendre `TrackFactory` seulement si une nouvelle primitive visuelle ou mécanique est nécessaire.
+2. Définir seed, rayon, largeur, relief, palette, grip, profil, textures, accessoires, dangers et temps de référence.
+3. Étendre `TrackFactory` ou `TrackVisualProfiles` seulement si une nouvelle primitive visuelle ou mécanique est nécessaire.
 4. Tester la fermeture, le relief, les poses, les marqueurs et une course complète.
 
 ### Nouvel objet

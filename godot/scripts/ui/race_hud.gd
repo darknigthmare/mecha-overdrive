@@ -98,7 +98,8 @@ func update_race(snapshot: Dictionary) -> void:
 		var item_data := GameDatabase.get_item(String(item))
 		item_name = String(item_data.get("short", item_data.get("name", item))).to_upper()
 	var charges := int(snapshot.get("item_charges", snapshot.get("charges", 1)))
-	_item_label.text = "MODULE  //  %s%s" % [item_name, "  ×%d" % charges if item_name != "VIDE" and charges > 1 else ""]
+	var view_name := "COCKPIT" if String(snapshot.get("camera_view", "tps")) == "fps" else "TPS"
+	_item_label.text = "MODULE  //  %s%s   •   VUE %s  [V]" % [item_name, "  ×%d" % charges if item_name != "VIDE" and charges > 1 else "", view_name]
 
 	var warning := String(snapshot.get("warning", ""))
 	if bool(snapshot.get("eliminated", false)):

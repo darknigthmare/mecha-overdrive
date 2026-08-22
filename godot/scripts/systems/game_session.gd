@@ -7,7 +7,9 @@ signal race_completed(result_data: Dictionary)
 signal championship_changed(championship_data: Dictionary)
 
 const MODES: Array[String] = ["quick", "time_trial", "elimination", "grand_prix"]
-const GRAND_PRIX_TRACKS: Array[String] = ["foundry", "dunes", "glacier", "orbital"]
+# Legacy wrapper for callers/tests. The authoritative list lives in
+# GameDatabase.CHAMPIONSHIPS[command_cup].track_ids.
+const GRAND_PRIX_TRACKS: Array[String] = ["foundry", "tempest", "glacier", "orbital"]
 const MAX_RACERS := 8
 
 var config: Dictionary = {}
@@ -33,9 +35,10 @@ func restore_championship() -> Dictionary:
 	var restored_data: Dictionary = restored
 	var round_index := int(restored_data.get("round_index", -1))
 	var entrants: Variant = restored_data.get("entrants", [])
+	var tracks: Variant = restored_data.get("tracks", [])
 	if not bool(restored_data.get("active", false)):
 		return {}
-	if round_index < 0 or round_index >= GRAND_PRIX_TRACKS.size():
+	if not tracks is Array or Array(tracks).is_empty() or round_index < 0 or round_index >= Array(tracks).size():
 		return {}
 	if not entrants is Array or Array(entrants).size() != MAX_RACERS:
 		return {}
@@ -55,15 +58,46 @@ func configure(request: Dictionary) -> Dictionary:
 	if not GameDatabase.has_track(track_id):
 		track_id = "foundry"
 
+	var profile_data := _profile()
+	var selected_chassis := String(profile_data.get("selected_chassis", "biped"))
+	var player_division := _chassis_division(selected_chassis)
+	var requested_division := String(request.get("division_id", player_division))
+	var division_id := requested_division if not GameDatabase.get_division(requested_division).is_empty() else player_division
+	var grid_policy := _sanitize_grid_policy(String(request.get("grid_policy", "division")))
+	var ruleset_id := String(request.get("ruleset_id", "open_mixed" if grid_policy == "mixed" else "division_locked"))
+	var ruleset := GameDatabase.get_ruleset(ruleset_id)
+	var expects_mixed := grid_policy == "mixed"
+	if ruleset.is_empty() or bool(ruleset.get("mixed_divisions", false)) != expects_mixed:
+		ruleset_id = "open_mixed" if expects_mixed else "division_locked"
+		ruleset = GameDatabase.get_ruleset(ruleset_id)
+	var performance_class_id := String(request.get("performance_class_id", ruleset.get("performance_class_id", "tuned")))
+	if GameDatabase.get_performance_class(performance_class_id).is_empty():
+		performance_class_id = "tuned"
+
 	if mode == "grand_prix":
 		if bool(request.get("new_championship", false)) or championship.is_empty() or not bool(championship.get("active", false)):
-			_start_championship(difficulty)
-		track_id = GRAND_PRIX_TRACKS[clampi(int(championship.get("round_index", 0)), 0, GRAND_PRIX_TRACKS.size() - 1)]
+			_start_championship(request, difficulty, profile_data)
+		var gp_tracks: Array = championship.get("tracks", GRAND_PRIX_TRACKS)
+		if gp_tracks.is_empty():
+			return {}
+		difficulty = String(championship.get("difficulty", difficulty))
+		track_id = String(gp_tracks[clampi(int(championship.get("round_index", 0)), 0, gp_tracks.size() - 1)])
+		division_id = String(championship.get("division_id", division_id))
+		grid_policy = _sanitize_grid_policy(String(championship.get("grid_policy", "division")))
+		ruleset_id = String(championship.get("ruleset_id", "division_locked"))
+		ruleset = GameDatabase.get_ruleset(ruleset_id)
+		performance_class_id = String(championship.get("performance_class_id", "tuned"))
 
 	var track := GameDatabase.get_track(track_id)
 	var laps := clampi(int(request.get("laps", track.get("default_laps", 3))), 1, 9)
-	var racer_count := 1 if mode == "time_trial" else clampi(int(request.get("racer_count", MAX_RACERS)), 2, MAX_RACERS)
+	# Championship standings are homologated for eight stable entrants. A
+	# request-level racer_count may never desynchronise the race from its table.
+	var racer_count := 1 if mode == "time_trial" else (MAX_RACERS if mode == "grand_prix" else clampi(int(request.get("racer_count", MAX_RACERS)), 2, MAX_RACERS))
 	_session_counter += 1
+	var session_seed := int(request.get("seed", int(track.get("seed", 1)) + _session_counter * 97))
+	var roster: Array = Array(championship.get("entrants", [])).duplicate(true) if mode == "grand_prix" else _build_roster(profile_data, racer_count, division_id, grid_policy, session_seed, performance_class_id)
+	if mode == "time_trial" and roster.size() > 1:
+		roster.resize(1)
 	config = {
 		"session_id": _session_counter,
 		"mode": mode,
@@ -71,10 +105,19 @@ func configure(request: Dictionary) -> Dictionary:
 		"difficulty": difficulty,
 		"laps": laps,
 		"racer_count": racer_count,
-		"items_enabled": mode != "time_trial",
+		"items_enabled": mode != "time_trial" and bool(ruleset.get("items_enabled", true)),
+		"division_id": division_id,
+		"grid_policy": grid_policy,
+		"mixed_divisions": grid_policy == "mixed",
+		"ruleset_id": ruleset_id,
+		"performance_class_id": performance_class_id,
+		"championship_id": String(championship.get("championship_id", "")) if mode == "grand_prix" else "",
+		"cup_id": String(championship.get("championship_id", "")) if mode == "grand_prix" else "",
+		"roster": roster,
+		"camera_view": _camera_view(profile_data),
 		"elimination_interval": clampf(float(request.get("elimination_interval", 32.0)), 15.0, 90.0) if mode == "elimination" else 0.0,
 		"time_limit": clampf(float(request.get("time_limit", 900.0)), 60.0, 1800.0),
-		"seed": int(request.get("seed", int(track.get("seed", 1)) + _session_counter * 97)),
+		"seed": session_seed,
 	}
 	_result_committed = false
 	last_result = {}
@@ -129,7 +172,7 @@ func complete_race(raw_result: Dictionary) -> Dictionary:
 		var championship_result := _championship_result()
 		result["championship"] = championship_result
 		result["round"] = int(championship_result.get("round", 1))
-		result["total_rounds"] = int(championship_result.get("total_rounds", GRAND_PRIX_TRACKS.size()))
+		result["total_rounds"] = int(championship_result.get("total_rounds", _championship_tracks().size()))
 		result["championship_standings"] = championship_result.get("standings", [])
 		result["championship_complete"] = bool(championship_result.get("complete", false))
 		result["can_continue"] = bool(championship_result.get("can_continue", false))
@@ -154,14 +197,20 @@ func abort_race(reason: String = "abandoned") -> Dictionary:
 	})
 
 
-func start_next_grand_prix_round() -> Dictionary:
+func start_next_championship_round() -> Dictionary:
 	if championship.is_empty() or not bool(championship.get("active", false)):
 		return {}
 	return configure({
 		"mode": "grand_prix",
 		"difficulty": String(championship.get("difficulty", "pilot")),
+		"championship_id": String(championship.get("championship_id", "command_cup")),
 		"new_championship": false,
 	})
+
+
+func start_next_grand_prix_round() -> Dictionary:
+	# Compatibility wrapper for v2 callers.
+	return start_next_championship_round()
 
 
 func abandon_championship() -> void:
@@ -173,17 +222,42 @@ func abandon_championship() -> void:
 	championship_changed.emit(championship.duplicate(true))
 
 
-func _start_championship(difficulty: String) -> void:
-	var entrants: Array[Dictionary] = [{"id": "player", "name": "PILOTE 01", "points": 0}]
-	for index in range(MAX_RACERS - 1):
-		var pilot: Dictionary = GameDatabase.PILOTS[index % GameDatabase.PILOTS.size()]
-		entrants.append({"id": String(pilot.get("id", "ai_%d" % index)), "name": String(pilot.get("name", "RIVAL %02d" % (index + 1))), "points": 0})
+func _start_championship(request: Dictionary, difficulty: String, profile_data: Dictionary = {}) -> void:
+	if profile_data.is_empty():
+		profile_data = _profile()
+	var championship_id := String(request.get("championship_id", request.get("cup_id", "command_cup")))
+	var definition := GameDatabase.get_championship(championship_id)
+	if definition.is_empty():
+		championship_id = "command_cup"
+		definition = GameDatabase.get_championship(championship_id)
+	var tracks: Array = Array(definition.get("track_ids", GRAND_PRIX_TRACKS)).duplicate()
+	var mixed_divisions := bool(definition.get("mixed_divisions", false))
+	var grid_policy := "mixed" if mixed_divisions else "division"
+	var division_id := String(definition.get("division_id", ""))
+	if division_id.is_empty():
+		division_id = _chassis_division(String(profile_data.get("selected_chassis", "biped")))
+	var ruleset_id := String(definition.get("ruleset_id", "open_mixed" if mixed_divisions else "division_locked"))
+	var performance_class_id := String(definition.get("performance_class_id", "tuned"))
+	var roster_seed := int(request.get("seed", championship_id.hash()))
+	var entrants := _build_roster(profile_data, MAX_RACERS, division_id, grid_policy, roster_seed, performance_class_id)
+	for entrant_index in range(entrants.size()):
+		var entrant: Dictionary = entrants[entrant_index]
+		entrant["points"] = 0
+		entrants[entrant_index] = entrant
 	championship = {
 		"active": true,
 		"abandoned": false,
+		"championship_id": championship_id,
+		"cup_id": championship_id,
+		"name": String(definition.get("name", championship_id)),
 		"difficulty": difficulty,
+		"division_id": division_id,
+		"ruleset_id": ruleset_id,
+		"grid_policy": grid_policy,
+		"mixed_divisions": mixed_divisions,
+		"performance_class_id": performance_class_id,
 		"round_index": 0,
-		"tracks": GRAND_PRIX_TRACKS.duplicate(),
+		"tracks": tracks,
 		"completed_tracks": [],
 		"entrants": entrants,
 		"champion_id": "",
@@ -194,7 +268,7 @@ func _start_championship(difficulty: String) -> void:
 
 func _apply_championship_result(result: Dictionary) -> void:
 	if championship.is_empty():
-		_start_championship(String(config.get("difficulty", "pilot")))
+		_start_championship(config, String(config.get("difficulty", "pilot")))
 	var entrants: Array = championship.get("entrants", [])
 	var classification: Array = result.get("classification", [])
 	if classification.is_empty():
@@ -225,7 +299,7 @@ func _apply_championship_result(result: Dictionary) -> void:
 	completed_tracks.append(String(config.get("track_id", "foundry")))
 	championship["completed_tracks"] = completed_tracks
 	championship["round_index"] = int(championship.get("round_index", 0)) + 1
-	if int(championship["round_index"]) >= GRAND_PRIX_TRACKS.size():
+	if int(championship["round_index"]) >= _championship_tracks().size():
 		championship["active"] = false
 		var sorted_entrants := entrants.duplicate(true)
 		sorted_entrants.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.get("points", 0)) > int(b.get("points", 0)))
@@ -267,7 +341,7 @@ func _apply_record_contract(result: Dictionary, save_system: Node) -> void:
 
 func _championship_result() -> Dictionary:
 	var output := championship.duplicate(true)
-	var total_rounds := GRAND_PRIX_TRACKS.size()
+	var total_rounds := _championship_tracks().size()
 	var completed_rounds := clampi(int(championship.get("round_index", 0)), 0, total_rounds)
 	var complete := completed_rounds >= total_rounds and not bool(championship.get("active", false)) and not bool(championship.get("abandoned", false))
 	var entrants: Array = championship.get("entrants", [])
@@ -293,6 +367,109 @@ func _championship_result() -> Dictionary:
 	output["complete"] = complete
 	output["championship_complete"] = complete
 	output["can_continue"] = bool(championship.get("active", false)) and completed_rounds < total_rounds
+	return output
+
+
+func _championship_tracks() -> Array:
+	var tracks: Variant = championship.get("tracks", GRAND_PRIX_TRACKS)
+	return tracks if tracks is Array and not Array(tracks).is_empty() else GRAND_PRIX_TRACKS
+
+
+func _profile() -> Dictionary:
+	var save_system := _save_system()
+	if save_system != null:
+		var profile_value: Variant = save_system.get("profile")
+		if profile_value is Dictionary:
+			return Dictionary(profile_value).duplicate(true)
+	return {"selected_chassis": "biped", "pilot_name": "PILOTE 01", "paints": {}, "loadouts": {}, "settings": {"camera_view": "tps"}}
+
+
+func _camera_view(profile_data: Dictionary) -> String:
+	var settings: Dictionary = profile_data.get("settings", {}) if profile_data.get("settings", {}) is Dictionary else {}
+	var value := String(settings.get("camera_view", "tps"))
+	return value if value in ["tps", "fps"] else "tps"
+
+
+func _sanitize_grid_policy(value: String) -> String:
+	# Mixed divisions are never inferred from malformed input.
+	return "mixed" if value == "mixed" else "division"
+
+
+func _chassis_division(chassis_id: String) -> String:
+	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", "command"))
+	return division_id if not GameDatabase.get_division(division_id).is_empty() else "command"
+
+
+func _build_roster(profile_data: Dictionary, racer_count: int, division_id: String, grid_policy: String, seed_value: int, performance_class_id: String = "tuned") -> Array[Dictionary]:
+	var all_chassis := GameDatabase.get_all_chassis()
+	var pool := all_chassis if grid_policy == "mixed" else GameDatabase.get_chassis_for_division(division_id)
+	if pool.is_empty():
+		pool = GameDatabase.get_chassis_for_division("command")
+	var selected_id := String(profile_data.get("selected_chassis", "biped"))
+	if grid_policy == "division" and _chassis_division(selected_id) != division_id:
+		selected_id = String(pool[0].get("id", "biped"))
+	var paints: Dictionary = profile_data.get("paints", {}) if profile_data.get("paints", {}) is Dictionary else {}
+	var loadouts: Dictionary = profile_data.get("loadouts", {}) if profile_data.get("loadouts", {}) is Dictionary else {}
+	var pilots := GameDatabase.get_all_pilots()
+	var roster: Array[Dictionary] = []
+	for index in range(clampi(racer_count, 1, MAX_RACERS)):
+		var is_player := index == 0
+		var chassis: Dictionary = GameDatabase.get_chassis(selected_id) if is_player else pool[(index + abs(seed_value)) % pool.size()]
+		var chassis_id := String(chassis.get("id", "biped"))
+		var pilot: Dictionary = pilots[(index - 1 + abs(seed_value)) % pilots.size()] if not is_player else {}
+		var racer_id := "player" if is_player else String(pilot.get("id", "rival_%02d" % index))
+		var loadout := _sanitize_loadout(loadouts.get(chassis_id, {}), chassis_id, performance_class_id) if is_player else _variant_loadout(index + abs(seed_value), chassis_id, performance_class_id)
+		var paint := String(paints.get(chassis_id, chassis.get("paint", "#5EE7FF"))) if is_player else String(pilot.get("paint", chassis.get("paint", "#5EE7FF")))
+		if not Color.html_is_valid(paint):
+			paint = String(chassis.get("paint", "#5EE7FF"))
+		roster.append({
+			"id": racer_id, "racer_id": racer_id,
+			"name": String(profile_data.get("pilot_name", "PILOTE 01")) if is_player else String(pilot.get("callsign", pilot.get("name", "RIVAL"))),
+			"pilot_id": "player" if is_player else String(pilot.get("id", racer_id)),
+			"chassis_id": chassis_id,
+			"division_id": _chassis_division(chassis_id),
+			"paint": Color(paint).to_html(false).to_upper(),
+			"loadout": loadout,
+			"module_variant": String(loadout.get("core", "core_balanced")),
+			"points": 0,
+		})
+	return roster
+
+
+func _default_loadout(chassis_id: String = "") -> Dictionary:
+	var output: Dictionary = {}
+	var chassis := GameDatabase.get_chassis(chassis_id)
+	var authored: Dictionary = chassis.get("default_loadout", {}) if chassis.get("default_loadout", {}) is Dictionary else {}
+	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
+		var slot_id := String(slot.get("id", ""))
+		var option_id := String(authored.get(slot_id, slot.get("default_option_id", "")))
+		if not slot_id.is_empty() and not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+			output[slot_id] = option_id
+	return output
+
+
+func _sanitize_loadout(value: Variant, chassis_id: String = "", performance_class_id: String = "tuned") -> Dictionary:
+	var performance_class := GameDatabase.get_performance_class(performance_class_id)
+	var output := _default_loadout(chassis_id)
+	if String(performance_class.get("module_policy", "all")) == "defaults_only":
+		return output
+	var source: Dictionary = value if value is Dictionary else {}
+	for slot_id: String in output.keys():
+		var option_id := String(source.get(slot_id, output[slot_id]))
+		if not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+			output[slot_id] = option_id
+	return output
+
+
+func _variant_loadout(variant_index: int, chassis_id: String = "", performance_class_id: String = "tuned") -> Dictionary:
+	var performance_class := GameDatabase.get_performance_class(performance_class_id)
+	if String(performance_class.get("module_policy", "all")) == "defaults_only":
+		return _default_loadout(chassis_id)
+	var output: Dictionary = {}
+	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
+		var options: Array = slot.get("options", [])
+		if not options.is_empty():
+			output[String(slot.get("id", ""))] = String(Dictionary(options[variant_index % options.size()]).get("id", slot.get("default_option_id", "")))
 	return output
 
 
@@ -358,6 +535,8 @@ func _sanitize_classification(value: Variant) -> Array[Dictionary]:
 			"name": display_name,
 			"pilot": display_name,
 			"player": racer_id == "player" or bool(entry.get("player", false)),
+			"chassis_id": String(entry.get("chassis_id", "")),
+			"division_id": String(entry.get("division_id", "")),
 			"delta": String(entry.get("delta", entry.get("gap", ""))),
 			"position": output.size() + 1,
 			"elapsed": maxf(0.0, float(entry.get("elapsed", 0.0))),

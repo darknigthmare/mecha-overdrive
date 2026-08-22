@@ -5,16 +5,17 @@ extends RefCounted
 ## assembled from Godot primitives, keeping the source portable and editable.
 
 
-static func build(chassis: Dictionary, paint: Color, is_player: bool = false) -> RacerVisual:
+static func build(chassis: Dictionary, paint: Color, is_player: bool = false, customization: Dictionary = {}) -> RacerVisual:
 	var root := RacerVisual.new()
 	root.name = "Mecha_%s" % String(chassis.get("id", "unknown"))
 	root.set_meta("chassis_id", chassis.get("id", "biped"))
 
-	var primary := _material(paint, 0.82, 0.24)
-	var dark := _material(paint.darkened(0.64), 0.9, 0.31)
-	var joint := _material(Color("18212c"), 0.88, 0.28)
+	var primary := MaterialLibrary.mecha(paint, 0.82, 0.24, 1.8)
+	var dark := MaterialLibrary.mecha(paint.darkened(0.64), 0.9, 0.31, 2.4)
+	var joint := MaterialLibrary.joint()
+	var cockpit := MaterialLibrary.cockpit()
 	var glow_color := Color("64ebff") if is_player else Color(String(chassis.get("glow", "ff9c55")))
-	var glow := _emissive(glow_color, 3.4 if is_player else 2.3)
+	var glow := MaterialLibrary.emissive(glow_color, 3.4 if is_player else 2.3)
 
 	match String(chassis.get("id", "biped")):
 		"tripod": _radial(root, 3, 2.35, primary, dark, joint, glow, 0.0)
@@ -28,7 +29,8 @@ static func build(chassis: Dictionary, paint: Color, is_player: bool = false) ->
 		"centurion": _centurion(root, primary, dark, joint, glow)
 		_: _biped(root, primary, dark, joint, glow)
 
-	_cockpit(root, primary, dark, glow)
+	_cockpit(root, chassis, primary, dark, cockpit, glow)
+	MechaVisualModules.install(root, chassis, customization, primary, dark, joint, glow)
 	root.scale = Vector3.ONE * float(chassis.get("visual_scale", 1.0))
 	return root
 
@@ -142,11 +144,31 @@ static func _centurion(root: Node3D, primary: Material, dark: Material, joint: M
 	_reactor(root, Vector3(0, 1.5, 3.0), Vector3(1.5, 0.25, 0.18), glow)
 
 
-static func _cockpit(root: Node3D, primary: Material, dark: Material, glow: Material) -> void:
-	_sphere(root, 0.72, Vector3(0, 2.85, -0.35), dark, Vector3(1.2, 0.65, 1.6))
-	_box(root, Vector3(0.95, 0.18, 0.58), Vector3(0, 2.88, -1.15), glow)
-	_box(root, Vector3(0.16, 0.55, 1.25), Vector3(-0.72, 2.55, -0.5), primary)
-	_box(root, Vector3(0.16, 0.55, 1.25), Vector3(0.72, 2.55, -0.5), primary)
+static func _cockpit(root: Node3D, chassis: Dictionary, primary: Material, dark: Material, cockpit: Material, glow: Material) -> void:
+	var cockpit_offset: Vector3 = chassis.get("cockpit_offset", Vector3(0, 2.65, 0.10))
+	var canopy := _sphere(root, 0.72, cockpit_offset + Vector3(0, 0.20, -0.45), cockpit, Vector3(1.2, 0.65, 1.6))
+	canopy.name = "CockpitCanopy"
+	canopy.add_to_group("mecha_fps_occluder")
+	var visor := _box(root, Vector3(0.95, 0.18, 0.58), cockpit_offset + Vector3(0, 0.23, -1.25), glow)
+	visor.name = "CockpitVisor"
+	visor.add_to_group("mecha_fps_occluder")
+	var left_frame := _box(root, Vector3(0.16, 0.55, 1.25), cockpit_offset + Vector3(-0.72, -0.10, -0.60), primary)
+	left_frame.add_to_group("mecha_fps_occluder")
+	var right_frame := _box(root, Vector3(0.16, 0.55, 1.25), cockpit_offset + Vector3(0.72, -0.10, -0.60), primary)
+	right_frame.add_to_group("mecha_fps_occluder")
+	var dashboard := _box(root, Vector3(1.55, 0.12, 0.34), cockpit_offset + Vector3(0, -0.68, -2.05), cockpit)
+	dashboard.name = "CockpitDashboard"
+	dashboard.add_to_group("mecha_cockpit_interior")
+	var display := _box(root, Vector3(0.72, 0.05, 0.18), cockpit_offset + Vector3(0, -0.56, -2.17), glow)
+	display.name = "CockpitDisplay"
+	display.add_to_group("mecha_cockpit_interior")
+	for side: float in [-1.0, 1.0]:
+		var inner_frame := _box(root, Vector3(0.10, 0.78, 0.12), cockpit_offset + Vector3(side * 1.55, 0.02, -2.02), cockpit)
+		inner_frame.name = "CockpitFrameLeft" if side < 0.0 else "CockpitFrameRight"
+		inner_frame.add_to_group("mecha_cockpit_interior")
+	var top_frame := _box(root, Vector3(3.15, 0.08, 0.12), cockpit_offset + Vector3(0, 0.90, -2.04), cockpit)
+	top_frame.name = "CockpitTopFrame"
+	top_frame.add_to_group("mecha_cockpit_interior")
 
 
 static func _reactor(root: Node3D, position: Vector3, size: Vector3, material: Material) -> void:
@@ -162,6 +184,7 @@ static func _box(root: Node3D, size: Vector3, position: Vector3, material: Mater
 	node.position = position
 	node.material_override = material
 	node.add_to_group("mecha_damage_part")
+	node.add_to_group("mecha_fps_occluder")
 	root.add_child(node)
 	return node
 
@@ -176,6 +199,7 @@ static func _sphere(root: Node3D, radius: float, position: Vector3, material: Ma
 	node.scale = scale_value
 	node.material_override = material
 	node.add_to_group("mecha_damage_part")
+	node.add_to_group("mecha_fps_occluder")
 	root.add_child(node)
 	return node
 
@@ -191,6 +215,7 @@ static func _cylinder(root: Node3D, radius: float, height: float, position: Vect
 	node.rotation = rotation
 	node.material_override = material
 	node.add_to_group("mecha_damage_part")
+	node.add_to_group("mecha_fps_occluder")
 	root.add_child(node)
 	return node
 

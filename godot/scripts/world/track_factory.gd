@@ -61,12 +61,7 @@ static func _build_curve(spec: Dictionary) -> Curve3D:
 
 	for index in range(POINT_COUNT):
 		var angle := TAU * float(index) / float(POINT_COUNT)
-		var radial_wave := sin(angle * harmonic_a + seed * 0.17) * radius * 0.16
-		radial_wave += cos(angle * harmonic_b - seed * 0.11) * radius * 0.08
-		var local_radius := radius + radial_wave
-		var elevation := sin(angle * (1 + posmod(seed, 2)) + seed) * verticality
-		elevation += cos(angle * 3.0 - seed * 0.3) * verticality * 0.36
-		points.append(Vector3(cos(angle) * local_radius, elevation, sin(angle) * local_radius))
+		points.append(TrackVisualProfiles.curve_point(spec, angle, radius, verticality, seed, harmonic_a, harmonic_b))
 
 	# Duplicate the first point at the end. Bezier handles preserve a smooth seam.
 	for index in range(POINT_COUNT + 1):
@@ -112,7 +107,7 @@ static func _build_environment(root: Node3D, spec: Dictionary) -> void:
 	plane.size = Vector2(1800.0, 1800.0)
 	ground.mesh = plane
 	ground.position.y = -18.0
-	ground.material_override = _material(_color(palette.get("ground", "#05080d"), Color("05080d")), 0.05, 0.92)
+	ground.material_override = MaterialLibrary.environment(_color(palette.get("ground", "#05080d"), Color("05080d")), 0.05, 0.92, 8.0)
 	root.add_child(ground)
 
 
@@ -121,19 +116,25 @@ static func _build_road(root: Node3D, curve: Curve3D, length: float, width: floa
 	var road_color := _color(palette.get("road", "#202733"), Color("202733"))
 	var shoulder_color := _color(palette.get("shoulder", "#4c6575"), Color("4c6575"))
 	var glow_color := _color(palette.get("glow", "#38ddff"), Color("38ddff"))
+	var tuning := TrackVisualProfiles.texture_tuning(spec)
 
 	var road_mesh := _strip_mesh(curve, length, width, road_color, 0.0)
 	var road := MeshInstance3D.new()
 	road.name = "Road"
 	road.mesh = road_mesh
-	road.material_override = _material(Color.WHITE, 0.58, 0.36, true)
+	var road_material := MaterialLibrary.road(Color.WHITE, float(tuning.get("metallic", 0.58)), float(tuning.get("roughness", 0.38)), true)
+	road_material.uv1_scale.y = float(tuning.get("road_repeat", 0.055))
+	road.material_override = road_material
 	root.add_child(road)
 
 	# Slightly wider shoulder is rendered first and lowered to avoid z-fighting.
 	var shoulder := MeshInstance3D.new()
 	shoulder.name = "MagneticShoulder"
 	shoulder.mesh = _strip_mesh(curve, length, width + 3.6, shoulder_color, -0.12)
-	shoulder.material_override = _material(Color.WHITE, 0.72, 0.42, true)
+	var shoulder_material := MaterialLibrary.road(Color.WHITE, 0.34, 0.56, true)
+	shoulder_material.uv1_scale.y = float(tuning.get("road_repeat", 0.055)) * 0.72
+	shoulder_material.vertex_color_use_as_albedo = true
+	shoulder.material_override = shoulder_material
 	root.add_child(shoulder)
 	root.move_child(shoulder, road.get_index())
 
@@ -217,21 +218,8 @@ static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: f
 		var prop := MeshInstance3D.new()
 		prop.name = "Prop_%02d" % index
 		var shape_kind := posmod(index + seed, 4)
-		if shape_kind == 0:
-			var cylinder := CylinderMesh.new()
-			cylinder.top_radius = rng.randf_range(0.5, 1.2)
-			cylinder.bottom_radius = rng.randf_range(0.8, 1.6)
-			cylinder.height = rng.randf_range(4.0, 12.0)
-			prop.mesh = cylinder
-		elif shape_kind == 1:
-			var prism := PrismMesh.new()
-			prism.size = Vector3(rng.randf_range(2.0, 5.0), rng.randf_range(2.0, 7.0), rng.randf_range(1.0, 3.0))
-			prop.mesh = prism
-		else:
-			var box := BoxMesh.new()
-			box.size = Vector3(rng.randf_range(1.4, 4.5), rng.randf_range(2.0, 10.0), rng.randf_range(1.2, 4.0))
-			prop.mesh = box
-		prop.material_override = _material(accent.darkened(rng.randf_range(0.25, 0.68)), 0.72, 0.46)
+		prop.mesh = TrackVisualProfiles.prop_mesh(spec, shape_kind, rng)
+		prop.material_override = MaterialLibrary.environment(accent.darkened(rng.randf_range(0.25, 0.68)), 0.72, 0.46, 2.4)
 		prop.position = pose.origin + pose.basis.x.normalized() * offset
 		prop.rotation.y = rng.randf_range(-PI, PI)
 		holder.add_child(prop)

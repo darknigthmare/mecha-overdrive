@@ -84,11 +84,29 @@ func _show_results(result: Dictionary) -> void:
 		push_error("Results scene root must use ResultsScreen.")
 		_show_main_menu()
 		return
-	results.retry_requested.connect(_start_race.bind(_last_config))
+	results.retry_requested.connect(_retry_last_race)
 	results.menu_requested.connect(_show_main_menu)
 	results.next_requested.connect(_start_next_round)
 	_replace_screen(results)
 	results.call_deferred(&"present", result)
+
+
+func _retry_last_race() -> void:
+	var request := _last_config.duplicate(true)
+	var session := get_node_or_null("/root/GameSession") as GameSessionService
+	if session != null and session.has_method(&"configure"):
+		# The last round has already been committed on the results screen. A
+		# completed championship therefore restarts the same cup; other modes
+		# simply reset their race transaction before rebuilding the controller.
+		if String(request.get("mode", "quick")) == "grand_prix":
+			request["new_championship"] = not bool(session.championship.get("active", false))
+		var configured: Variant = session.call(&"configure", request)
+		if configured is Dictionary:
+			request = configured
+	if request.is_empty():
+		_show_main_menu()
+		return
+	_start_race(request)
 
 
 func _start_next_round() -> void:
@@ -96,7 +114,7 @@ func _start_next_round() -> void:
 	if session == null:
 		_show_main_menu()
 		return
-	var config := session.start_next_grand_prix_round()
+	var config := session.start_next_championship_round() if session.has_method(&"start_next_championship_round") else session.start_next_grand_prix_round()
 	if not config.is_empty():
 		_start_race(config)
 	else:
@@ -122,12 +140,14 @@ func _register_input_defaults() -> void:
 	_add_key_action(&"race_boost", [KEY_SHIFT, KEY_X])
 	_add_key_action(&"race_item", [KEY_SPACE, KEY_E, KEY_ENTER])
 	_add_key_action(&"race_reset", [KEY_R])
+	_add_key_action(&"race_camera", [KEY_V, KEY_TAB])
 	_add_key_action(&"race_pause", [KEY_ESCAPE, KEY_P])
 	_add_joy_button(&"race_accelerate", JOY_BUTTON_RIGHT_SHOULDER)
 	_add_joy_button(&"race_brake", JOY_BUTTON_LEFT_SHOULDER)
 	_add_joy_button(&"race_drift", JOY_BUTTON_B)
 	_add_joy_button(&"race_boost", JOY_BUTTON_X)
 	_add_joy_button(&"race_item", JOY_BUTTON_A)
+	_add_joy_button(&"race_camera", JOY_BUTTON_Y)
 	_add_joy_button(&"race_pause", JOY_BUTTON_START)
 	_add_joy_axis(&"race_left", JOY_AXIS_LEFT_X, -0.22)
 	_add_joy_axis(&"race_right", JOY_AXIS_LEFT_X, 0.22)

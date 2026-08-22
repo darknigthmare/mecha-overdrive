@@ -15,3 +15,24 @@
 ### Statut
 
 Asset original créé pour le projet. Aucune œuvre de franchise n’a été copiée ou fournie comme référence d’entrée. Une vérification juridique séparée reste recommandée avant exploitation commerciale ou dépôt de marque.
+
+## Matériaux gameplay OpenAI — édition Godot 2.1.0
+
+Les quatre images suivantes ont été créées le 22 août 2026 avec la génération d’images intégrée d’OpenAI, en mode **nouvelle génération raster**, sans image de référence :
+
+| Fichier | Identifiant de génération | Usage runtime |
+|---|---|---|
+| `godot/assets/textures/openai/mecha_armor.png` | `exec-16c591eb-ae6f-4299-8676-8b64e361df05` | armures et panneaux modulaires des dix méchas |
+| `godot/assets/textures/openai/track_surface.png` | `exec-051ea44d-aee8-4ca1-af66-c742959fca37` | chaussées et épaules magnétiques des huit circuits |
+| `godot/assets/textures/openai/cockpit_composite.png` | `exec-12d4b298-d001-412b-b218-70544aed3470` | verrières, intérieurs et composites de cockpit |
+| `godot/assets/textures/openai/environment_panels.png` | `exec-02f22be6-b9a3-4b1f-9ab1-cdb51b864226` | barrières, accessoires et décors procéduraux |
+
+Le manifeste machine lisible [`../godot/assets/textures/openai/manifest.json`](../godot/assets/textures/openai/manifest.json) archive les prompts complets, les contraintes d’originalité, les identifiants, la date, le générateur et les usages. Les images ne contiennent ni texte, ni logo, ni marque, ni élément provenant d’une franchise tierce.
+
+### Intégration
+
+`MaterialLibrary` charge les quatre PNG et leur applique répétition UV, filtrage anisotrope, métallicité et rugosité. `MechaFactory`, `MechaVisualModules` et `TrackFactory` les consomment sur les dix architectures, leurs modules, les huit pistes et leurs décors. Les géométries restent originales et procédurales ; seules leurs surfaces sont bitmap.
+
+### Statut
+
+Assets originaux créés pour MECHA OVERDRIVE. Une vérification juridique séparée reste recommandée avant exploitation commerciale ou dépôt de marque.

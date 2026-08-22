@@ -89,14 +89,21 @@ func configure(spec: Dictionary) -> RacerState:
 	var servo_level := clampi(int(upgrades.get("servos", 0)), 0, 4)
 	var reactor_level := clampi(int(upgrades.get("reactor", 0)), 0, 4)
 	var armor_level := clampi(int(upgrades.get("armor", 0)), 0, 4)
+	var module_stats: Dictionary = spec.get("module_stats", {}) if spec.get("module_stats", {}) is Dictionary else {}
+	var module_speed := clampf(float(module_stats.get("speed", 0.0)) / 100.0, -0.25, 0.25)
+	var module_acceleration := clampf(float(module_stats.get("acceleration", 0.0)) / 100.0, -0.25, 0.25)
+	var module_handling := clampf(float(module_stats.get("handling", 0.0)) / 100.0, -0.25, 0.25)
+	var module_armor := clampf(float(module_stats.get("armor", 0.0)) / 100.0, -0.25, 0.25)
+	var module_stability := clampf(float(module_stats.get("stability", 0.0)) / 100.0, -0.25, 0.25)
+	var module_reactor := clampf(float(module_stats.get("reactor", 0.0)) / 100.0, -0.25, 0.25)
 
-	top_speed = BASE_TOP_SPEED * float(physics.get("top_speed", 1.0)) * (1.0 + engine_level * 0.035)
-	acceleration = BASE_ACCELERATION * float(physics.get("acceleration", 1.0)) * (1.0 + servo_level * 0.045)
-	handling = float(physics.get("handling", 1.0)) * (1.0 + servo_level * 0.035)
+	top_speed = BASE_TOP_SPEED * float(physics.get("top_speed", 1.0)) * (1.0 + engine_level * 0.035) * (1.0 + module_speed)
+	acceleration = BASE_ACCELERATION * float(physics.get("acceleration", 1.0)) * (1.0 + servo_level * 0.045) * (1.0 + module_acceleration)
+	handling = float(physics.get("handling", 1.0)) * (1.0 + servo_level * 0.035) * (1.0 + module_handling)
 	mass = maxf(0.45, float(physics.get("mass", 1.0)))
-	offroad_efficiency = clampf(float(physics.get("offroad", 1.0)), 0.65, 1.60)
-	heat_generation = maxf(0.55, float(physics.get("heat", 1.0))) / (1.0 + reactor_level * 0.055)
-	armor_max = BASE_ARMOR * float(physics.get("armor", 1.0)) * (1.0 + armor_level * 0.060)
+	offroad_efficiency = clampf(float(physics.get("offroad", 1.0)) * (1.0 + module_stability), 0.65, 1.60)
+	heat_generation = maxf(0.55, float(physics.get("heat", 1.0))) / ((1.0 + reactor_level * 0.055) * (1.0 + module_reactor))
+	armor_max = BASE_ARMOR * float(physics.get("armor", 1.0)) * (1.0 + armor_level * 0.060) * (1.0 + module_armor)
 	armor = armor_max
 	boost_energy = clampf(float(spec.get("boost_energy", 0.55 + reactor_level * 0.07)), 0.0, 1.0)
 
@@ -156,6 +163,27 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 	var hazard_drag := _hazard_drag(hazard_value)
 	if chassis_id == "centurion" and String(hazard_value) in ["debris", "gravity"]:
 		grip = maxf(grip, 0.98)
+	# Every authored circuit hazard changes the deterministic vehicle model.
+	match String(hazard_value):
+		"mud":
+			grip *= 0.82
+		"spores":
+			grip *= 0.92
+			heat = minf(1.0, heat + dt * 0.025)
+		"rain":
+			grip *= 0.78
+		"crosswind":
+			lane_velocity += sin(distance * 0.055 + seed * 0.13) * dt * 0.78
+		"current":
+			lane_velocity += sin(distance * 0.041 + seed * 0.17) * dt * 1.05
+		"pressure":
+			throttle *= 0.88
+		"lava":
+			heat = minf(1.0, heat + dt * 0.22)
+			armor = maxf(0.0, armor - dt * 1.5)
+		"eruption":
+			heat = minf(1.0, heat + dt * 0.14)
+			_impact_velocity += sin(distance * 0.09 + seed) * dt * 0.32
 	if _emp_time > 0.0:
 		grip *= 0.55
 		throttle *= 0.72
@@ -419,6 +447,7 @@ func snapshot() -> Dictionary:
 		"racer_id": racer_id,
 		"display_name": display_name,
 		"chassis_id": chassis_id,
+		"division_id": String(GameDatabase.get_chassis(chassis_id).get("division_id", "command")),
 		"pilot_id": pilot_id,
 		"is_player": is_player,
 		"distance": maxf(0.0, distance),
@@ -469,21 +498,29 @@ func _hazard_drag(hazard: Variant) -> float:
 		var hazard_data: Dictionary = hazard
 		return clampf(float(hazard_data.get("drag", hazard_data.get("strength", 0.0))), 0.0, 1.0)
 	var hazard_id := String(hazard)
-	if chassis_id == "tracked" and hazard_id in ["sand", "debris"]:
-		return 0.0
-	if chassis_id == "hover" and hazard_id == "sand":
-		return 0.03
-	if chassis_id == "centurion":
-		if hazard_id == "debris":
-			return 0.06
-		if hazard_id == "gravity":
-			return 0.09
+	if chassis_id == "tracked" and hazard_id in ["sand", "debris", "mud"]:
+		return 0.10 if hazard_id == "mud" else 0.0
+	if chassis_id == "hover" and hazard_id in ["sand", "mud"]:
+		return 0.03 if hazard_id == "sand" else 0.06
+	if chassis_id == "centurion" and hazard_id in ["debris", "gravity", "crosswind"]:
+		match hazard_id:
+			"debris": return 0.06
+			"gravity": return 0.09
+			_: return 0.11
 	match hazard_id:
 		"sand": return 0.60 / offroad_efficiency
 		"ice": return 0.28
 		"gravity": return 0.36
 		"debris": return 0.24
 		"vent": return 0.20
+		"mud": return 0.52 / offroad_efficiency
+		"spores": return 0.16
+		"rain": return 0.18
+		"crosswind": return 0.27
+		"current": return 0.34
+		"pressure": return 0.23
+		"lava": return 0.48
+		"eruption": return 0.40
 		_: return 0.0
 
 

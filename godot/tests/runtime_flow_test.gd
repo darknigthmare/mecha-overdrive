@@ -30,6 +30,19 @@ func _run() -> void:
 		if profile_value is Dictionary:
 			var profile: Dictionary = profile_value
 			_profile_before = profile.duplicate(true)
+			var test_profile := profile.duplicate(true)
+			test_profile["selected_chassis"] = "biped"
+			var test_loadouts: Dictionary = test_profile.get("loadouts", {})
+			test_loadouts["biped"] = {
+				"core": "core_overdrive",
+				"mobility": "mobility_sprint",
+				"utility": "utility_scanner",
+			}
+			test_profile["loadouts"] = test_loadouts
+			var test_settings: Dictionary = test_profile.get("settings", {})
+			test_settings["camera_view"] = "tps"
+			test_profile["settings"] = test_settings
+			_save_system.set("profile", test_profile)
 
 	var menu: Node = app.get("_active_screen") as Node
 	_expect(menu != null and menu.name == &"MainMenu", "la scène principale doit afficher MainMenu")
@@ -43,6 +56,10 @@ func _run() -> void:
 		"difficulty": "pilot",
 		"laps": 1,
 		"racer_count": 8,
+		"division_id": "command",
+		"grid_policy": "division",
+		"ruleset_id": "division_locked",
+		"performance_class_id": "tuned",
 		"time_limit": 60.0,
 		"seed": 240817,
 	}
@@ -51,6 +68,21 @@ func _run() -> void:
 		var configured: Variant = session.call(&"configure", config)
 		if configured is Dictionary:
 			config = configured
+
+	# Configuration only reads the isolated test profile. Hide the autoload
+	# before RaceController exists, so no test transition can write user data.
+	if _save_system != null:
+		_save_system.name = &"SaveSystem_RuntimeFlowIsolated"
+	_expect(String(config.get("grid_policy", "")) == "division" and not bool(config.get("mixed_divisions", true)), "le flux rapide doit rester en division dédiée")
+	_expect(String(config.get("ruleset_id", "")) == "division_locked", "le flux rapide doit utiliser le règlement dédié")
+	var configured_roster: Array = config.get("roster", [])
+	_expect(configured_roster.size() == 8, "la configuration doit fournir 8 entrants stables")
+	for entrant_value: Variant in configured_roster:
+		if entrant_value is Dictionary:
+			var entrant: Dictionary = entrant_value
+			_expect(String(entrant.get("division_id", "")) == "command", "un entrant hors Commandement a contaminé la grille dédiée")
+			var entrant_chassis := GameDatabase.get_chassis(String(entrant.get("chassis_id", "")))
+			_expect(String(entrant_chassis.get("division_id", "")) == "command", "le roster annonce une division incohérente avec son châssis")
 
 	menu.emit_signal(&"race_requested", config)
 	var race: Node = await _wait_for_race(app)
@@ -77,6 +109,28 @@ func _run() -> void:
 	_expect(race.has_signal(&"race_finished"), "RaceController doit exposer race_finished")
 	if race.has_signal(&"race_finished"):
 		race.connect(&"race_finished", Callable(self, "_on_race_finished"))
+	var actual_roster_ids: Array[String] = []
+	if racers_value is Array:
+		for racer_value: Variant in racers_value:
+			if racer_value is RefCounted:
+				var racer_ref: RefCounted = racer_value as RefCounted
+				var racer_snapshot: Dictionary = racer_ref.call(&"snapshot")
+				actual_roster_ids.append(String(racer_snapshot.get("racer_id", "")))
+				_expect(String(racer_snapshot.get("division_id", "")) == "command", "la simulation a construit un châssis hors division")
+	var configured_roster_ids: Array[String] = []
+	for entrant_value: Variant in configured_roster:
+		if entrant_value is Dictionary:
+			configured_roster_ids.append(String(Dictionary(entrant_value).get("id", "")))
+	_expect(actual_roster_ids == configured_roster_ids, "RaceController doit respecter l'ordre du roster homologué")
+	var player_state: RacerState = race.get("_player") as RacerState
+	if player_state != null:
+		var baseline := RacerState.new().configure({"racer_id": "baseline", "chassis_id": "biped", "track_length": 400.0, "total_laps": 1})
+		_expect(player_state.top_speed > baseline.top_speed, "le noyau Overdrive doit atteindre la simulation réelle")
+		_expect(player_state.acceleration > baseline.acceleration, "les articulations Sprint doivent atteindre la simulation réelle")
+		_expect(player_state.handling > baseline.handling, "le Scanner Apex doit atteindre la simulation réelle")
+		_expect(player_state.armor_max < baseline.armor_max, "les compromis de modules doivent atteindre la simulation réelle")
+		_expect(player_state.snapshot().get("division_id", "") == "command", "la division doit survivre dans les snapshots")
+
 
 	# Skip only the presentation countdown; movement still runs through the real
 	# input map and fixed-step race simulation.
@@ -111,12 +165,49 @@ func _run() -> void:
 		_expect(false, "la course ne doit pas disparaître avant la fin forcée")
 		_finish()
 		return
+	var tps_anchor: Marker3D = player_visual.call(&"camera_anchor", "tps") as Marker3D
+	var fps_anchor: Marker3D = player_visual.call(&"camera_anchor", "fps") as Marker3D
+	_expect(tps_anchor != null and fps_anchor != null, "chaque mécha doit exposer ses ancres TPS et cockpit")
+	var module_loadout: Dictionary = player_visual.get_meta("module_loadout", {})
+	_expect(String(module_loadout.get("core", "")) == "core_overdrive", "le module noyau visuel doit correspondre au loadout")
+	_expect(player_visual.get_node_or_null("ModuleCore_core_overdrive") != null, "le module noyau doit être visible")
+	_expect(player_visual.get_node_or_null("ModuleMobility_mobility_sprint") != null, "le module mobilité doit être visible")
+	_expect(player_visual.get_node_or_null("ModuleUtility_utility_scanner") != null, "le module utilitaire doit être visible")
+	race.call(&"_update_camera", 1.0)
+	if tps_anchor != null:
+		_expect(camera.global_position.distance_to(tps_anchor.global_position) < 0.2, "la vue TPS doit consommer l'ancre propre au châssis")
+	_expect(String(race.call(&"switch_camera_view")) == "fps", "la bascule publique doit ouvrir la vue cockpit")
+	race.call(&"_update_camera", 1.0)
+	race.call(&"_update_feedback")
+	_expect(bool(player_visual.get("first_person")), "le visuel joueur doit entrer en mode cockpit")
+	if fps_anchor != null:
+		_expect(camera.global_position.distance_to(fps_anchor.global_position) < 0.2, "la vue cockpit doit consommer l'ancre FPS")
+	player_visual.call(&"_process", 0.016)
+	var has_hidden_occluder := false
+	var has_visible_interior := false
+	for node_value: Variant in get_nodes_in_group(&"mecha_fps_occluder"):
+		var candidate := node_value as Node3D
+		if candidate != null and player_visual.is_ancestor_of(candidate) and not candidate.visible:
+			has_hidden_occluder = true
+	for node_value: Variant in get_nodes_in_group(&"mecha_cockpit_interior"):
+		var candidate := node_value as Node3D
+		if candidate != null and player_visual.is_ancestor_of(candidate) and candidate.visible:
+			has_visible_interior = true
+	_expect(has_hidden_occluder and has_visible_interior, "la vue cockpit doit masquer la coque et afficher l'intérieur")
+	var visible_exterior := 0
+	for node_value: Variant in get_nodes_in_group(&"mecha_damage_part"):
+		var candidate := node_value as Node3D
+		if candidate != null and player_visual.is_ancestor_of(candidate) and candidate.visible and not candidate.is_in_group(&"mecha_cockpit_interior"):
+			visible_exterior += 1
+	_expect(visible_exterior == 0, "aucune coque ou module extérieur ne doit couper la vue cockpit")
+	var item_label: Label = hud.get("_item_label") as Label
+	_expect(item_label != null and item_label.text.contains("VUE COCKPIT"), "le HUD doit annoncer la vue cockpit")
+	_expect(String(race.call(&"switch_camera_view")) == "tps", "la seconde bascule doit restaurer la vue TPS")
+	race.call(&"_update_camera", 1.0)
+	_expect(not bool(player_visual.get("first_person")), "la coque doit être restaurée en TPS")
+	if tps_anchor != null:
+		_expect(camera.global_position.distance_to(tps_anchor.global_position) < 0.2, "la caméra doit revenir sur l'ancre TPS")
 
-	# Keep the real service/profile in memory, but hide the autoload path while
-	# GameSession commits the synthetic DNF. This prevents test telemetry from
-	# ever reaching the user's persistent save or its backup.
-	if _save_system != null:
-		_save_system.name = &"SaveSystem_RuntimeFlowIsolated"
 	player.call(&"mark_dnf", "runtime_flow_test")
 	race.call(&"_check_end_conditions")
 	var results: Node = await _wait_for_screen(app, &"Results", RESULTS_TIMEOUT_MS)
@@ -130,17 +221,38 @@ func _run() -> void:
 
 	var result_title: Label = results.get_node_or_null("%ResultTitle") as Label
 	_expect(result_title != null and result_title.text == "COURSE INTERROMPUE", "Results doit présenter le statut DNF")
-	_expect(results.has_signal(&"menu_requested"), "Results doit permettre le retour au menu")
-	if results.has_signal(&"menu_requested"):
-		results.emit_signal(&"menu_requested")
+	_expect(results.has_signal(&"retry_requested"), "Results doit permettre de recommencer")
+	if results.has_signal(&"retry_requested"):
+		results.emit_signal(&"retry_requested")
+	var retry_race: Node = await _wait_for_race(app)
+	_expect(retry_race != null, "Recommencer doit reconstruire une course")
+	if session != null:
+		_expect(not bool(session.get("_result_committed")), "Recommencer doit ouvrir une nouvelle transaction de résultat")
+	if retry_race != null:
+		retry_race.call(&"_request_menu")
 	var returned_menu: Node = await _wait_for_screen(app, &"MainMenu", STARTUP_TIMEOUT_MS)
-	_expect(returned_menu != null, "le retour depuis Results doit restaurer MainMenu")
+	_expect(returned_menu != null, "le retour depuis la course recommencée doit restaurer MainMenu")
 	_expect(app.get("_race") == null, "aucun RaceController ne doit rester actif au menu")
+	if session != null and session.has_method(&"configure"):
+		var dedicated_cup: Dictionary = session.call(&"configure", {"mode": "grand_prix", "championship_id": "command_cup", "new_championship": true, "seed": 99})
+		var dedicated_ids := _roster_signature(dedicated_cup.get("roster", []))
+		var resumed_cup: Dictionary = session.call(&"configure", {"mode": "grand_prix", "championship_id": "command_cup", "new_championship": false, "seed": 12345})
+		_expect(_roster_signature(resumed_cup.get("roster", [])) == dedicated_ids, "un championnat doit conserver son roster entre les manches")
+		_expect(String(dedicated_cup.get("grid_policy", "")) == "division" and _division_count(dedicated_cup.get("roster", [])) == 1, "la Coupe Commandement doit rester dédiée")
+		if returned_menu != null:
+			returned_menu.call(&"refresh")
+			var resume_button: Button = returned_menu.get_node_or_null("%GrandPrixButton") as Button
+			_expect(resume_button != null and resume_button.text.begins_with("REPRENDRE"), "le menu doit exposer la reprise du championnat sauvegardé")
+		var open_cup: Dictionary = session.call(&"configure", {"mode": "grand_prix", "championship_id": "nexus_open", "new_championship": true, "seed": 777})
+		_expect(String(open_cup.get("grid_policy", "")) == "mixed" and bool(open_cup.get("mixed_divisions", false)), "le Grand Open doit être explicitement mixte")
+		_expect(_division_count(open_cup.get("roster", [])) > 1, "le Grand Open doit réellement réunir plusieurs divisions")
+
 	# Let short UI tweens release their runtime objects before SceneTree quits.
 	# This keeps the flow gate warning-free without weakening leak detection.
 	await create_timer(0.65, true, false, true).timeout
 	await process_frame
 	_finish()
+
 
 
 func _wait_for_race(app: Node) -> Node:
@@ -185,9 +297,29 @@ func _finish() -> void:
 	Input.action_release(&"race_accelerate")
 	_restore_profile()
 	if _failures.is_empty():
-		print("MECHA GODOT RUNTIME FLOW: PASS (menu, 3D race, HUD, stream audio, camera, 8 racers, movement, DNF, results, menu)")
+		print("MECHA GODOT RUNTIME FLOW: PASS (menu, division roster, modules, TPS/FPS cockpit, movement, DNF, results, dedicated cup, Open cup)")
 		quit(0)
 		return
 	for failure: String in _failures:
 		push_error("MECHA GODOT RUNTIME FLOW: %s" % failure)
 	quit(1)
+
+
+func _roster_signature(roster_value: Variant) -> Array[String]:
+	var output: Array[String] = []
+	if not roster_value is Array:
+		return output
+	for entrant_value: Variant in roster_value:
+		if entrant_value is Dictionary:
+			var entrant: Dictionary = entrant_value
+			output.append("%s|%s|%s|%s" % [entrant.get("id", ""), entrant.get("chassis_id", ""), entrant.get("division_id", ""), JSON.stringify(entrant.get("loadout", {}))])
+	return output
+
+
+func _division_count(roster_value: Variant) -> int:
+	var divisions: Dictionary = {}
+	if roster_value is Array:
+		for entrant_value: Variant in roster_value:
+			if entrant_value is Dictionary:
+				divisions[String(Dictionary(entrant_value).get("division_id", ""))] = true
+	return divisions.size()

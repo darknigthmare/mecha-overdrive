@@ -6,13 +6,18 @@ Projet préparé pour **Darknigthmare** en 2026.
 
 ## Assets
 
-MECHA OVERDRIVE — Circuit Zero ne charge aucun asset tiers. Le projet contient un key art original produit avec l’outil de génération d’images OpenAI et conservé dans `media/openai/mecha-overdrive-hero.png` :
+MECHA OVERDRIVE — Circuit Zero ne charge aucun asset artistique tiers. Le projet contient un key art et quatre matériaux bitmap originaux produits avec l’outil de génération d’images OpenAI :
 
 - génération commandée spécifiquement pour ce jeu le 21 août 2026 ;
 - aucune image de référence sous licence ni aucun asset officiel n’a été fourni au modèle ;
 - prompt complet et contraintes d’originalité archivés dans `docs/ASSET_PROVENANCE.md`.
+- `godot/assets/textures/openai/mecha_armor.png` — armures et modules ;
+- `godot/assets/textures/openai/track_surface.png` — pistes et épaules ;
+- `godot/assets/textures/openai/cockpit_composite.png` — cockpits ;
+- `godot/assets/textures/openai/environment_panels.png` — décors et barrières ;
+- prompts complets et identifiants archivés dans `godot/assets/textures/openai/manifest.json`.
 
-Le reste de l’expérience est généré localement :
+La géométrie, le son et les autres surfaces de l’expérience sont générés localement :
 
 - les huit méchas du compagnon sont dessinés dans `js/renderer.js` ;
 - les dix méchas de l’édition principale sont assemblés en primitives 3D par Godot ;

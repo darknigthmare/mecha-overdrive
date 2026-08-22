@@ -1,5 +1,75 @@
 # Game Design Document — MECHA OVERDRIVE: Circuit Zero
 
+## Contrat de jeu actuel — Godot 2.1.0
+
+Cette section est la spécification autoritative de l’édition Godot. Elle remplace, pour cette édition, les quantités et limites de la baseline Canvas/PWA 1.0 archivée plus bas.
+
+### Catalogue jouable
+
+La release comprend **10 châssis**, répartis dans **5 divisions** de deux architectures :
+
+| Division | Châssis | Intention de pilotage |
+|---|---|---|
+| Commandement (`command`) | Raptor R2, Centurion S12 | Adaptation tactique et motricité |
+| Stabilisés (`stabilized`) | Triarch T3, Fenrir Q4 | Tenue de cap et relance |
+| Essaim (`swarm`) | Mantis H6, Arachne O8 | Précision multi-appuis et contrôle des terrains complexes |
+| Sol (`ground`) | Bastion C2, Cyclops M1 | Couple, impact et dérive mécanique |
+| Expérimental (`experimental`) | Wraith V0, Orb S7 | Sustentation et inertie non conventionnelles |
+
+Les courses sont **dédiées à la division du joueur par défaut**. Une grille mélangée n’existe que lorsque le joueur choisit explicitement une règle ou un championnat Open ; une configuration incohérente est renormalisée avant la course.
+
+### Championnats et règlements
+
+Les Grands Prix utilisent huit concurrents, un plateau stable entre les manches et le barème cumulé. Six championnats sont livrés :
+
+| Championnat | Grille | Classe | Circuits |
+|---|---|---|---|
+| Coupe Commandement | Commandement, `division_locked` | `tuned` | Fonderie Néon, Couronne Tempête, Arc Polaire, Cimetière Orbital |
+| Coupe Stabilisée | Stabilisés, `division_locked` | `tuned` | Faille Écarlate, Canopée d’Azura, Fonderie Néon, Tranchée Hadale |
+| Coupe Essaim | Essaim, `division_locked` | `tuned` | Canopée d’Azura, Arc Polaire, Tranchée Hadale, Caldeira Zéro |
+| Coupe Sol | Sol, `division_locked` | `tuned` | Faille Écarlate, Fonderie Néon, Caldeira Zéro, Couronne Tempête |
+| Coupe Expérimentale | Expérimental, `division_locked` | `tuned` | Cimetière Orbital, Couronne Tempête, Tranchée Hadale, Caldeira Zéro |
+| Grand Open du Nexus (`nexus_open`) | cinq divisions, `elite_open` | `unlimited` | les huit circuits |
+
+Les trois règlements sont `division_locked`, `open_mixed` et `elite_open`. Le premier verrouille la grille à une division ; les deux autres autorisent explicitement le mélange, `elite_open` imposant aussi la classe Prototype.
+
+### Classes et personnalisation modulaire
+
+Trois classes de performance encadrent l’écart de puissance :
+
+| ID | Nom affiché | Modules | Améliorations |
+|---|---|---|---|
+| `stock` | Série | configuration d’usine | niveau 0 |
+| `tuned` | Préparé | choix libre parmi les modules | niveau maximal 2 |
+| `unlimited` | Prototype | choix libre parmi les modules | niveau maximal 4 |
+
+Chaque châssis possède un chargement enregistré dans **3 emplacements** — Noyau, Mobilité, Utilitaire — avec **9 modules** au total. Le garage affiche leur impact net sur vitesse, accélération, maniabilité, blindage, stabilité et réacteur. Les modules sont visibles sur la géométrie 3D et leurs modificateurs sont consommés par la simulation.
+
+### Huit circuits
+
+Les quatre pistes historiques restent Fonderie Néon (`foundry`), Faille Écarlate (`dunes`), Arc Polaire (`glacier`) et Cimetière Orbital (`orbital`). La 2.1.0 ajoute :
+
+- **Canopée d’Azura** (`canopy`) : boue, spores et raccourcis vivants ;
+- **Couronne Tempête** (`tempest`) : pluie, vents latéraux et tracé urbain vertical ;
+- **Tranchée Hadale** (`abyss`) : courants, pression et spirale abyssale ;
+- **Caldeira Zéro** (`caldera`) : lave, éruptions et couronne volcanique.
+
+Chaque circuit définit son grip, son profil de tracé, ses matériaux, ses accessoires et ses dangers. Ces dangers modifient physiquement l’adhérence, la trajectoire ou la vitesse ; ils ne sont pas de simples étiquettes visuelles.
+
+### Caméras, direction visuelle et persistance
+
+Tous les châssis fournissent une vue TPS et une vue cockpit/FPS avec ancres dédiées. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé par châssis. La vue interne active le composite cockpit et masque les pièces extérieures obstructives.
+
+La bibliothèque de matériaux couvre l’armure des méchas, les surfaces de piste, le cockpit et les panneaux d’environnement avec quatre textures raster originales générées avec OpenAI. Les fichiers, identifiants de génération, prompts et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
+
+### Sauvegarde et continuité
+
+Le profil Godot utilise `SAVE_VERSION = 3`. Il conserve notamment les chargements modulaires et la caméra par châssis, ainsi que l’identité, la manche, la grille stable, la division, le règlement et la classe du championnat actif. La migration v2 associe un ancien Grand Prix à la coupe dédiée de la division sélectionnée. À la lecture, les propriétés de coupe sont recanonicalisées depuis le catalogue immuable afin qu’un profil altéré ne puisse pas redéfinir le championnat.
+
+## Annexe — Spécification historique du compagnon web 1.0
+
+Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.1.0 ci-dessus.
+
 ## 1. Vision
 
 **MECHA OVERDRIVE: Circuit Zero** est un jeu de course-combat arcade où la forme du véhicule n’est pas cosmétique : son nombre d’appuis, sa masse et son mode de locomotion déterminent réellement son pilotage. L’objectif est de réunir la lisibilité immédiate d’un kart racer, la sensation de vitesse d’une course antigravité et la personnalité tactique de méchas spécialisés, dans un univers original.

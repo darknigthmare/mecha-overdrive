@@ -1,6 +1,6 @@
 # MECHA OVERDRIVE — édition Godot 3D
 
-Cette arborescence contient l’édition principale **2.0.1** de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale.
+Cette arborescence contient l’édition principale **2.1.0** de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale.
 
 ## Ouvrir le projet
 
@@ -24,12 +24,18 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 
 ## Contenu
 
-- **10 châssis** : Raptor R2, Triarch T3, Fenrir Q4, Mantis H6, Arachne O8, Wraith V0, Bastion C2, Cyclops M1, Orb S7 et Centurion S12 ;
+- **10 châssis** regroupés en **5 divisions** : Commandement, Stabilisés, Essaim, Sol et Expérimental ;
 - **4 modes** : Course rapide, Contre-la-montre, Élimination et Grand Prix ;
-- **4 circuits** : Fonderie Néon, Faille Écarlate, Arc Polaire et Cimetière Orbital ;
+- **8 circuits** : Fonderie Néon, Faille Écarlate, Arc Polaire, Cimetière Orbital, Canopée d’Azura, Couronne Tempête, Tranchée Hadale et Caldeira Zéro ;
+- **6 championnats** : cinq coupes dédiées et le Grand Open du Nexus ;
+- **9 modules** répartis entre noyau, mobilité et utilitaire ;
 - **8 objets** de combat/mobilité ;
+- grilles dédiées par défaut, mélange interdivision uniquement en Open ;
 - garage, peintures, améliorations, codex, HUD, résultats et progression ;
+- matériaux bitmap OpenAI sur méchas, cockpits, pistes et décors ;
 - circuits et silhouettes construits à l’exécution avec les primitives Godot.
+
+Les classes **Série**, **Préparé** et **Prototype** imposent leurs politiques de modules et leurs plafonds d’amélioration. Les cinq coupes dédiées utilisent des rosters stables de huit concurrents ; le Grand Open mélange explicitement les cinq divisions sur huit manches.
 
 ## Contrôles
 
@@ -42,9 +48,10 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 | Surcharge | `Maj`, `X` | `X` |
 | Objet | `Espace`, `E`, `Entrée` | `A` |
 | Recalage | `R` | — |
+| Basculer TPS / cockpit | `V`, `Tab` | `Y` |
 | Pause | `Échap`, `P` | `Start` |
 
-## Sauvegarde v2
+## Sauvegarde v3
 
 `SaveSystem` enregistre le profil dans :
 
@@ -52,7 +59,7 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 user://mecha_overdrive_profile.json
 ```
 
-Le profil conserve le pilote, les crédits, le châssis, les peintures, les améliorations, les records, les statistiques, le Grand Prix en cours, l’accessibilité et les volumes. Les données sont normalisées et bornées à la lecture. L’écriture utilise un fichier temporaire et un backup réellement restaurable. Une course DNF ne peut pas créer de record ni verser de récompense.
+Le profil conserve le pilote, les crédits, le châssis, les peintures, les améliorations, les loadouts modulaires, la vue TPS/cockpit, les records, les statistiques et le championnat enrichi : coupe, division/Open, classe, roster stable et points. Les profils v2 migrent vers la coupe dédiée du châssis actif. Les données sont normalisées et bornées ; une coupe v3 ne peut pas réécrire ses règles canoniques. L’écriture utilise un fichier temporaire et un backup restaurable. Une course DNF ne peut pas créer de record ni verser de récompense.
 
 Le chemin absolu de `user://` dépend du système ; Godot permet de l’ouvrir depuis l’éditeur via **Projet > Ouvrir le dossier de données utilisateur**.
 
@@ -82,7 +89,7 @@ Puis le flux de la vraie application :
 godot --headless --path godot --script res://tests/runtime_flow_test.gd
 ```
 
-Le smoke contrôle le catalogue 10/4/8, les quatre modes, la normalisation du profil v2 et une simulation déterministe. Le flux runtime vérifie menu, piste 3D, HUD, huit pilotes, mouvement, DNF, résultats et retour menu tout en isolant la sauvegarde. Les résultats confirmés sont consignés dans [`../docs/QA_REPORT.md`](../docs/QA_REPORT.md).
+Le smoke contrôle le contrat 10 châssis / 5 divisions / 8 circuits / 9 modules / 6 championnats, les classes, les migrations v2, l’anti-altération, les huit fabriques de piste et la simulation déterministe. Le flux runtime vérifie roster dédié, modules physiques/visuels, ancres TPS/cockpit, coupes dédiée/Open, DNF, résultats et retour menu, tout en isolant la sauvegarde. Les résultats confirmés sont consignés dans [`../docs/QA_REPORT.md`](../docs/QA_REPORT.md).
 
 ## Organisation
 
@@ -90,6 +97,7 @@ Le smoke contrôle le catalogue 10/4/8, les quatre modes, la normalisation du pr
 godot/
 ├── project.godot
 ├── assets/
+│   └── textures/openai/  quatre PNG et manifeste de provenance
 ├── scenes/
 │   ├── app.tscn
 │   ├── main_menu.tscn
@@ -103,7 +111,8 @@ godot/
 │   ├── mecha/      silhouettes et animation
 │   ├── race/       simulation et orchestration
 │   ├── ui/         écrans et HUD
-│   └── audio/      feedback procédural
+│   ├── audio/      feedback procédural
+│   └── visual/     matériaux OpenAI, modules et profils de circuit
 └── tests/
     ├── smoke_test.gd
     └── runtime_flow_test.gd

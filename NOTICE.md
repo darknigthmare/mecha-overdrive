@@ -2,7 +2,7 @@
 
 **MECHA OVERDRIVE — Circuit Zero** est une création originale issue d’un brief de course arcade en méchas. Les références à des jeux de kart ou de course futuriste décrivent uniquement un genre et une sensation de pilotage.
 
-Le jeu ne contient aucun personnage, véhicule, circuit, logo, musique, image, modèle ou nom provenant d’une franchise tierce. Les méchas, circuits, pilotes, objets, textes, effets visuels et sons sont définis ou générés par le projet. Les PNG `media/preview-*.png` sont des captures du jeu ; `media/openai/mecha-overdrive-hero.png` est un key art original généré pour le projet avec OpenAI, documenté dans `docs/ASSET_PROVENANCE.md`.
+Le jeu ne contient aucun personnage, véhicule, circuit, logo, musique, image, modèle ou nom provenant d’une franchise tierce. Les méchas, circuits, pilotes, objets, textes, effets visuels et sons sont définis ou générés par le projet. Les PNG `media/preview-*.png` sont des captures du jeu ; `media/openai/mecha-overdrive-hero.png` est un key art original et les quatre PNG de `godot/assets/textures/openai/` sont des matériaux originaux générés avec OpenAI. Leur provenance, leurs prompts et leurs identifiants sont documentés dans `docs/ASSET_PROVENANCE.md` et `godot/assets/textures/openai/manifest.json`.
 
 Le dépôt est publiquement consultable, mais le fichier `LICENSE` conserve les droits du contenu original à **Darknigthmare** et n’accorde pas automatiquement un droit de redistribution. Le propriétaire peut remplacer cette licence par une licence commerciale ou open source de son choix.
 

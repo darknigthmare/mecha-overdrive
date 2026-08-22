@@ -20,6 +20,9 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 @onready var text_toggle: CheckButton = %TextToggle
 @onready var track_select: OptionButton = %TrackSelect
 @onready var difficulty_select: OptionButton = %DifficultySelect
+@onready var grid_policy_select: OptionButton = %GridPolicySelect
+@onready var championship_select: OptionButton = %ChampionshipSelect
+@onready var rule_summary: Label = %RuleSummary
 
 @onready var quick_button: Button = %QuickButton
 @onready var grand_prix_button: Button = %GrandPrixButton
@@ -86,6 +89,8 @@ func _bind_actions() -> void:
 	text_toggle.toggled.connect(_on_accessibility_toggled)
 	track_select.item_selected.connect(_on_race_option_selected)
 	difficulty_select.item_selected.connect(_on_race_option_selected)
+	grid_policy_select.item_selected.connect(_on_race_option_selected)
+	championship_select.item_selected.connect(_on_race_option_selected)
 
 	for control in _focus_controls():
 		control.focus_entered.connect(_remember_focus.bind(control))
@@ -108,18 +113,42 @@ func _bind_services() -> void:
 func _start_mode(mode: StringName) -> void:
 	var track_id := _selected_track_id()
 	var track := GameDatabase.get_track(track_id)
+	var profile := _profile()
+	var selected_chassis := GameDatabase.get_chassis(_string_value(profile, ["selected_chassis", "selectedChassis"], "biped"))
+	var active_division := String(selected_chassis.get("division_id", "command"))
+	var grid_policy := _selected_grid_policy()
 	var config := {
 		"mode": String(mode),
 		"track_id": track_id,
 		"difficulty": _selected_difficulty_id(),
 		"laps": int(track.get("default_laps", 3)),
-		"new_championship": mode == &"grand_prix",
+		"division_id": active_division,
+		"grid_policy": grid_policy,
+		"ruleset_id": "open_mixed" if grid_policy == "mixed" else "division_locked",
+		"new_championship": false,
 	}
+	if mode == &"grand_prix":
+		var cup_id := _selected_championship_id()
+		var cup := GameDatabase.get_championship(cup_id)
+		var cup_division := String(cup.get("division_id", ""))
+		var active_championship := _active_championship()
+		var resume_active := not active_championship.is_empty() and String(active_championship.get("championship_id", "")) == cup_id
+		if not resume_active and not bool(cup.get("mixed_divisions", false)) and cup_division != active_division:
+			var division := GameDatabase.get_division(cup_division)
+			status_message.theme_type_variation = &"WarningLabel"
+			status_message.text = "CHÂSSIS INCOMPATIBLE // ÉQUIPEZ UNE UNITÉ %s AU GARAGE" % String(division.get("name", cup_division)).to_upper()
+			return
+		config["new_championship"] = not resume_active
+		config["championship_id"] = cup_id
+		config["cup_id"] = cup_id
+		config["division_id"] = cup_division if not cup_division.is_empty() else active_division
+		config["grid_policy"] = "mixed" if bool(cup.get("mixed_divisions", false)) else "division"
 	var session := _game_session()
 	if session != null and session.has_method(&"configure"):
 		var configured: Variant = session.call(&"configure", config)
 		if configured is Dictionary:
 			config = configured
+	status_message.theme_type_variation = &"MutedLabel"
 	status_message.text = _mode_status(mode)
 	race_requested.emit(config)
 
@@ -134,8 +163,10 @@ func _request_quit() -> void:
 
 
 func _on_race_option_selected(_index: int) -> void:
-	var track := GameDatabase.get_track(_selected_track_id())
-	status_message.text = "CONFIGURATION // %s // %s" % [String(track.get("name", "CIRCUIT ZERO")).to_upper(), difficulty_select.get_item_text(difficulty_select.selected).to_upper()]
+	_refresh_rule_summary()
+	_refresh_championship_action()
+	status_message.theme_type_variation = &"MutedLabel"
+	status_message.text = "CONFIGURATION // %s" % rule_summary.text
 
 
 func _on_accessibility_toggled(_enabled: bool) -> void:
@@ -169,14 +200,23 @@ func _refresh_profile() -> void:
 	pilot_value.text = _string_value(profile, ["pilot_name", "pilotName"], "PILOTE 01").to_upper()
 
 	var selected_id := _string_value(profile, ["selected_chassis", "selectedChassis"], "biped")
-	var chassis: Variant = GameDatabase.get_chassis(selected_id)
-	chassis_class.text = _string_value(chassis, ["category", "class_name"], "ARCHITECTURE").to_upper()
+	var chassis: Dictionary = GameDatabase.get_chassis(selected_id)
+	var division := GameDatabase.get_division(String(chassis.get("division_id", "command")))
+	chassis_class.text = "%s  //  %s" % [_string_value(chassis, ["category", "class_name"], "ARCHITECTURE").to_upper(), String(division.get("name", "DIVISION")).to_upper()]
 	chassis_name.text = _string_value(chassis, ["name"], selected_id).to_upper()
 	chassis_trait.text = _string_value(chassis, ["subtitle", "trait"], "Configuration prête")
 
 	var stats := _dictionary_value(profile, ["stats"], {})
 	career_summary.text = _career_text(stats)
-	status_message.text = "SYSTÈMES PRÊTS // SAISON 01"
+	var active_championship := _active_championship()
+	if active_championship.is_empty():
+		_select_championship_for_division(String(chassis.get("division_id", "command")))
+	else:
+		_select_championship_by_id(String(active_championship.get("championship_id", "command_cup")))
+		_select_difficulty_by_id(String(active_championship.get("difficulty", "pilot")))
+	_refresh_rule_summary()
+	_refresh_championship_action()
+	status_message.text = "SYSTÈMES PRÊTS // SAISON 02"
 
 
 func _career_text(stats: Dictionary) -> String:
@@ -189,7 +229,9 @@ func _career_text(stats: Dictionary) -> String:
 
 func _mode_status(mode: StringName) -> String:
 	match mode:
-		&"grand_prix": return "GRAND PRIX // QUATRE MANCHES"
+		&"grand_prix":
+			var cup := GameDatabase.get_championship(_selected_championship_id())
+			return "%s // %d MANCHES" % [String(cup.get("name", "CHAMPIONNAT")).to_upper(), Array(cup.get("track_ids", [])).size()]
 		&"time_trial": return "TÉLÉMÉTRIE SOLO // CHRONO"
 		&"elimination": return "PROTOCOLE ÉLIMINATION // DERNIER EXCLU"
 		_: return "COURSE RAPIDE // SEPT RIVAUX"
@@ -202,7 +244,7 @@ func _configure_focus() -> void:
 
 func _focus_controls() -> Array[Control]:
 	var controls: Array[Control] = [
-		track_select, difficulty_select,
+		track_select, difficulty_select, grid_policy_select, championship_select,
 		quick_button, grand_prix_button, time_trial_button, elimination_button,
 		garage_button, codex_button, contrast_toggle, motion_toggle, text_toggle,
 	]
@@ -274,6 +316,101 @@ func _setup_race_options() -> void:
 		difficulty_select.set_item_metadata(difficulty_index, String(difficulty.get("id", "pilot")))
 		if String(difficulty.get("id", "")) == "pilot":
 			difficulty_select.select(difficulty_index)
+	grid_policy_select.clear()
+	grid_policy_select.add_item("DIVISION ACTIVE  //  GRILLE FERMÉE")
+	grid_policy_select.set_item_metadata(0, "division")
+	grid_policy_select.add_item("OPEN / INTERDIVISION  //  MIXTE")
+	grid_policy_select.set_item_metadata(1, "mixed")
+	grid_policy_select.select(0)
+	championship_select.clear()
+	for championship: Dictionary in GameDatabase.CHAMPIONSHIPS:
+		var index := championship_select.item_count
+		var open_badge := "OPEN" if bool(championship.get("mixed_divisions", false)) else String(GameDatabase.get_division(String(championship.get("division_id", ""))).get("short", "DIV"))
+		championship_select.add_item("%s  //  %s" % [String(championship.get("name", "COUPE")).to_upper(), open_badge])
+		championship_select.set_item_metadata(index, String(championship.get("id", "command_cup")))
+
+
+func _selected_grid_policy() -> String:
+	if grid_policy_select.item_count > 0 and grid_policy_select.selected >= 0:
+		return "mixed" if String(grid_policy_select.get_item_metadata(grid_policy_select.selected)) == "mixed" else "division"
+	return "division"
+
+
+func _selected_championship_id() -> String:
+	if championship_select.item_count > 0 and championship_select.selected >= 0:
+		var value := String(championship_select.get_item_metadata(championship_select.selected))
+		if not GameDatabase.get_championship(value).is_empty():
+			return value
+	return "command_cup"
+
+
+func _select_championship_for_division(division_id: String) -> void:
+	var current := GameDatabase.get_championship(_selected_championship_id())
+	if bool(current.get("mixed_divisions", false)) or String(current.get("division_id", "")) == division_id:
+		return
+	for index in range(championship_select.item_count):
+		var candidate := GameDatabase.get_championship(String(championship_select.get_item_metadata(index)))
+		if not bool(candidate.get("mixed_divisions", false)) and String(candidate.get("division_id", "")) == division_id:
+			championship_select.select(index)
+			return
+
+
+func _select_championship_by_id(championship_id: String) -> void:
+	for index in range(championship_select.item_count):
+		if String(championship_select.get_item_metadata(index)) == championship_id:
+			championship_select.select(index)
+			return
+
+
+func _select_difficulty_by_id(difficulty_id: String) -> void:
+	for index in range(difficulty_select.item_count):
+		if String(difficulty_select.get_item_metadata(index)) == difficulty_id:
+			difficulty_select.select(index)
+			return
+
+
+func _active_championship() -> Dictionary:
+	var session := _game_session()
+	if session == null:
+		return {}
+	var value: Variant = session.get("championship")
+	if value is Dictionary and bool(Dictionary(value).get("active", false)):
+		return Dictionary(value).duplicate(true)
+	return {}
+
+
+func _refresh_championship_action() -> void:
+	var cup := GameDatabase.get_championship(_selected_championship_id())
+	var cup_name := String(cup.get("name", "CHAMPIONNAT")).to_upper()
+	var active_championship := _active_championship()
+	if not active_championship.is_empty() and String(active_championship.get("championship_id", "")) == _selected_championship_id():
+		var tracks: Array = active_championship.get("tracks", [])
+		var total := maxi(tracks.size(), 1)
+		var round_number := clampi(int(active_championship.get("round_index", 0)) + 1, 1, total)
+		grand_prix_button.text = "REPRENDRE %s   //   MANCHE %d/%d" % [cup_name, round_number, total]
+		grand_prix_button.tooltip_text = "Reprendre le championnat sauvegardé avec sa grille et ses points"
+	else:
+		grand_prix_button.text = "NOUVEAU CHAMPIONNAT   //   %s" % cup_name
+		grand_prix_button.tooltip_text = "Démarrer la coupe sélectionnée avec une grille stable"
+
+
+func _refresh_rule_summary() -> void:
+	if not is_instance_valid(rule_summary):
+		return
+	var profile := _profile()
+	var chassis := GameDatabase.get_chassis(_string_value(profile, ["selected_chassis", "selectedChassis"], "biped"))
+	var division := GameDatabase.get_division(String(chassis.get("division_id", "command")))
+	var race_grid_label := "OPEN / INTERDIVISION" if _selected_grid_policy() == "mixed" else "DIVISION %s" % String(division.get("name", "ACTIVE")).to_upper()
+	var cup := GameDatabase.get_championship(_selected_championship_id())
+	var cup_division := GameDatabase.get_division(String(cup.get("division_id", "")))
+	var cup_grid_label := "OPEN / INTERDIVISION" if bool(cup.get("mixed_divisions", false)) else "DIVISION %s" % String(cup_division.get("name", "ACTIVE")).to_upper()
+	var race_difficulty := difficulty_select.get_item_text(difficulty_select.selected).to_upper()
+	var cup_difficulty := race_difficulty
+	var active_championship := _active_championship()
+	if not active_championship.is_empty() and String(active_championship.get("championship_id", "")) == _selected_championship_id():
+		var saved_difficulty := GameDatabase.get_difficulty(String(active_championship.get("difficulty", "pilot")))
+		cup_difficulty = String(saved_difficulty.get("name", "PILOTE")).to_upper()
+	rule_summary.text = "COURSE %s / %s  •  %s / %s / %s" % [race_grid_label, race_difficulty, String(cup.get("name", "COUPE")).to_upper(), cup_grid_label, cup_difficulty]
 
 
 func _selected_track_id() -> String:

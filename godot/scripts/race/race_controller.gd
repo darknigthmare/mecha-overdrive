@@ -33,6 +33,7 @@ var _visuals: Dictionary[String, RacerVisual] = {}
 var _snapshots: Array[Dictionary] = []
 var _player: RefCounted
 var _camera: Camera3D
+var _camera_mode := "tps"
 var _hud: RaceHUD
 var _audio: AudioDirector
 var _accumulator := 0.0
@@ -56,11 +57,15 @@ func _ready() -> void:
 
 func start(request: Dictionary) -> void:
 	_config = request.duplicate(true)
+	_camera_mode = String(_config.get("camera_view", "tps"))
+	if _camera_mode not in ["tps", "fps"]:
+		_camera_mode = "tps"
 	_build_track()
 	_build_racers()
 	_build_camera()
 	_build_feedback()
 	_update_racer_visuals(0.0)
+	_set_camera_mode(_camera_mode, false)
 	if _hud != null and _hud.has_method(&"configure"):
 		_hud.call(&"configure", _config)
 	if _hud != null and _hud.has_method(&"show_countdown"):
@@ -106,6 +111,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_paused = false
 		if _hud != null and _hud.has_method(&"show_pause"):
 			_hud.call(&"show_pause", false)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed(&"race_camera") and not _paused:
+		switch_camera_view()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"race_reset") and _running and _player != null:
 		var snapshot: Dictionary = _player.call(&"snapshot")
@@ -495,10 +503,17 @@ func _race_context() -> Dictionary:
 
 
 func _track_grip() -> float:
+	var track := GameDatabase.get_track(String(_config.get("track_id", "foundry")))
+	if track.has("base_grip"):
+		return clampf(float(track.get("base_grip", 1.0)), 0.65, 1.2)
 	match String(_config.get("track_id", "foundry")):
 		"glacier": return 0.82
 		"dunes": return 0.91
 		"orbital": return 0.88
+		"canopy": return 0.86
+		"tempest": return 0.90
+		"abyss": return 0.84
+		"caldera": return 0.92
 		_: return 1.0
 
 
@@ -516,7 +531,10 @@ func _hazard_at(distance: float) -> String:
 	if hazards.is_empty():
 		return ""
 	var section := int(fposmod(distance, _track_length) / maxf(1.0, _track_length) * 12.0)
-	return String(hazards[section % hazards.size()]) if section % 4 == 2 else ""
+	if section % 4 != 2:
+		return ""
+	var hazard_sector := int(section / 4)
+	return String(hazards[hazard_sector % hazards.size()])
 
 
 func _build_track() -> void:
@@ -529,26 +547,52 @@ func _build_track() -> void:
 func _build_racers() -> void:
 	var profile := _profile()
 	var selected_id := String(profile.get("selected_chassis", "biped"))
-	var paints: Dictionary = profile.get("paints", {})
-	var selected_paint := Color(String(paints.get(selected_id, GameDatabase.get_chassis(selected_id).get("paint", "#5EE7FF"))))
-	var chassis_entries := GameDatabase.get_all_chassis()
+	var selected_chassis := GameDatabase.get_chassis(selected_id)
+	var selected_division := String(selected_chassis.get("division_id", "command"))
+	var grid_policy := "mixed" if String(_config.get("grid_policy", "division")) == "mixed" else "division"
+	var division_id := String(_config.get("division_id", selected_division))
+	if GameDatabase.get_division(division_id).is_empty():
+		division_id = selected_division
+	var chassis_pool := GameDatabase.get_all_chassis() if grid_policy == "mixed" else GameDatabase.get_chassis_for_division(division_id)
+	if chassis_pool.is_empty():
+		chassis_pool = [selected_chassis]
 	var pilots := GameDatabase.get_all_pilots()
-	var player_index := 0
-	for index in range(clampi(int(_config.get("racer_count", GRID_SIZE)), 1, GRID_SIZE)):
-		var is_player := index == player_index
-		var chassis: Dictionary = GameDatabase.get_chassis(selected_id) if is_player else chassis_entries[(index + 2) % chassis_entries.size()]
-		var pilot: Dictionary = pilots[0] if is_player else pilots[(index - 1) % pilots.size()]
+	var roster_value: Variant = _config.get("roster", [])
+	var roster: Array = roster_value if roster_value is Array else []
+	var performance_class_id := String(_config.get("performance_class_id", "tuned"))
+	var racer_count := clampi(int(_config.get("racer_count", GRID_SIZE)), 1, GRID_SIZE)
+	for index in range(racer_count):
+		var entrant: Dictionary = roster[index] if index < roster.size() and roster[index] is Dictionary else {}
+		var is_player := bool(entrant.get("is_player", entrant.get("player", index == 0))) or String(entrant.get("racer_id", entrant.get("id", ""))) == "player"
+		var fallback_chassis := selected_chassis if is_player else chassis_pool[index % chassis_pool.size()]
+		var chassis_id := String(entrant.get("chassis_id", fallback_chassis.get("id", "biped")))
+		var chassis := GameDatabase.get_chassis(chassis_id)
+		if chassis.is_empty() or (grid_policy == "division" and String(chassis.get("division_id", "")) != division_id):
+			chassis = fallback_chassis
+			chassis_id = String(chassis.get("id", "biped"))
+		var pilot_id := String(entrant.get("pilot_id", "player" if is_player else pilots[(index - 1) % pilots.size()].get("id", "vex")))
+		var pilot := GameDatabase.get_pilot(pilot_id)
+		if pilot.is_empty() and not is_player:
+			pilot = pilots[(index - 1) % pilots.size()]
+		var racer_id := "player" if is_player else String(entrant.get("racer_id", entrant.get("id", pilot.get("id", "rival_%02d" % index))))
+		var fallback_loadout := _player_loadout(profile, chassis_id) if is_player else _default_loadout(chassis_id)
+		var requested_loadout: Variant = entrant.get("loadout", fallback_loadout)
+		var loadout := _loadout_for_class(requested_loadout, chassis_id, performance_class_id)
+		var paint_text := String(entrant.get("paint", _player_paint(profile, chassis) if is_player else pilot.get("paint", chassis.get("paint", "#5EE7FF"))))
+		if not Color.html_is_valid(paint_text):
+			paint_text = String(chassis.get("paint", "#5EE7FF"))
 		var racer := RacerStateType.new()
 		var spec := {
-			"racer_id": "player" if is_player else String(pilot.get("id", "rival_%02d" % index)),
-			"display_name": String(profile.get("pilot_name", "PILOTE 01")) if is_player else String(pilot.get("callsign", pilot.get("name", "RIVAL"))),
-			"chassis_id": String(chassis.get("id", "biped")),
-			"pilot_id": String(pilot.get("id", "vex")),
+			"racer_id": racer_id,
+			"display_name": String(entrant.get("name", profile.get("pilot_name", "PILOTE 01") if is_player else pilot.get("callsign", pilot.get("name", "RIVAL")))),
+			"chassis_id": chassis_id,
+			"pilot_id": pilot_id,
 			"is_player": is_player,
 			"difficulty": String(_config.get("difficulty", "pilot")),
 			"track_length": _track_length,
 			"total_laps": int(_config.get("laps", 3)),
-			"upgrades": _player_upgrades(profile, selected_id) if is_player else {},
+			"upgrades": _player_upgrades(profile, chassis_id, performance_class_id) if is_player else {},
+			"module_stats": _module_stats(loadout),
 			"grid_index": index,
 			"seed": String(_config.get("track_id", "foundry")).hash() + index * 733,
 		}
@@ -556,33 +600,106 @@ func _build_racers() -> void:
 		_racers.append(racer)
 		if is_player:
 			_player = racer
-		var paint := selected_paint if is_player else Color(String(pilot.get("paint", chassis.get("paint", "#5EE7FF"))))
-		var visual: RacerVisual = MechaFactoryType.build(chassis, paint, is_player)
-		visual.name = String(spec["racer_id"])
+		var visual: RacerVisual = MechaFactoryType.build(chassis, Color(paint_text), is_player, loadout)
+		visual.name = racer_id
 		# Animate limbs first, then reapply the authored track elevation.
 		# This prevents visual bounce from flattening vertical circuits.
 		visual.process_priority = -10
 		add_child(visual)
-		_visuals[String(spec["racer_id"])] = visual
+		_visuals[racer_id] = visual
 
 
-func _player_upgrades(profile: Dictionary, chassis_id: String) -> Dictionary:
+func _player_paint(profile: Dictionary, chassis: Dictionary) -> String:
+	var paints: Dictionary = profile.get("paints", {}) if profile.get("paints", {}) is Dictionary else {}
+	var chassis_id := String(chassis.get("id", "biped"))
+	return String(paints.get(chassis_id, chassis.get("paint", "#5EE7FF")))
+
+
+func _player_loadout(profile: Dictionary, chassis_id: String) -> Dictionary:
+	var loadouts: Dictionary = profile.get("loadouts", {}) if profile.get("loadouts", {}) is Dictionary else {}
+	var value: Variant = loadouts.get(chassis_id, {})
+	return Dictionary(value).duplicate(true) if value is Dictionary else _default_loadout(chassis_id)
+
+
+func _default_loadout(chassis_id: String = "") -> Dictionary:
+	var output: Dictionary = {}
+	var chassis := GameDatabase.get_chassis(chassis_id)
+	var authored: Dictionary = chassis.get("default_loadout", {}) if chassis.get("default_loadout", {}) is Dictionary else {}
+	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
+		var slot_id := String(slot.get("id", ""))
+		var option_id := String(authored.get(slot_id, slot.get("default_option_id", "")))
+		if not slot_id.is_empty() and not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+			output[slot_id] = option_id
+	return output
+
+
+func _loadout_for_class(value: Variant, chassis_id: String, performance_class_id: String) -> Dictionary:
+	var defaults := _default_loadout(chassis_id)
+	var performance_class := GameDatabase.get_performance_class(performance_class_id)
+	if String(performance_class.get("module_policy", "all")) == "defaults_only":
+		return defaults
+	var source: Dictionary = value if value is Dictionary else {}
+	for slot_id: String in defaults.keys():
+		var option_id := String(source.get(slot_id, defaults[slot_id]))
+		if not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+			defaults[slot_id] = option_id
+	return defaults
+
+
+func _module_stats(loadout: Dictionary) -> Dictionary:
+	var output := {"speed": 0.0, "acceleration": 0.0, "handling": 0.0, "armor": 0.0, "stability": 0.0, "reactor": 0.0}
+	for slot_id: String in loadout.keys():
+		var option := GameDatabase.get_module_option(slot_id, String(loadout[slot_id]))
+		var stats: Dictionary = option.get("stats", {}) if option.get("stats", {}) is Dictionary else {}
+		for stat_id: String in output.keys():
+			output[stat_id] = float(output[stat_id]) + float(stats.get(stat_id, 0.0))
+	return output
+
+
+func _player_upgrades(profile: Dictionary, chassis_id: String, performance_class_id: String) -> Dictionary:
+	var performance_class := GameDatabase.get_performance_class(performance_class_id)
+	var maximum := clampi(int(performance_class.get("max_upgrade_level", 2)), 0, 4)
 	var all_upgrades: Variant = profile.get("upgrades", {})
 	if all_upgrades is Dictionary:
 		var upgrades: Dictionary = all_upgrades
 		var selected: Variant = upgrades.get(chassis_id, upgrades)
 		if selected is Dictionary:
 			var selected_upgrades: Dictionary = selected
-			return selected_upgrades.duplicate(true)
+			var output: Dictionary = {}
+			for upgrade_id: String in GameDatabase.get_upgrade_ids():
+				output[upgrade_id] = clampi(int(selected_upgrades.get(upgrade_id, 0)), 0, maximum)
+			return output
 	return {}
 
 
 func _build_camera() -> void:
 	_camera = Camera3D.new()
-	_camera.name = "ChaseCamera"
+	_camera.name = "RaceCamera"
 	_camera.current = true
+	_camera.near = 0.06
 	_camera.fov = 72.0
 	add_child(_camera)
+
+
+func camera_mode() -> String:
+	return _camera_mode
+
+
+func switch_camera_view() -> String:
+	_set_camera_mode("fps" if _camera_mode == "tps" else "tps", true)
+	return _camera_mode
+
+
+func _set_camera_mode(mode: String, persist: bool) -> void:
+	_camera_mode = mode if mode in ["tps", "fps"] else "tps"
+	_config["camera_view"] = _camera_mode
+	var player_visual: RacerVisual = _visuals.get("player")
+	if player_visual != null and player_visual.has_method(&"set_camera_mode"):
+		player_visual.call(&"set_camera_mode", _camera_mode)
+	if persist:
+		var save := get_node_or_null("/root/SaveSystem")
+		if save != null and save.has_method(&"set_camera_view"):
+			save.call(&"set_camera_view", _camera_mode)
 
 
 func _build_feedback() -> void:
@@ -638,16 +755,30 @@ func _update_camera(delta: float) -> void:
 	if _camera == null or _player == null or _track == null:
 		return
 	var state: Dictionary = _player.call(&"snapshot")
+	var player_visual: RacerVisual = _visuals.get("player")
 	var pose := TrackFactoryType.sample_pose(_track, float(state.get("distance", 0.0)), float(state.get("lane", 0.0)))
 	var forward := -pose.basis.z.normalized()
 	var target_position := pose.origin - forward * 12.5 + Vector3.UP * 6.1
 	var look_target := pose.origin + forward * (10.0 + float(state.get("speed_ratio", 0.0)) * 7.0) + Vector3.UP * 1.8
-	var weight := 1.0 - exp(-delta * 6.5)
+	var response := 6.5
+	var target_fov := 72.0 + minf(10.0, float(state.get("speed_ratio", 0.0)) * 5.5)
+	var anchor: Marker3D = player_visual.camera_anchor(_camera_mode) if player_visual != null and player_visual.has_method(&"camera_anchor") else null
+	if anchor != null:
+		target_position = anchor.global_position
+		forward = -anchor.global_basis.z.normalized()
+		if _camera_mode == "fps":
+			look_target = target_position + forward * 28.0 + anchor.global_basis.y.normalized() * 0.12
+			response = 15.0
+			target_fov = 79.0 + minf(5.0, float(state.get("speed_ratio", 0.0)) * 3.0)
+		else:
+			look_target = pose.origin + forward * (11.0 + float(state.get("speed_ratio", 0.0)) * 7.0) + pose.basis.y.normalized() * 1.7
+			response = 7.5
+	var weight := 1.0 - exp(-delta * response)
 	_camera.global_position = _camera.global_position.lerp(target_position, weight)
 	# Camera3D looks along -Z; `use_model_front` would turn its view away from the track.
 	var next_basis := _camera.global_transform.looking_at(look_target, Vector3.UP, false).basis
 	_camera.global_basis = _camera.global_basis.slerp(next_basis, weight)
-	_camera.fov = lerpf(_camera.fov, 72.0 + minf(10.0, float(state.get("speed_ratio", 0.0)) * 5.5), weight)
+	_camera.fov = lerpf(_camera.fov, target_fov, weight)
 
 
 func _update_feedback() -> void:
@@ -662,6 +793,7 @@ func _update_feedback() -> void:
 		hud_snapshot["racer_count"] = _racers.size()
 		hud_snapshot["mode"] = String(_config.get("mode", "quick"))
 		hud_snapshot["next_elimination"] = maxf(0.0, _next_elimination - _elapsed)
+		hud_snapshot["camera_view"] = _camera_mode
 		_hud.call(&"update_race", hud_snapshot)
 	_audio.set_motion(float(player_state.get("speed_ratio", 0.0)), bool(player_state.get("boosting", false)), 1.0 - float(player_state.get("armor_ratio", 1.0)), _chassis_tone(String(player_state.get("chassis_id", "biped"))))
 

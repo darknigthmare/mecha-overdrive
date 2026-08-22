@@ -2,6 +2,45 @@
 
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
+## [2.1.0] — 2026-08-22
+
+### Ajouté
+
+- cinq divisions d’homologation regroupant les dix architectures, avec grilles dédiées par défaut ;
+- cinq coupes de division à quatre manches et Grand Open du Nexus à huit manches, seul championnat explicitement interdivision ;
+- roster de huit concurrents stable et persistant pendant tout un championnat ;
+- trois emplacements de customisation — noyau, mobilité et utilitaire — et neuf modules visibles avec effets physiques ;
+- classes Série, Préparé et Prototype imposant réellement leurs modules et plafonds d’amélioration ;
+- bascule à chaud TPS/cockpit avec ancres propres aux dix châssis, coque occultée et intérieur visible en première personne ;
+- Canopée d’Azura, Couronne Tempête, Tranchée Hadale et Caldeira Zéro, portant le catalogue à huit circuits ;
+- dangers jouables pour boue, spores, pluie, vent latéral, courant, pression, lave et éruption ;
+- quatre matériaux bitmap originaux générés avec OpenAI pour armure, piste, cockpit et environnement, avec prompts et identifiants archivés.
+
+### Amélioré
+
+- sauvegarde v3 avec loadouts par châssis, vue caméra, identité/règlement/classe de coupe et roster enrichi ;
+- migration des Grand Prix v2 vers la coupe dédiée correspondant au châssis actif dans chacune des cinq divisions ;
+- règles de coupe canoniques protégées contre la réécriture par une sauvegarde altérée ;
+- géométries, accessoires et répétition de surface propres aux huit profils de circuit ;
+- garage enrichi avec constructeur, lore, division, trois sélecteurs de module et bilan statistique net ;
+- menu principal enrichi avec politique de grille, sélection du championnat et avertissements d’incompatibilité de division ;
+- résultats enrichis avec nom de coupe, manche réelle et règle dédiée/Open.
+
+### Corrigé
+
+- incohérence possible entre règlement Open et grille dédiée ;
+- Grand Prix pouvant lancer moins de concurrents que son classement persistant ;
+- division des concurrents perdue lors de la normalisation d’une sauvegarde ;
+- ancre TPS par châssis déclarée mais ignorée par la caméra de course ;
+- nouveaux dangers de circuit décoratifs sans incidence sur la simulation.
+
+### Validation
+
+- contrat statique réussi : 10 châssis, 5 divisions, 8 circuits, 9 modules, 6 championnats, TPS/FPS et sauvegarde v3 ;
+- import et parse strict réussis avec Godot 4.7.2 officiel ;
+- smoke Godot enrichi réussi, incluant migrations v2 des cinq divisions, anti-altération, huit fabriques 3D et textures ;
+- flux runtime réussi : menu, roster dédié, modules physiques/visuels, TPS/cockpit, DNF, résultats, coupe dédiée et Open.
+
 ## [2.0.1] — 2026-08-22
 
 ### Ajouté

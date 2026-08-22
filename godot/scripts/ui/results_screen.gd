@@ -136,7 +136,15 @@ func _populate_championship(mode: String) -> void:
 	var round_index := int(_dictionary_value(championship_dictionary, "round", _value(["round"], 1)))
 	var round_total := int(_dictionary_value(championship_dictionary, "total_rounds", 4))
 	var standings: Variant = _dictionary_value(championship_dictionary, "standings", [])
-	var lines := PackedStringArray(["MANCHE %d / %d" % [round_index, round_total]])
+	var championship_name := String(_dictionary_value(championship_dictionary, "name", "CHAMPIONNAT"))
+	var grid_policy := String(_dictionary_value(championship_dictionary, "grid_policy", "division"))
+	var division := GameDatabase.get_division(String(_dictionary_value(championship_dictionary, "division_id", "")))
+	var grid_label := "OPEN / INTERDIVISION" if grid_policy == "mixed" else "DIVISION %s" % String(division.get("name", "ACTIVE")).to_upper()
+	var lines := PackedStringArray([
+		championship_name.to_upper(),
+		"MANCHE %d / %d" % [round_index, round_total],
+		"RÈGLEMENT // %s" % grid_label,
+	])
 	if standings is Array:
 		var standings_array: Array = standings
 		for index in range(mini(standings_array.size(), 5)):

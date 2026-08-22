@@ -84,7 +84,7 @@ size_flags_vertical = 3
 theme_override_constants/separation = 18
 
 [node name="RosterPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
-custom_minimum_size = Vector2(350, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 theme_type_variation = &"CardPanel"
 
@@ -95,7 +95,7 @@ theme_override_constants/separation = 10
 [node name="RosterTitle" type="Label" parent="SafeArea/Page/Content/RosterPanel/Roster"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
-text = "10 ARCHITECTURES"
+text = "10 ARCHITECTURES  //  5 DIVISIONS"
 
 [node name="RosterHelp" type="Label" parent="SafeArea/Page/Content/RosterPanel/Roster"]
 layout_mode = 2
@@ -260,104 +260,162 @@ theme_type_variation = &"PrimaryButton"
 text = "CHÂSSIS ACTIF"
 
 [node name="WorkshopPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
-custom_minimum_size = Vector2(390, 0)
+custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 theme_type_variation = &"CardPanel"
 
-[node name="Workshop" type="VBoxContainer" parent="SafeArea/Page/Content/WorkshopPanel"]
+[node name="WorkshopScroll" type="ScrollContainer" parent="SafeArea/Page/Content/WorkshopPanel"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Workshop" type="VBoxContainer" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll"]
+custom_minimum_size = Vector2(348, 0)
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="WorkshopTitle" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="WorkshopTitle" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "ATELIER"
 
-[node name="PaintLabel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="PaintLabel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
 text = "PEINTURE ACTIVE"
 
-[node name="PaintRow" type="HBoxContainer" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="PaintRow" type="HBoxContainer" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="PaintPreview" type="ColorRect" parent="SafeArea/Page/Content/WorkshopPanel/Workshop/PaintRow"]
+[node name="PaintPreview" type="ColorRect" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop/PaintRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(54, 54)
 layout_mode = 2
 mouse_filter = 2
 color = Color(0.369, 0.906, 1, 1)
 
-[node name="PaintOption" type="OptionButton" parent="SafeArea/Page/Content/WorkshopPanel/Workshop/PaintRow"]
+[node name="PaintOption" type="OptionButton" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop/PaintRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 54)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Choisir une peinture de châssis"
 
-[node name="UpgradeTitle" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ModuleTitle" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "CONFIGURATION MODULAIRE"
+
+[node name="CoreLabel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "NOYAU ÉNERGÉTIQUE"
+
+[node name="CoreOption" type="OptionButton" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+tooltip_text = "Module de noyau: équilibre, Overdrive ou Bastion"
+
+[node name="MobilityLabel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "MOBILITÉ"
+
+[node name="MobilityOption" type="OptionButton" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+tooltip_text = "Train mobile: vectoriel, sprint ou adaptatif"
+
+[node name="UtilityLabel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "SYSTÈME UTILITAIRE"
+
+[node name="UtilityOption" type="OptionButton" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+tooltip_text = "Sous-système: refroidissement, Aegis ou scanner"
+
+[node name="ModuleSummary" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "NOYAU SYNCHRONE / SERVOS VECTORIELS / BOUCLE CRYO"
+autowrap_mode = 2
+
+[node name="UpgradeTitle" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
 text = "AMÉLIORATIONS PERMANENTES"
 
-[node name="EngineName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="EngineName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "MOTEUR VECTORIEL"
-[node name="EngineLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="EngineLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "NIVEAU 0 / 4"
-[node name="EngineButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="EngineButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
 text = "INSTALLER  •  650 CR"
 
-[node name="ServosName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ServosName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "SERVOMOTEURS"
-[node name="ServosLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ServosLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "NIVEAU 0 / 4"
-[node name="ServosButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ServosButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
 text = "INSTALLER  •  600 CR"
 
-[node name="ReactorName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ReactorName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "REFROIDISSEMENT"
-[node name="ReactorLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ReactorLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "NIVEAU 0 / 4"
-[node name="ReactorButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ReactorButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
 text = "INSTALLER  •  700 CR"
 
-[node name="ArmorName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ArmorName" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "BLINDAGE COMPOSITE"
-[node name="ArmorLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ArmorLevel" type="Label" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "NIVEAU 0 / 4"
-[node name="ArmorButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="ArmorButton" type="Button" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
 text = "INSTALLER  •  600 CR"
 
-[node name="WorkshopSpacer" type="Control" parent="SafeArea/Page/Content/WorkshopPanel/Workshop"]
+[node name="WorkshopSpacer" type="Control" parent="SafeArea/Page/Content/WorkshopPanel/WorkshopScroll/Workshop"]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
@@ -369,4 +427,3 @@ layout_mode = 2
 theme_type_variation = &"MutedLabel"
 text = "ATELIER PRÊT"
 horizontal_alignment = 1
-

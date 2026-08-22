@@ -10,7 +10,7 @@ signal profile_loaded(profile_data: Dictionary)
 signal profile_changed(profile_data: Dictionary)
 signal save_failed(message: String)
 
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
 const SAVE_PATH := "user://mecha_overdrive_profile.json"
 const TEMP_PATH := "user://mecha_overdrive_profile.tmp"
 const BACKUP_PATH := "user://mecha_overdrive_profile.backup.json"
@@ -127,6 +127,40 @@ func set_paint(chassis_id: String, paint_hex: String = "") -> bool:
 	return _commit_profile()
 
 
+func set_module(chassis_id: String, slot_id: String, module_id: String) -> bool:
+	if not GameDatabase.has_chassis(chassis_id) or GameDatabase.get_module_option(slot_id, module_id).is_empty():
+		return false
+	var loadouts: Dictionary = profile.get("loadouts", {})
+	var loadout := _sanitize_loadout(loadouts.get(chassis_id, {}), chassis_id)
+	loadout[slot_id] = module_id
+	loadouts[chassis_id] = loadout
+	profile["loadouts"] = loadouts
+	return _commit_profile()
+
+
+func get_loadout(chassis_id: String = "") -> Dictionary:
+	if chassis_id.is_empty():
+		chassis_id = String(profile.get("selected_chassis", "biped"))
+	if not GameDatabase.has_chassis(chassis_id):
+		return {}
+	var loadouts: Dictionary = profile.get("loadouts", {})
+	return _sanitize_loadout(loadouts.get(chassis_id, {}), chassis_id).duplicate(true)
+
+
+func set_camera_view(camera_view: String) -> bool:
+	if camera_view not in ["tps", "fps"]:
+		return false
+	var settings: Dictionary = profile.get("settings", {})
+	settings["camera_view"] = camera_view
+	profile["settings"] = settings
+	return _commit_profile()
+
+
+func get_camera_view() -> String:
+	var settings: Dictionary = profile.get("settings", {})
+	return _sanitize_camera_view(String(settings.get("camera_view", "tps")))
+
+
 func buy_upgrade(upgrade_id: String, chassis_id: String = "") -> bool:
 	if chassis_id.is_empty():
 		chassis_id = String(profile.get("selected_chassis", "biped"))
@@ -180,6 +214,8 @@ func update_settings(changes: Dictionary) -> bool:
 	for key: String in ["master_volume", "music_volume", "effects_volume"]:
 		if changes.has(key) and (changes[key] is int or changes[key] is float):
 			settings[key] = clampf(float(changes[key]), 0.0, 1.0)
+	if changes.has("camera_view"):
+		settings["camera_view"] = _sanitize_camera_view(String(changes["camera_view"]))
 	profile["settings"] = settings
 	return _commit_profile()
 
@@ -263,6 +299,7 @@ func _commit_profile() -> bool:
 func _default_profile() -> Dictionary:
 	var paints: Dictionary = {}
 	var upgrades: Dictionary = {}
+	var loadouts: Dictionary = {}
 	var chassis_ids: Array[String] = []
 	for chassis: Dictionary in GameDatabase.CHASSIS:
 		var chassis_id := String(chassis.get("id", "biped"))
@@ -272,6 +309,7 @@ func _default_profile() -> Dictionary:
 		for upgrade_id: String in GameDatabase.get_upgrade_ids():
 			levels[upgrade_id] = 0
 		upgrades[chassis_id] = levels
+		loadouts[chassis_id] = _default_loadout(chassis_id)
 	return {
 		"version": SAVE_VERSION,
 		"pilot_name": "PILOTE 01",
@@ -281,6 +319,7 @@ func _default_profile() -> Dictionary:
 		"paints": paints,
 		"unlocked_paints": GameDatabase.DEFAULT_PAINTS.duplicate(),
 		"upgrades": upgrades,
+		"loadouts": loadouts,
 		"records": {},
 		"championship": {},
 		"stats": {"races": 0, "wins": 0, "podiums": 0, "championships": 0, "credits_earned": 0},
@@ -288,6 +327,7 @@ func _default_profile() -> Dictionary:
 			"high_contrast": false, "reduced_motion": false, "large_text": false,
 			"camera_shake": true, "metric_units": true,
 			"master_volume": 0.85, "music_volume": 0.65, "effects_volume": 0.85,
+			"camera_view": "tps",
 		},
 	}
 
@@ -319,6 +359,14 @@ func _sanitize_profile(source: Dictionary) -> Dictionary:
 		clean_upgrades[chassis_id] = new_levels
 	clean["upgrades"] = clean_upgrades
 
+	# v2 profiles have no modular loadouts. Missing or invalid slots migrate to
+	# the catalog defaults without invalidating the rest of the profile.
+	var source_loadouts: Dictionary = source.get("loadouts", {}) if source.get("loadouts", {}) is Dictionary else {}
+	var clean_loadouts: Dictionary = clean["loadouts"]
+	for chassis_id: String in clean_loadouts.keys():
+		clean_loadouts[chassis_id] = _sanitize_loadout(source_loadouts.get(chassis_id, {}), chassis_id)
+	clean["loadouts"] = clean_loadouts
+
 	var old_settings: Dictionary = source.get("settings", {}) if source.get("settings", {}) is Dictionary else {}
 	var new_settings: Dictionary = clean["settings"]
 	for key: String in new_settings.keys():
@@ -328,6 +376,8 @@ func _sanitize_profile(source: Dictionary) -> Dictionary:
 			new_settings[key] = old_settings[key]
 		elif new_settings[key] is float and (old_settings[key] is int or old_settings[key] is float):
 			new_settings[key] = clampf(float(old_settings[key]), 0.0, 1.0)
+		elif key == "camera_view":
+			new_settings[key] = _sanitize_camera_view(String(old_settings[key]))
 	clean["settings"] = new_settings
 
 	var old_stats: Dictionary = source.get("stats", {}) if source.get("stats", {}) is Dictionary else {}
@@ -336,7 +386,7 @@ func _sanitize_profile(source: Dictionary) -> Dictionary:
 		new_stats[key] = clampi(int(old_stats.get(key, 0)), 0, 99999999)
 	clean["stats"] = new_stats
 	clean["records"] = _sanitize_records(source.get("records", {}))
-	clean["championship"] = _sanitize_championship(source.get("championship", {}))
+	clean["championship"] = _sanitize_championship(source.get("championship", {}), clean, int(source.get("version", 1)))
 	clean["version"] = SAVE_VERSION
 	return clean
 
@@ -361,7 +411,7 @@ func _sanitize_records(value: Variant) -> Dictionary:
 	return clean
 
 
-func _sanitize_championship(value: Variant) -> Dictionary:
+func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, source_version: int = SAVE_VERSION) -> Dictionary:
 	if not value is Dictionary:
 		return {}
 	var source: Dictionary = value
@@ -370,9 +420,43 @@ func _sanitize_championship(value: Variant) -> Dictionary:
 	var difficulty := String(source.get("difficulty", "pilot"))
 	if not GameDatabase.has_difficulty(difficulty):
 		return {}
-	var round_index := int(source.get("round_index", -1))
-	if round_index < 0 or round_index >= CHAMPIONSHIP_TRACKS.size():
+
+	var selected_chassis := String(profile_context.get("selected_chassis", profile.get("selected_chassis", "biped")))
+	if not GameDatabase.has_chassis(selected_chassis):
+		selected_chassis = "biped"
+	var selected_division := String(GameDatabase.get_chassis(selected_chassis).get("division_id", "command"))
+	var legacy_cup_id := "%s_cup" % selected_division
+	if GameDatabase.get_championship(legacy_cup_id).is_empty():
+		legacy_cup_id = "command_cup"
+	# v2 only knew one anonymous GP. Migrate it to the dedicated cup matching
+	# the selected chassis so an existing championship is never silently lost.
+	var default_cup_id := legacy_cup_id if source_version < SAVE_VERSION else "command_cup"
+	var championship_id := String(source.get("championship_id", source.get("cup_id", default_cup_id)))
+	var definition := GameDatabase.get_championship(championship_id)
+	if definition.is_empty():
 		return {}
+	# From v3 onward, a saved cup references immutable catalogue rules. This
+	# closes tampering and prevents stale fields from rewriting its homologation.
+	var track_source: Variant = source.get("tracks", definition.get("track_ids", CHAMPIONSHIP_TRACKS)) if source_version < SAVE_VERSION else definition.get("track_ids", CHAMPIONSHIP_TRACKS)
+	var tracks := _sanitize_track_list(track_source)
+	if tracks.is_empty():
+		return {}
+	var round_index := int(source.get("round_index", -1))
+	if round_index < 0 or round_index >= tracks.size():
+		return {}
+	var authored_division := String(definition.get("division_id", ""))
+	var division_id := _sanitize_division(selected_division if authored_division.is_empty() else authored_division)
+	var ruleset_id := String(definition.get("ruleset_id", "division_locked"))
+	var ruleset := GameDatabase.get_ruleset(ruleset_id)
+	if ruleset.is_empty():
+		ruleset_id = "open_mixed" if bool(definition.get("mixed_divisions", false)) else "division_locked"
+		ruleset = GameDatabase.get_ruleset(ruleset_id)
+	var mixed_divisions := bool(definition.get("mixed_divisions", false))
+	var grid_policy := "mixed" if mixed_divisions else "division"
+	var performance_class_id := String(definition.get("performance_class_id", ruleset.get("performance_class_id", "tuned")))
+	if GameDatabase.get_performance_class(performance_class_id).is_empty():
+		performance_class_id = "tuned"
+	var profile_loadouts: Dictionary = profile_context.get("loadouts", profile.get("loadouts", {}))
 
 	var entrants: Array[Dictionary] = []
 	var seen_ids: Dictionary = {}
@@ -392,9 +476,25 @@ func _sanitize_championship(value: Variant) -> Dictionary:
 		var entrant_name := String(entrant.get("name", "PILOTE")).strip_edges().substr(0, 24)
 		if entrant_name.is_empty():
 			entrant_name = "PILOTE"
+		var chassis_id := String(entrant.get("chassis_id", selected_chassis if entrant_id == "player" else _fallback_chassis_id(entrants.size(), division_id, grid_policy)))
+		if not GameDatabase.has_chassis(chassis_id):
+			return {}
+		if grid_policy == "division" and String(GameDatabase.get_chassis(chassis_id).get("division_id", "")) != division_id:
+			return {}
+		var paint := String(entrant.get("paint", GameDatabase.get_chassis(chassis_id).get("paint", "#5EE7FF")))
+		if not Color.html_is_valid(paint):
+			paint = String(GameDatabase.get_chassis(chassis_id).get("paint", "#5EE7FF"))
+		var loadout_source: Variant = entrant.get("loadout", profile_loadouts.get(chassis_id, {}))
 		entrants.append({
 			"id": entrant_id,
+			"racer_id": entrant_id,
 			"name": entrant_name,
+			"pilot_id": String(entrant.get("pilot_id", "player" if entrant_id == "player" else entrant_id)),
+			"chassis_id": chassis_id,
+			"division_id": String(GameDatabase.get_chassis(chassis_id).get("division_id", division_id)),
+			"paint": Color(paint).to_html(false).to_upper(),
+			"loadout": _sanitize_loadout(loadout_source, chassis_id),
+			"module_variant": String(entrant.get("module_variant", "standard")),
 			"points": clampi(int(entrant.get("points", 0)), 0, 9999),
 		})
 	if entrants.size() != CHAMPIONSHIP_RACER_COUNT or not has_player:
@@ -402,17 +502,78 @@ func _sanitize_championship(value: Variant) -> Dictionary:
 
 	var completed_tracks: Array[String] = []
 	for track_index in range(round_index):
-		completed_tracks.append(CHAMPIONSHIP_TRACKS[track_index])
+		completed_tracks.append(tracks[track_index])
 	return {
 		"active": true,
 		"abandoned": false,
+		"championship_id": championship_id,
+		"cup_id": championship_id,
+		"name": String(definition.get("name", championship_id)),
 		"difficulty": difficulty,
+		"division_id": division_id,
+		"ruleset_id": ruleset_id,
+		"grid_policy": grid_policy,
+		"mixed_divisions": mixed_divisions,
+		"performance_class_id": performance_class_id,
 		"round_index": round_index,
-		"tracks": CHAMPIONSHIP_TRACKS.duplicate(),
+		"tracks": tracks,
 		"completed_tracks": completed_tracks,
 		"entrants": entrants,
 		"champion_id": "",
 	}
+
+
+func _default_loadout(chassis_id: String = "") -> Dictionary:
+	var output: Dictionary = {}
+	var chassis := GameDatabase.get_chassis(chassis_id)
+	var authored: Dictionary = chassis.get("default_loadout", {}) if chassis.get("default_loadout", {}) is Dictionary else {}
+	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
+		var slot_id := String(slot.get("id", ""))
+		var option_id := String(authored.get(slot_id, slot.get("default_option_id", "")))
+		if not slot_id.is_empty() and not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+			output[slot_id] = option_id
+	return output
+
+
+func _sanitize_loadout(value: Variant, chassis_id: String = "") -> Dictionary:
+	var source: Dictionary = value if value is Dictionary else {}
+	var output := _default_loadout(chassis_id)
+	for slot_id: String in output.keys():
+		var option_id := String(source.get(slot_id, output[slot_id]))
+		if not GameDatabase.get_module_option(slot_id, option_id).is_empty():
+			output[slot_id] = option_id
+	return output
+
+
+func _sanitize_camera_view(value: String) -> String:
+	return value if value in ["tps", "fps"] else "tps"
+
+
+func _sanitize_grid_policy(value: String) -> String:
+	# Fail closed: malformed or future policies can never silently open a grid.
+	return "mixed" if value == "mixed" else "division"
+
+
+func _sanitize_division(value: String) -> String:
+	return value if not GameDatabase.get_division(value).is_empty() else "command"
+
+
+func _sanitize_track_list(value: Variant) -> Array[String]:
+	var output: Array[String] = []
+	if not value is Array:
+		return output
+	for raw_id: Variant in value:
+		var track_id := String(raw_id)
+		if GameDatabase.has_track(track_id) and track_id not in output:
+			output.append(track_id)
+	return output
+
+
+func _fallback_chassis_id(index: int, division_id: String, grid_policy: String) -> String:
+	var pool: Array[Dictionary] = GameDatabase.get_all_chassis() if grid_policy == "mixed" else GameDatabase.get_chassis_for_division(division_id)
+	if pool.is_empty():
+		return "biped"
+	return String(pool[index % pool.size()].get("id", "biped"))
 
 
 func _read_profile_candidate(path: String) -> Dictionary:

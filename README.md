@@ -10,14 +10,14 @@ Le visuel de présentation est une création originale générée avec OpenAI po
 
 | Édition | Emplacement | Contenu | Exécution |
 |---|---|---|---|
-| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 4 modes, 4 circuits, garage, codex, progression et sauvegarde v2 | Godot **4.7.2** ou navigateur WebGL2 |
+| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 5 divisions, 8 circuits, 6 championnats, 9 modules, TPS/cockpit et sauvegarde v3 | Godot **4.7.2** ou navigateur WebGL2 |
 | **Web — compagnon autonome** | racine du dépôt | 8 châssis, Course rapide, Grand Prix et Contre-la-montre, PWA hors ligne | Navigateur moderne, Node.js facultatif |
 
-La version déclarée dans le projet Godot est `2.0.1`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+La version déclarée dans le projet Godot est `2.1.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
 
 ## Jouer en ligne
 
-- **Godot 3D 2.0.1** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
+- **Godot 3D 2.1.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
 - **Édition web légère** : [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app)
 
 L’export Godot est mono-thread, WebGL2 et destiné aux ordinateurs avec clavier ou manette. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste l’option tactile et PWA hors ligne.
@@ -65,25 +65,41 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 | Sphère | **Orb S7** | inertie omnidirectionnelle et rebond |
 | Myriapode | **Centurion S12** | douze appuis, adhérence et motricité |
 
+### Cinq divisions et six championnats
+
+- **Commandement** : Bipède et Myriapode ;
+- **Stabilisés** : Tripode et Quadrupède ;
+- **Essaim** : Hexapode et Octopode ;
+- **Sol** : Chenilles et Monoroue ;
+- **Expérimental** : Aéroglisseur et Sphère.
+
+Course rapide et Élimination utilisent une grille de la division active par défaut. Le mélange n’est autorisé que lorsque le joueur choisit explicitement **Open / Interdivision**. Les cinq coupes dédiées disputent quatre manches avec un roster stable ; le **Grand Open du Nexus** réunit les cinq divisions sur les huit circuits.
+
+Les classes **Série**, **Préparé** et **Prototype** imposent réellement leurs politiques de modules et leurs plafonds d’amélioration.
+
 ### Quatre modes
 
 - **Course rapide** (`quick`) : grille complète, objets et classement.
 - **Contre-la-montre** (`time_trial`) : un pilote, sans objets.
 - **Élimination** (`elimination`) : le dernier concurrent est éliminé à intervalle régulier.
-- **Grand Prix** (`grand_prix`) : championnat en quatre manches avec points cumulés.
+- **Grand Prix** (`grand_prix`) : cinq coupes dédiées de quatre manches et un Open de huit manches, avec points cumulés et roster persistant.
 
-### Quatre circuits
+### Huit circuits
 
 - **Fonderie Néon** — Nexus Industriel 7 ;
 - **Faille Écarlate** — Désert de Vermillon ;
 - **Arc Polaire** — lune cryo Khepri ;
 - **Cimetière Orbital** — anneau de Morrigan.
+- **Canopée d’Azura** — forêt-monde Elysia ;
+- **Couronne Tempête** — mégalopole Stratos ;
+- **Tranchée Hadale** — océan de Néréide ;
+- **Caldeira Zéro** — réacteur tellurique IX.
 
-Les circuits sont assemblés en 3D par `TrackFactory` à partir des spécifications de la base de données. Les dix silhouettes sont générées par `MechaFactory`, sans dépendance à des modèles 3D externes.
+Les circuits sont assemblés en 3D par `TrackFactory` à partir de huit profils géométriques et de dangers jouables distincts. Les dix silhouettes sont générées par `MechaFactory`, sans modèle 3D externe ; les matériaux bitmap originaux OpenAI sont appliqués aux méchas, cockpits, pistes et décors.
 
 ### Combat et progression
 
-La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cellule Overdrive, charge gravitique, drone réparateur, onde cinétique et Railburst. Le garage expose les peintures et quatre familles d’améliorations : moteur, servomoteurs, refroidissement et blindage. Chaque architecture applique réellement sa capacité propre en course.
+La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cellule Overdrive, charge gravitique, drone réparateur, onde cinétique et Railburst. Le garage expose peintures, quatre familles d’améliorations et **trois emplacements modulaires** — noyau, mobilité, utilitaire — avec neuf modules visibles et des compromis statistiques réellement appliqués. Chaque architecture conserve sa capacité propre en course.
 
 ## Contrôles Godot
 
@@ -97,10 +113,11 @@ La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cell
 | Utiliser l’objet | `Espace`, `E` ou `Entrée` | `A` |
 | Recaler le mécha | `R` | — |
 | Pause | `Échap` ou `P` | `Start` |
+| Basculer TPS / cockpit | `V` ou `Tab` | `Y` |
 
 Le menu et les écrans garage, codex et résultats acceptent aussi les actions d’interface standard de Godot.
 
-## Sauvegarde Godot v2
+## Sauvegarde Godot v3
 
 Le service autoloadé `SaveSystem` écrit un profil JSON versionné dans :
 
@@ -108,13 +125,15 @@ Le service autoloadé `SaveSystem` écrit un profil JSON versionné dans :
 user://mecha_overdrive_profile.json
 ```
 
-La sauvegarde v2 conserve notamment :
+La sauvegarde v3 conserve notamment :
 
 - nom du pilote, crédits et châssis actif ;
 - peintures et niveaux d’amélioration par châssis ;
 - records par circuit et mode ;
+- loadout modulaire propre à chacun des dix châssis ;
+- vue caméra TPS/cockpit sélectionnée ;
 - statistiques de carrière ;
-- championnat Grand Prix en cours, points et manche suivante ;
+- identité de la coupe, règlement, division/Open, classe de performance, roster stable, points et manche suivante ;
 - accessibilité et volumes audio.
 
 Les données sont normalisées à la lecture. L’écriture passe par un fichier temporaire puis une sauvegarde de secours ; un fichier illisible est archivé avant reconstruction d’un profil sain. Un abandon ou DNF compte comme course, mais ne peut accorder ni crédits ni record.
@@ -184,7 +203,8 @@ MECHA_OVERDRIVE/
 ├── godot/                         édition principale Godot 3D
 │   ├── project.godot
 │   ├── scenes/                    app, menu, garage, codex, résultats
-│   ├── scripts/                   données, systèmes, course, UI, audio
+│   ├── scripts/                   données, systèmes, course, UI, audio, fabriques visuelles
+│   ├── assets/textures/openai/    quatre textures bitmap et manifeste de provenance
 │   ├── assets/                    key art original intégré
 │   └── tests/
 │       ├── smoke_test.gd          contrat déterministe headless

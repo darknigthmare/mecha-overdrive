@@ -8,7 +8,7 @@ import {
 
 const manifest = {
   schema: 1,
-  gameVersion: '2.0.1',
+  gameVersion: '2.1.0',
   godotVersion: '4.7.2',
   preset: 'Web',
   threads: false,

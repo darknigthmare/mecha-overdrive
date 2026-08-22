@@ -48,7 +48,7 @@ theme_override_constants/margin_bottom = 32
 
 [node name="Page" type="VBoxContainer" parent="SafeArea"]
 layout_mode = 2
-theme_override_constants/separation = 22
+theme_override_constants/separation = 16
 
 [node name="TopBar" type="HBoxContainer" parent="SafeArea/Page"]
 layout_mode = 2
@@ -61,7 +61,7 @@ size_flags_horizontal = 3
 [node name="Series" type="Label" parent="SafeArea/Page/TopBar/Identity"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "NEXUS RACING AUTHORITY  //  SAISON 01"
+text = "NEXUS RACING AUTHORITY  //  SAISON 02"
 
 [node name="GameTitle" type="Label" parent="SafeArea/Page/TopBar/Identity"]
 layout_mode = 2
@@ -125,7 +125,7 @@ theme_type_variation = &"HeroPanel"
 
 [node name="Actions" type="VBoxContainer" parent="SafeArea/Page/Content/ActionsPanel"]
 layout_mode = 2
-theme_override_constants/separation = 11
+theme_override_constants/separation = 7
 
 [node name="Prompt" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 layout_mode = 2
@@ -170,9 +170,55 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Niveau des pilotes IA et multiplicateur de récompense"
 
+[node name="CompetitionOptions" type="HBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GridBlock" type="VBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions/CompetitionOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="GridLabel" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions/CompetitionOptions/GridBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "RÈGLE DE GRILLE"
+
+[node name="GridPolicySelect" type="OptionButton" parent="SafeArea/Page/Content/ActionsPanel/Actions/CompetitionOptions/GridBlock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Division active par défaut; le mélange exige Open / Interdivision"
+
+[node name="CupBlock" type="VBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions/CompetitionOptions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="CupLabel" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions/CompetitionOptions/CupBlock"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "CHAMPIONNAT"
+
+[node name="ChampionshipSelect" type="OptionButton" parent="SafeArea/Page/Content/ActionsPanel/Actions/CompetitionOptions/CupBlock"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Cinq coupes de division et un Grand Open explicitement mixte"
+
+[node name="RuleSummary" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "DIVISION ACTIVE  •  COUPE COMMANDEMENT  •  PILOTE"
+autowrap_mode = 2
+
 [node name="QuickButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_type_variation = &"PrimaryButton"
 tooltip_text = "Course complète de trois tours contre sept rivaux"
@@ -181,15 +227,15 @@ alignment = 0
 
 [node name="GrandPrixButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-tooltip_text = "Championnat en quatre manches avec points persistants"
-text = "GRAND PRIX   //   4 MANCHES"
+tooltip_text = "Choisir une coupe de division ou le Grand Open sur huit circuits"
+text = "CHAMPIONNATS   //   COUPES & OPEN"
 alignment = 0
 
 [node name="TimeTrialButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 tooltip_text = "Contre-la-montre sans adversaire ni objet offensif"
 text = "CONTRE-LA-MONTRE   //   SOLO"
@@ -197,7 +243,7 @@ alignment = 0
 
 [node name="EliminationButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 tooltip_text = "À chaque intervalle, le dernier pilote est éliminé"
 text = "ÉLIMINATION   //   DERNIER EXCLU"
@@ -214,7 +260,7 @@ theme_override_constants/separation = 10
 
 [node name="GarageButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions/SecondaryActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Sélectionner et améliorer une architecture"
@@ -222,7 +268,7 @@ text = "GARAGE"
 
 [node name="CodexButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions/SecondaryActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Consulter les architectures, circuits et objets"
@@ -230,7 +276,7 @@ text = "CODEX"
 
 [node name="QuitButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_type_variation = &"DangerButton"
 text = "QUITTER"
@@ -317,6 +363,5 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "SYSTÈMES PRÊTS // SAISON 01"
+text = "SYSTÈMES PRÊTS // SAISON 02"
 horizontal_alignment = 1
-
