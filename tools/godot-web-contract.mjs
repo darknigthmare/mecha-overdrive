@@ -21,10 +21,14 @@ export const GODOT_WEB_ARTIFACTS = [
 
 const SOURCE_ROOTS = ['project.godot', 'export_presets.cfg', 'assets', 'scenes', 'scripts'];
 const EXCLUDED_DIRECTORIES = new Set(['.godot', 'export', 'tests']);
+const EXCLUDED_FILE_SUFFIXES = ['.import'];
 
 function collect(path) {
   const information = statSync(path);
-  if (information.isFile()) return [path];
+  if (information.isFile()) {
+    if (EXCLUDED_FILE_SUFFIXES.some((suffix) => path.endsWith(suffix))) return [];
+    return [path];
+  }
   const files = [];
   for (const entry of readdirSync(path, { withFileTypes: true })) {
     if (entry.isDirectory() && EXCLUDED_DIRECTORIES.has(entry.name)) continue;
@@ -35,7 +39,7 @@ function collect(path) {
 
 const TEXT_EXTENSIONS = new Set([
   '.cfg', '.gd', '.gdshader', '.godot', '.json', '.md',
-  '.shader', '.svg', '.tres', '.tscn', '.txt',
+  '.shader', '.svg', '.tres', '.tscn', '.txt', '.uid',
 ]);
 
 function readSource(path) {

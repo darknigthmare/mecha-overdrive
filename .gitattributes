@@ -1,0 +1,2 @@
+# Preserve generated Godot Web artifacts byte-for-byte for build.json.
+godot3d/* -text whitespace=cr-at-eol

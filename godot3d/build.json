@@ -4,7 +4,7 @@
   "godotVersion": "4.7.2",
   "preset": "Web",
   "threads": false,
-  "sourceSha256": "fe6c956b8f17fad022a2300c28216a984d891f4063d70e4dc6bd7f0019628bba",
+  "sourceSha256": "929a094f1b9722a84ee9eb9b6aa1c9e58391528a19d6bce0524cb8bf41e83feb",
   "artifacts": {
     "mecha-overdrive.html": {
       "bytes": 5848,
