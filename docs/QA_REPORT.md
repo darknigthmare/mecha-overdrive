@@ -97,16 +97,17 @@ Décision : **GO technique Web** pour une release publique originale et jouable 
 
 ## Publication distante
 
-La release candidate locale est prête ; les preuves ci-dessous seront remplacées après le push du commit d’implémentation.
+Le commit d’implémentation a passé les gates distantes et son export a été promu sur l’alias public.
 
 | Gate distante | Preuve |
 |---|---|
-| Commit d’implémentation | À renseigner après push |
-| GitHub Actions | À renseigner après le run `Quality` |
-| Déploiement Vercel | À renseigner après promotion production |
-| URL immuable | À renseigner après déploiement |
-| Alias public | [mecha-overdrive.vercel.app](https://mecha-overdrive.vercel.app) |
-| Release | `v2.3.0` à créer après les gates finales |
+| Commit d’implémentation | [`1d9ee03b77ea4bd2d11e1a48b63a54118c0d85b7`](https://github.com/darknigthmare/mecha-overdrive/commit/1d9ee03b77ea4bd2d11e1a48b63a54118c0d85b7) |
+| GitHub Actions | [`Quality` 32770732834](https://github.com/darknigthmare/mecha-overdrive/actions/runs/32770732834) — `success` |
+| Déploiement d’implémentation | `dpl_3BkxkQ5icGg7Dn6dkWAps27kPKYu` — `READY`, promotion vérifiée le 24 août 2026 |
+| URL immuable | [mecha-overdrive-2pi2hxnn7-darknigthmares-projects.vercel.app](https://mecha-overdrive-2pi2hxnn7-darknigthmares-projects.vercel.app) — protection Vercel activée |
+| Alias public | [Jouer à MECHA OVERDRIVE 2.3.0](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive) — HTTP 200 |
+| Build public | [`build.json`](https://mecha-overdrive.vercel.app/godot3d/build.json) — version `2.3.0`, source `903a68d9fabd0a2e12d043a8b8d8c7e009ffaf07520c25493139ffe808d59b39` |
+| Release | [`v2.3.0`](https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.3.0) — archive Web autonome jointe |
 | Archive | `mecha-overdrive-godot-web-v2.3.0.zip` — 46 684 628 octets — SHA-256 `03599974bcf75218f7569a273c829cb73d1c5aaed04916c344878d5902bd0999` |
 
-Ces champs ne constituent pas une validation distante tant que les identifiants réels ne sont pas inscrits.
+Chrome a chargé l’alias public en 1280 × 720 avec WebGL2 actif, canvas 1280 × 720, HTTP 200 et zéro erreur console, page ou réseau. L’URL immuable conserve la protection Vercel du compte ; l’alias de production est public.
