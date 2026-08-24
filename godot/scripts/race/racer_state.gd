@@ -21,10 +21,17 @@ const TRIPOD_CONTROL_FACTOR := 0.42
 var racer_id := "racer"
 var display_name := "RACER"
 var chassis_id := "biped"
+var locomotion_id := "biped__mecha_legs__balanced"
+var drive_id := "mecha_legs"
+var mount_id := "balanced"
 var pilot_id := "vex"
 var is_player := false
 var difficulty_id := "pilot"
 var seed := 1
+var ai_trait := "adaptive"
+var ai_aggression := 0.50
+var ai_precision := 0.70
+var ai_risk := 0.50
 
 var track_length := 1000.0
 var total_laps := 3
@@ -64,6 +71,7 @@ var _recovery_time := 0.0
 var _was_drifting := false
 var _drift_exit_thrust_time := 0.0
 var _last_impact_thrust := 0.0
+var _ai_steer_memory := 0.0
 
 
 func configure(spec: Dictionary) -> RacerState:
@@ -77,12 +85,25 @@ func configure(spec: Dictionary) -> RacerState:
 	difficulty_id = String(spec.get("difficulty", "pilot"))
 	if not GameDatabase.has_difficulty(difficulty_id):
 		difficulty_id = "pilot"
+	var pilot := GameDatabase.get_pilot(pilot_id)
+	ai_trait = String(spec.get("ai_trait", pilot.get("trait", "adaptive")))
+	var difficulty := GameDatabase.get_difficulty(difficulty_id)
+	var personality := _ai_personality(ai_trait)
+	ai_aggression = clampf(float(difficulty.get("aggression", 0.50)) + float(personality.get("aggression", 0.0)), 0.08, 0.96)
+	ai_precision = clampf(float(difficulty.get("skill", 0.69)) + float(personality.get("precision", 0.0)), 0.28, 0.98)
+	ai_risk = clampf(0.34 + ai_aggression * 0.48 + float(personality.get("risk", 0.0)), 0.12, 0.94)
 	seed = int(spec.get("seed", 1))
 	track_length = maxf(100.0, float(spec.get("track_length", 1000.0)))
 	total_laps = clampi(int(spec.get("total_laps", 3)), 1, 9)
 	grid_index = maxi(0, int(spec.get("grid_index", 0)))
 
 	var chassis := GameDatabase.get_chassis(chassis_id)
+	var locomotion := LocomotionCatalog.resolve_configuration(chassis, {
+		"locomotion_id": String(spec.get("locomotion_id", "")),
+	})
+	locomotion_id = String(locomotion.get("id", LocomotionCatalog.get_default_configuration_id(chassis_id)))
+	drive_id = String(locomotion.get("drive_id", "mecha_legs"))
+	mount_id = String(locomotion.get("mount_id", "balanced"))
 	var physics: Dictionary = chassis.get("physics", {})
 	var upgrades: Dictionary = spec.get("upgrades", {}) if spec.get("upgrades", {}) is Dictionary else {}
 	var engine_level := clampi(int(upgrades.get("engine", 0)), 0, 4)
@@ -131,6 +152,7 @@ func configure(spec: Dictionary) -> RacerState:
 	_was_drifting = false
 	_drift_exit_thrust_time = 0.0
 	_last_impact_thrust = 0.0
+	_ai_steer_memory = 0.0
 	return self
 
 
@@ -188,7 +210,7 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 		grip *= 0.55
 		throttle *= 0.72
 
-	if chassis_id == "monowheel":
+	if drive_id == "mono_gyro":
 		if _was_drifting and not drifting:
 			_drift_exit_thrust_time = MONOWHEEL_EXIT_THRUST_DURATION
 			speed = minf(top_speed * 1.06, speed + acceleration * 0.16)
@@ -222,13 +244,13 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 		speed += acceleration * 1.38 * dt
 	elif drifting and absf(steer) > 0.25:
 		boost_energy = minf(1.0, boost_energy + dt * 0.028)
-		heat = maxf(0.0, heat - dt * (0.145 if chassis_id == "monowheel" else 0.075) / heat_generation)
+		heat = maxf(0.0, heat - dt * (0.145 if drive_id == "mono_gyro" else 0.075) / heat_generation)
 	else:
 		heat = maxf(0.0, heat - dt * (0.105 if throttle < 0.6 else 0.055) / heat_generation)
 
 	if heat >= 0.985:
 		speed = minf(speed, top_speed * 0.72)
-	var ability_speed_factor := 1.06 if chassis_id == "monowheel" and _drift_exit_thrust_time > 0.0 else 1.0
+	var ability_speed_factor := 1.06 if drive_id == "mono_gyro" and _drift_exit_thrust_time > 0.0 else 1.0
 	var allowed_speed := top_speed * maxf(1.23 if boosting else 1.0, ability_speed_factor)
 	speed = clampf(speed, 0.0, allowed_speed)
 	distance += speed * speed_multiplier * dt
@@ -248,24 +270,102 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 func ai_controls(context: Dictionary) -> Dictionary:
 	var skill := float(GameDatabase.get_difficulty(difficulty_id).get("skill", 0.69))
 	var curvature := clampf(float(context.get("curvature", 0.0)), -1.0, 1.0)
-	var wave := sin(distance * 0.0105 + seed * 0.731) * (0.20 - skill * 0.11)
-	var target_lane := clampf(-curvature * (0.62 + skill * 0.22) + wave, -0.82, 0.82)
-	var steer := clampf((target_lane - lane) * (1.8 + skill * 1.1), -1.0, 1.0)
-	var corner_load := absf(curvature)
-	var target_speed_ratio := clampf(1.04 - corner_load * (0.50 - skill * 0.24), 0.50, 1.04)
+	var curvature_ahead := clampf(float(context.get("curvature_ahead", curvature)), -1.0, 1.0)
+	var curvature_far := clampf(float(context.get("curvature_far", curvature_ahead)), -1.0, 1.0)
+	var personality := _ai_personality(ai_trait)
+	var position_value := maxi(1, int(context.get("position", position)))
+	var adaptive_push := clampf((position_value - 1) * 0.018, 0.0, 0.10) if ai_trait in ["adaptive", "opportunist"] else 0.0
+	var anticipation := clampf(0.48 + ai_precision * 0.42 + float(personality.get("anticipation", 0.0)), 0.45, 0.96)
+	var planned_curvature := lerpf(curvature, curvature_ahead, anticipation)
+	planned_curvature = lerpf(planned_curvature, curvature_far, anticipation * 0.24)
+
+	# Outside/inside/outside racing line: prepare on the opposite side of the
+	# upcoming bend, then converge smoothly toward its apex.
+	var entry_weight := clampf((absf(curvature_ahead) - absf(curvature)) * 2.2 + 0.45, 0.16, 0.86)
+	var target_lane := -curvature_ahead * entry_weight * (0.64 + ai_precision * 0.20)
+	target_lane += curvature * (1.0 - entry_weight) * 0.28
+	var wave_amplitude := maxf(0.018, (0.17 - skill * 0.10) * float(personality.get("line_noise", 1.0)))
+	target_lane += sin(distance * 0.0105 + seed * 0.731) * wave_amplitude
+
+	var hazard_now := _hazard_drag(context.get("hazard", ""))
+	var hazard_ahead := _hazard_drag(context.get("hazard_ahead", ""))
+	var hazard_far := _hazard_drag(context.get("hazard_far", ""))
+	var hazard_load := maxf(hazard_now, maxf(hazard_ahead * 0.88, hazard_far * 0.62))
+	if hazard_ahead > 0.18 or hazard_far > 0.28:
+		var escape_side := -1.0 if posmod(seed, 2) == 0 else 1.0
+		target_lane += escape_side * minf(0.34, hazard_load * (0.30 + ai_precision * 0.18))
+
+	var traffic := _traffic_ahead(context)
+	if bool(traffic.get("found", false)):
+		var traffic_gap := float(traffic.get("gap", 999.0))
+		var traffic_lane := float(traffic.get("lane", 0.0))
+		var lane_gap := traffic_lane - lane
+		if ai_trait == "rammer" and traffic_gap < 12.0 and ai_aggression > 0.62:
+			target_lane = lerpf(target_lane, traffic_lane, 0.30)
+		elif traffic_gap < 34.0 and absf(lane_gap) < 0.38:
+			var pass_side := -1.0 if lane_gap >= 0.0 else 1.0
+			if absf(lane_gap) < 0.04:
+				pass_side = -1.0 if posmod(seed + position_value, 2) == 0 else 1.0
+			target_lane += pass_side * (0.24 + (34.0 - traffic_gap) / 34.0 * 0.28)
+
+	target_lane = clampf(target_lane, -0.86, 0.86)
+	var raw_steer := clampf((target_lane - lane) * (1.70 + ai_precision * 1.20), -1.0, 1.0)
+	_ai_steer_memory = move_toward(_ai_steer_memory, raw_steer, 0.085 + ai_precision * 0.11)
+	var steer := clampf(_ai_steer_memory, -1.0, 1.0)
+	var corner_load := maxf(absf(curvature), maxf(absf(curvature_ahead) * 0.92, absf(curvature_far) * 0.70))
+	var conservative_factor := 0.12 if ai_trait == "defensive" else 0.0
+	var target_speed_ratio := 1.04 + float(personality.get("pace", 0.0)) + adaptive_push
+	target_speed_ratio -= corner_load * (0.55 - skill * 0.25 - ai_risk * 0.08)
+	target_speed_ratio -= hazard_load * (0.22 + conservative_factor - ai_risk * 0.07)
+	if bool(traffic.get("found", false)) and float(traffic.get("gap", 999.0)) < 10.0 and ai_trait != "rammer":
+		target_speed_ratio -= 0.08
+	target_speed_ratio = clampf(target_speed_ratio, 0.46, 1.075)
 	var speed_ratio := speed / maxf(1.0, top_speed)
-	var throttle := 1.0 if speed_ratio < target_speed_ratio else 0.25
-	var brake := clampf((speed_ratio - target_speed_ratio) * 2.8, 0.0, 1.0)
-	var hazard := _hazard_drag(context.get("hazard", ""))
-	if hazard > 0.4:
-		throttle *= 0.82 + skill * 0.14
+	var throttle := 1.0 if speed_ratio < target_speed_ratio else clampf(0.16 + ai_risk * 0.24, 0.16, 0.40)
+	var brake := clampf((speed_ratio - target_speed_ratio) * (3.0 + ai_precision * 0.9), 0.0, 1.0)
+	if hazard_load > 0.4:
+		throttle *= 0.78 + skill * 0.15
+	var drift_threshold := 0.50 + (1.0 - skill) * 0.12 - (0.10 if ai_trait == "drifter" else 0.0)
+	var boost_heat_limit := 0.70 + ai_risk * 0.16
 	return {
 		"throttle": throttle,
 		"brake": brake,
 		"steer": steer,
-		"drift": corner_load > (0.54 + (1.0 - skill) * 0.10) and speed_ratio > 0.45,
-		"boost": corner_load < 0.16 and speed_ratio > 0.64 and boost_energy > 0.24 and heat < 0.76,
+		"drift": corner_load > drift_threshold and speed_ratio > 0.42 and hazard_now < 0.48,
+		"boost": corner_load < 0.18 and absf(curvature_ahead) < 0.22 and speed_ratio > 0.58 and boost_energy > (0.19 + (1.0 - ai_risk) * 0.13) and heat < boost_heat_limit,
 	}
+
+
+func _traffic_ahead(context: Dictionary) -> Dictionary:
+	var racers_value: Variant = context.get("racers", [])
+	if not racers_value is Array:
+		return {"found": false}
+	var best_gap := INF
+	var best_lane := 0.0
+	for value: Variant in racers_value:
+		if not value is Dictionary:
+			continue
+		var state: Dictionary = value
+		if String(state.get("racer_id", "")) == racer_id or bool(state.get("dnf", false)) or bool(state.get("eliminated", false)):
+			continue
+		var gap := float(state.get("distance", 0.0)) - distance
+		if gap > 0.0 and gap < best_gap and gap <= 42.0:
+			best_gap = gap
+			best_lane = float(state.get("lane", 0.0))
+	return {"found": best_gap < INF, "gap": best_gap, "lane": best_lane}
+
+
+func _ai_personality(trait_id: String) -> Dictionary:
+	match trait_id:
+		"aggressive": return {"aggression": 0.18, "risk": 0.12, "precision": -0.03, "pace": 0.012, "line_noise": 1.15}
+		"technical": return {"aggression": -0.03, "risk": -0.02, "precision": 0.09, "anticipation": 0.10, "line_noise": 0.55}
+		"defensive": return {"aggression": -0.18, "risk": -0.14, "precision": 0.04, "anticipation": 0.08, "pace": -0.012, "line_noise": 0.65}
+		"opportunist": return {"aggression": 0.07, "risk": 0.05, "precision": 0.03, "anticipation": 0.04, "line_noise": 0.80}
+		"clean_line": return {"aggression": -0.05, "risk": -0.04, "precision": 0.11, "anticipation": 0.09, "line_noise": 0.28}
+		"rammer": return {"aggression": 0.24, "risk": 0.15, "precision": -0.06, "pace": 0.008, "line_noise": 1.20}
+		"strategist": return {"aggression": -0.01, "risk": 0.00, "precision": 0.08, "anticipation": 0.14, "line_noise": 0.48}
+		"drifter": return {"aggression": 0.08, "risk": 0.10, "precision": 0.01, "pace": 0.010, "line_noise": 0.82}
+		_: return {"aggression": 0.0, "risk": 0.0, "precision": 0.02, "anticipation": 0.05, "line_noise": 0.72}
 
 
 func apply_hit(damage: float, lateral_impulse: float = 0.0) -> void:
@@ -312,23 +412,33 @@ func apply_boost_pad() -> bool:
 
 
 func apply_ground_mine(damage: float = 18.0, lateral_impulse: float = 0.48) -> bool:
-	if chassis_id == "hover" or finished or dnf or eliminated:
+	if drive_id in ["hover_skids", "twin_antigrav"] or finished or dnf or eliminated:
 		return false
 	apply_hit(damage, lateral_impulse)
 	return true
 
 
 func contact_damage_multiplier() -> float:
-	match chassis_id:
-		"octopod": return 1.65
-		"tracked": return 1.38
-		_: return 1.0
+	var multiplier := 1.65 if chassis_id == "octopod" else 1.0
+	match drive_id:
+		"treads": multiplier = maxf(multiplier, 1.38)
+		"multi_support": multiplier = maxf(multiplier, 1.08)
+		"articulated_rail": multiplier = maxf(multiplier, 1.12)
+	return multiplier
 
 
 func offroad_drag_factor() -> float:
-	match chassis_id:
-		"hexapod": return 0.38
-		"hover": return 0.16
+	match drive_id:
+		"twin_antigrav": return 0.12
+		"hover_skids": return 0.16
+		"multi_support": return 0.38
+		"treads": return 0.44
+		"ducted_fans": return 0.68
+		"sphere_drive": return 0.72
+		"mecha_legs": return 0.82
+		"mono_gyro": return 0.92
+		"articulated_rail": return 1.05
+		"wheels": return 1.10
 		_: return 1.0
 
 
@@ -357,20 +467,54 @@ func chassis_ability_snapshot() -> Dictionary:
 		"quadruped":
 			ability.merge({"active": _recovery_time > 0.0, "recovery_time": _recovery_time, "drive_factor": 1.22}, true)
 		"hexapod":
-			ability.merge({"low_speed_steering_factor": 1.30, "offroad_drag_factor": offroad_drag_factor()}, true)
+			ability.merge({"low_speed_steering_factor": 1.30}, true)
 		"octopod":
 			ability.merge({"contact_damage_factor": contact_damage_multiplier(), "momentum_loss_factor": 0.45}, true)
 		"hover":
-			ability.merge({"mine_immune": true, "offroad_drag_factor": offroad_drag_factor()}, true)
+			ability.merge({"stabilized_frame": true}, true)
 		"tracked":
-			ability.merge({"contact_damage_factor": contact_damage_multiplier(), "sand_debris_drag": 0.0}, true)
+			ability.merge({"armored_bed": true}, true)
 		"monowheel":
-			ability.merge({"active": _drift_exit_thrust_time > 0.0, "exit_thrust_time": _drift_exit_thrust_time, "drift_cooling": 0.145}, true)
+			ability.merge({"gyro_frame": true}, true)
 		"orb":
 			ability.merge({"active": _last_impact_thrust > 0.0, "impact_thrust": _last_impact_thrust, "control_loss_factor": 0.36}, true)
 		"centurion":
 			ability.merge({"debris_drag": _hazard_drag("debris"), "gravity_drag": _hazard_drag("gravity")}, true)
 	return ability
+
+
+func locomotion_ability_snapshot() -> Dictionary:
+	var mine_immune := drive_id in ["hover_skids", "twin_antigrav"]
+	return {
+		"id": "drive_%s" % drive_id,
+		"drive_id": drive_id,
+		"locomotion_id": locomotion_id,
+		"mount_id": mount_id,
+		"mine_immune": mine_immune,
+		"offroad_drag_factor": offroad_drag_factor(),
+		"contact_damage_factor": contact_damage_multiplier(),
+		"sand_drag": _hazard_drag("sand"),
+		"mud_drag": _hazard_drag("mud"),
+		"debris_drag": _hazard_drag("debris"),
+		"active": drive_id == "mono_gyro" and _drift_exit_thrust_time > 0.0,
+		"exit_thrust_time": _drift_exit_thrust_time if drive_id == "mono_gyro" else 0.0,
+		"drift_cooling": 0.145 if drive_id == "mono_gyro" else 0.075,
+	}
+
+
+func ability_profile_snapshot() -> Dictionary:
+	var chassis_ability := chassis_ability_snapshot()
+	var drive_ability := locomotion_ability_snapshot()
+	var profile := chassis_ability.duplicate(true)
+	profile["chassis"] = chassis_ability
+	profile["locomotion"] = drive_ability
+	profile["drive_id"] = drive_id
+	profile["locomotion_id"] = locomotion_id
+	profile["mine_immune"] = bool(drive_ability.get("mine_immune", false))
+	profile["offroad_drag_factor"] = offroad_drag_factor()
+	profile["contact_damage_factor"] = contact_damage_multiplier()
+	profile["active"] = bool(chassis_ability.get("active", false)) or bool(drive_ability.get("active", false))
+	return profile
 
 
 func grant_item(item_id: String) -> bool:
@@ -447,8 +591,14 @@ func snapshot() -> Dictionary:
 		"racer_id": racer_id,
 		"display_name": display_name,
 		"chassis_id": chassis_id,
+		"locomotion_id": locomotion_id,
+		"drive_id": drive_id,
+		"mount_id": mount_id,
 		"division_id": String(GameDatabase.get_chassis(chassis_id).get("division_id", "command")),
 		"pilot_id": pilot_id,
+		"ai_trait": ai_trait,
+		"ai_aggression": ai_aggression,
+		"ai_precision": ai_precision,
 		"is_player": is_player,
 		"distance": maxf(0.0, distance),
 		"lane": lane,
@@ -467,7 +617,7 @@ func snapshot() -> Dictionary:
 		"item": item,
 		"boosting": boosting,
 		"shielded": _shield_time > 0.0,
-		"ability": chassis_ability_snapshot(),
+		"ability": ability_profile_snapshot(),
 		"finished": finished,
 		"finish_time": finish_time,
 		"dnf": dnf,
@@ -498,10 +648,25 @@ func _hazard_drag(hazard: Variant) -> float:
 		var hazard_data: Dictionary = hazard
 		return clampf(float(hazard_data.get("drag", hazard_data.get("strength", 0.0))), 0.0, 1.0)
 	var hazard_id := String(hazard)
-	if chassis_id == "tracked" and hazard_id in ["sand", "debris", "mud"]:
+	if drive_id == "treads" and hazard_id in ["sand", "debris", "mud"]:
 		return 0.10 if hazard_id == "mud" else 0.0
-	if chassis_id == "hover" and hazard_id in ["sand", "mud"]:
+	if drive_id == "hover_skids" and hazard_id in ["sand", "mud"]:
 		return 0.03 if hazard_id == "sand" else 0.06
+	if drive_id == "twin_antigrav" and hazard_id in ["sand", "mud", "debris"]:
+		match hazard_id:
+			"sand": return 0.02
+			"mud": return 0.04
+			_: return 0.08
+	if drive_id == "multi_support" and hazard_id in ["sand", "mud", "debris"]:
+		match hazard_id:
+			"sand": return 0.34 / offroad_efficiency
+			"mud": return 0.28 / offroad_efficiency
+			_: return 0.16
+	if drive_id == "ducted_fans" and hazard_id in ["rain", "current", "pressure"]:
+		match hazard_id:
+			"rain": return 0.08
+			"current": return 0.10
+			_: return 0.12
 	if chassis_id == "centurion" and hazard_id in ["debris", "gravity", "crosswind"]:
 		match hazard_id:
 			"debris": return 0.06

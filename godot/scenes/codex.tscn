@@ -62,7 +62,7 @@ text = "10 ARCHITECTURES   •   5 DIVISIONS   •   8 CIRCUITS   •   18 MODUL
 unique_name_in_owner = true
 custom_minimum_size = Vector2(190, 56)
 layout_mode = 2
-text = "←  RETOUR"
+text = "RETOUR  //  ESC"
 
 [node name="Tabs" type="HBoxContainer" parent="SafeArea/Page"]
 layout_mode = 2
@@ -90,6 +90,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = "OBJETS  //  8"
+
+[node name="LoreTab" type="Button" parent="SafeArea/Page/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "UNIVERS  //  8"
 
 [node name="Content" type="HBoxContainer" parent="SafeArea/Page"]
 layout_mode = 2

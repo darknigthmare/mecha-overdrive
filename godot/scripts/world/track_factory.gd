@@ -25,6 +25,7 @@ static func build(spec: Dictionary) -> Node3D:
 	_build_environment(root, spec)
 	_build_road(root, curve, length, width, spec)
 	_build_scenery(root, curve, length, width, spec)
+	_build_start_finish_complex(root, curve, length, width, spec)
 	_build_gameplay_markers(root, curve, length, width, spec)
 	return root
 
@@ -212,7 +213,7 @@ static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: f
 	var seed := int(spec.get("seed", 1))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed
-	var count := clampi(int(length / 34.0), 18, 56)
+	var count := clampi(int(length / 25.0), 28, 72)
 
 	for index in range(count):
 		var distance := length * (float(index) + 0.4) / float(count)
@@ -221,12 +222,26 @@ static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: f
 		var offset := width * rng.randf_range(1.15, 2.45) * side
 		var prop := MeshInstance3D.new()
 		prop.name = "Prop_%02d" % index
-		var shape_kind := posmod(index + seed, 4)
+		var shape_kind := posmod(index + seed, 8)
 		prop.mesh = TrackVisualProfiles.prop_mesh(spec, shape_kind, rng)
-		prop.material_override = MaterialLibrary.environment(accent.darkened(rng.randf_range(0.25, 0.68)), 0.72, 0.46, 2.4)
+		var prop_tint := Color.WHITE.lerp(accent, rng.randf_range(0.12, 0.34)).darkened(rng.randf_range(0.0, 0.16))
+		prop.material_override = MaterialLibrary.prop_for(spec, prop_tint, rng.randf_range(1.8, 3.2))
 		prop.position = pose.origin + pose.basis.x.normalized() * offset
 		prop.rotation.y = rng.randf_range(-PI, PI)
 		holder.add_child(prop)
+
+		if index % 4 == 1:
+			var detail := MeshInstance3D.new()
+			detail.name = "PropGlow_%02d" % index
+			var detail_mesh := CylinderMesh.new()
+			detail_mesh.top_radius = rng.randf_range(0.28, 0.5)
+			detail_mesh.bottom_radius = detail_mesh.top_radius
+			detail_mesh.height = rng.randf_range(0.12, 0.28)
+			detail.mesh = detail_mesh
+			detail.material_override = _emissive_material(glow if index % 2 == 0 else accent, 2.6)
+			detail.position = prop.position + Vector3.UP * rng.randf_range(1.2, 3.4)
+			detail.rotation = Vector3(PI * 0.5, prop.rotation.y, 0.0)
+			holder.add_child(detail)
 
 		if index % 3 == 0:
 			var beacon := OmniLight3D.new()
@@ -235,6 +250,69 @@ static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: f
 			beacon.omni_range = 12.0
 			beacon.position = prop.position + Vector3.UP * 2.5
 			holder.add_child(beacon)
+
+
+static func _build_start_finish_complex(root: Node3D, curve: Curve3D, length: float, width: float, spec: Dictionary) -> void:
+	var complex := Node3D.new()
+	complex.name = "NexusRaceComplex"
+	complex.transform = curve.sample_baked_with_rotation(fposmod(length * 0.002, length), true, true)
+	root.add_child(complex)
+
+	var palette: Dictionary = spec.get("palette", {})
+	var glow := _color(palette.get("glow", "#38ddff"), Color("38ddff"))
+	var accent := _color(palette.get("accent", "#ff8a3d"), Color("ff8a3d"))
+	var structure_material := MaterialLibrary.ceremonial(Color.WHITE, 2.2)
+
+	for side: float in [-1.0, 1.0]:
+		var pillar := MeshInstance3D.new()
+		pillar.name = "GantryPillar_%s" % ("L" if side < 0.0 else "R")
+		var pillar_mesh := BoxMesh.new()
+		pillar_mesh.size = Vector3(0.9, 8.4, 1.2)
+		pillar.mesh = pillar_mesh
+		pillar.material_override = structure_material
+		pillar.position = Vector3(width * 0.66 * side, 4.2, 0.0)
+		complex.add_child(pillar)
+
+		var grandstand := MeshInstance3D.new()
+		grandstand.name = "Grandstand_%s" % ("L" if side < 0.0 else "R")
+		var stand_mesh := BoxMesh.new()
+		stand_mesh.size = Vector3(8.0, 3.4, 16.0)
+		grandstand.mesh = stand_mesh
+		grandstand.material_override = MaterialLibrary.prop_for(spec, Color.WHITE.lerp(accent, 0.18), 3.4)
+		grandstand.position = Vector3(width * 1.28 * side, 1.4, 10.0)
+		grandstand.rotation.z = deg_to_rad(-7.0 * side)
+		complex.add_child(grandstand)
+
+	var beam := MeshInstance3D.new()
+	beam.name = "StartFinishBeam"
+	var beam_mesh := BoxMesh.new()
+	beam_mesh.size = Vector3(width * 1.42, 0.85, 1.35)
+	beam.mesh = beam_mesh
+	beam.material_override = structure_material
+	beam.position = Vector3(0.0, 8.15, 0.0)
+	complex.add_child(beam)
+
+	var finish_strip := MeshInstance3D.new()
+	finish_strip.name = "FinishStrip"
+	var strip_mesh := BoxMesh.new()
+	strip_mesh.size = Vector3(width, 0.075, 1.25)
+	finish_strip.mesh = strip_mesh
+	finish_strip.material_override = MaterialLibrary.ceremonial(Color.WHITE, 1.0)
+	finish_strip.position = Vector3(0.0, 0.08, 0.0)
+	complex.add_child(finish_strip)
+
+	for light_index in range(5):
+		var signal_light := MeshInstance3D.new()
+		signal_light.name = "StartSignal_%d" % light_index
+		var signal_mesh := SphereMesh.new()
+		signal_mesh.radius = 0.34
+		signal_mesh.height = 0.68
+		signal_light.mesh = signal_mesh
+		signal_light.material_override = _emissive_material(glow if light_index >= 3 else accent, 3.4)
+		signal_light.position = Vector3((float(light_index) - 2.0) * 1.15, 7.95, -0.75)
+		complex.add_child(signal_light)
+
+	root.set_meta("start_complex", complex)
 
 
 static func _build_gameplay_markers(root: Node3D, curve: Curve3D, length: float, width: float, spec: Dictionary) -> void:

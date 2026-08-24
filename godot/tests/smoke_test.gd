@@ -2,6 +2,7 @@ extends SceneTree
 ## Headless smoke test: godot --headless --path godot --script res://tests/smoke_test.gd
 
 const DatabaseScript = preload("res://scripts/data/game_database.gd")
+const CatalogScript = preload("res://scripts/data/locomotion_catalog.gd")
 const SaveScript = preload("res://scripts/systems/save_system.gd")
 const SessionScript = preload("res://scripts/systems/game_session.gd")
 const RacerScript = preload("res://scripts/race/racer_state.gd")
@@ -9,8 +10,12 @@ const AudioScript = preload("res://scripts/audio/audio_director.gd")
 const GarageScript = preload("res://scripts/ui/garage.gd")
 const MechaFactoryScript = preload("res://scripts/mecha/mecha_factory.gd")
 const RaceControllerScript = preload("res://scripts/race/race_controller.gd")
+const RaceBroadcastScript = preload("res://scripts/data/race_broadcast.gd")
+const LoreScript = preload("res://scripts/data/lore_database.gd")
 const TrackFactoryScript = preload("res://scripts/world/track_factory.gd")
 const GaragePreviewScene = preload("res://scenes/components/garage_preview.tscn")
+const PodiumScene = preload("res://scenes/components/podium_presenter.tscn")
+const MobileTouchScript = preload("res://scripts/input/mobile_touch_controls.gd")
 
 var _failures: Array[String] = []
 
@@ -26,6 +31,7 @@ func _init() -> void:
 	_test_performance_classes()
 	_test_mecha_visual_contract()
 	_test_track_visual_contract()
+	_test_race_presentation_contract()
 	_test_championship_migration_and_tamper_guard()
 	_test_time_trial_results_contract()
 	_test_grand_prix_persistence()
@@ -33,11 +39,14 @@ func _init() -> void:
 	_test_garage_preview_contract()
 	_test_backup_recovery()
 	_test_deterministic_racer()
+	_test_mobile_touch_contract()
+	_test_ai_racecraft()
 	_test_boost_pad_contract()
 	_test_chassis_abilities()
+	_test_active_locomotion_abilities()
 	_test_audio_event_lifecycle()
 	if _failures.is_empty():
-		print("MECHA GODOT SMOKE: PASS (10 chassis, 5 divisions, 8 tracks, 6 cups, 18 modules, 12 textures, garage preview, TPS/FPS, save v4, GP resume, racer, audio)")
+		print("MECHA GODOT SMOKE: PASS (race briefing, blocking countdown, podium, mobile multi-touch, profiled AI, deterministic racer, garage preview, 500 locomotions, TPS/FPS, save v5, GP resume, audio)")
 		quit(0)
 		return
 	for failure in _failures:
@@ -50,6 +59,15 @@ func _test_database() -> void:
 	_expect(DatabaseScript.TRACKS.size() == 8, "le catalogue doit contenir 8 circuits")
 	_expect(DatabaseScript.ITEMS.size() == 8, "le catalogue doit contenir 8 objets")
 	_expect(DatabaseScript.DIVISIONS.size() == 5, "le catalogue doit contenir 5 divisions")
+	var expected_divisions: Array[String] = ["Commandement", "Stabilisés", "Essaim", "Sol", "Expérimental"]
+	_expect(LoreScript.division_names() == expected_divisions, "le lore doit dériver exactement les cinq divisions de GameDatabase")
+	var division_lore := ""
+	for entry: Dictionary in LoreScript.get_all():
+		if String(entry.get("id", "")) == "five_divisions":
+			division_lore = String(entry.get("description", ""))
+	for division_name: String in expected_divisions:
+		_expect(division_lore.contains(division_name), "division absente du lore : %s" % division_name)
+	_expect(not division_lore.contains("Sillage") and not division_lore.contains("Bastion") and not division_lore.contains("Singularité"), "le lore conserve d’anciennes divisions non canoniques")
 	_expect(DatabaseScript.MODULE_SLOTS.size() == 3, "la customisation doit exposer 3 emplacements")
 	_expect(DatabaseScript.CHAMPIONSHIPS.size() == 6, "le catalogue doit contenir 6 championnats")
 	var module_count := 0
@@ -114,6 +132,64 @@ func _test_database() -> void:
 		_expect(ResourceLoader.exists(texture_path), "texture OpenAI absente : %s" % texture_path)
 
 
+func _test_race_presentation_contract() -> void:
+	var briefing: Dictionary = RaceBroadcastScript.briefing({
+		"mode": "grand_prix",
+		"track_id": "orbital",
+		"laps": 4,
+		"racer_count": 8,
+		"ruleset_id": "elite_open",
+		"performance_class_id": "unlimited",
+		"homologation_notice": "HOMOLOGATION // MONTAGE CONSTRUCTEUR APPLIQUÉ",
+	})
+	_expect(String(briefing.get("track_name", "")) == "CIMETIÈRE ORBITAL", "le briefing doit annoncer le circuit canonique")
+	_expect(String(briefing.get("session", "")).contains("4 TOURS") and String(briefing.get("session", "")).contains("08 PARTANTS"), "le briefing doit détailler tours et grille")
+	_expect(String(briefing.get("rules", "")).contains("OPEN PROTOTYPE"), "le briefing doit afficher le règlement homologué")
+	_expect(String(briefing.get("lore", "")).contains("Morrigan"), "le briefing doit porter le lore propre au circuit")
+	_expect(String(briefing.get("conditions", "")).contains("MONTAGE CONSTRUCTEUR APPLIQUÉ"), "le briefing doit relayer l’avis d’homologation")
+	var finish: Dictionary = RaceBroadcastScript.finish_call({"track_id": "orbital", "position": 1, "total_racers": 8, "dnf": false})
+	_expect(String(finish.get("title", "")).contains("VICTOIRE") and String(finish.get("position", "")).begins_with("1RE"), "l’annonce arrivée doit distinguer une victoire")
+	var record_finish: Dictionary = RaceBroadcastScript.finish_call({"mode": "time_trial", "track_id": "orbital", "position": 1, "dnf": false, "new_record": true})
+	var homologated_finish: Dictionary = RaceBroadcastScript.finish_call({"mode": "time_trial", "track_id": "orbital", "position": 1, "dnf": false, "new_record": false})
+	_expect(String(record_finish.get("title", "")) == "NOUVEAU RECORD", "un chrono record doit annoncer uniquement le nouveau record")
+	_expect(String(homologated_finish.get("title", "")) == "CHRONO HOMOLOGUÉ", "un chrono non-record ne doit jamais être présenté comme une victoire")
+	var podium: PodiumPresenter = PodiumScene.instantiate()
+	get_root().add_child(podium)
+	podium.present([
+		{"racer_id": "iris", "pilot": "IRIS", "position": 1, "finished": true},
+		{"racer_id": "brakk", "pilot": "BRAKK", "position": 2, "finished": false, "classified": true},
+		{"racer_id": "player", "pilot": "PILOTE 01", "position": 3, "finished": false, "dnf": true, "player": true},
+	], 3, true)
+	_expect(podium.top_three().size() == 2 and podium.visible_card_count() == 2, "le podium doit accepter un classé encore en piste et masquer le joueur DNF")
+	var podium_text := ""
+	for label_value: Node in podium.find_children("*", "Label", true, false):
+		podium_text += (label_value as Label).text + "\n"
+	_expect(not podium_text.contains("RIVAL") and not podium_text.contains("VOUS"), "un joueur DNF ne doit jamais recevoir un libellé de podium")
+	podium.present([{"racer_id": "player", "position": 1, "finished": true, "player": true}], 1, false, "time_trial")
+	_expect(podium.top_three().is_empty() and podium.visible_card_count() == 0, "un contre-la-montre ne doit construire aucun podium")
+	podium.free()
+	var race_classification: Node = RaceControllerScript.new()
+	var live_snapshots: Array[Dictionary] = [
+		{"racer_id": "player", "is_player": true, "distance": 100.0, "finished": false, "dnf": false, "eliminated": false},
+		{"racer_id": "iris", "distance": 90.0, "finished": false, "dnf": false, "eliminated": false},
+		{"racer_id": "brakk", "distance": 80.0, "finished": false, "dnf": false, "eliminated": false},
+	]
+	race_classification.set("_config", {"mode": "quick"})
+	race_classification.set("_snapshots", live_snapshots)
+	race_classification.call(&"_prepare_official_classification", {
+		"racer_id": "player", "is_player": true, "finished": true, "dnf": false, "eliminated": false,
+	})
+	var official_entries: Array = race_classification.get("_snapshots")
+	var official_top_count := 0
+	for entry_value: Variant in official_entries:
+		if entry_value is Dictionary and bool(Dictionary(entry_value).get("classified", false)):
+			official_top_count += 1
+	_expect(official_top_count == 3, "une victoire doit figer un podium officiel complet à partir de l’ordre vivant")
+	_expect(not official_entries.is_empty() and bool(Dictionary(official_entries[0]).get("finished", false)), "le survivant/vainqueur doit être synchronisé comme arrivé dans le classement")
+	race_classification.free()
+	_expect(PodiumScene != null and RaceControllerScript.GRID_BRIEFING_SECONDS > 0.0, "la grille et le podium doivent être chargeables")
+
+
 func _test_asset_manifest_contract() -> void:
 	var manifest_file := FileAccess.open("res://assets/textures/openai/manifest.json", FileAccess.READ)
 	_expect(manifest_file != null, "manifest OpenAI absent")
@@ -130,10 +206,12 @@ func _test_asset_manifest_contract() -> void:
 		"mecha_armor.png", "track_surface.png", "cockpit_composite.png", "environment_panels.png",
 		"mecha_armor_light.png", "mecha_armor_heavy.png", "module_energy.png", "module_mobility.png",
 		"module_utility.png", "track_thermal.png", "track_cryo.png", "garage_bay.png",
+		"prop_industrial.png", "prop_biome.png", "prop_urban_wet.png", "race_ceremonial.png",
+		"locomotion_antigrav.png",
 	]
 	var assets: Array = manifest.get("assets", [])
 	var seen: Dictionary = {}
-	_expect(assets.size() == 12, "le manifest OpenAI doit décrire 12 textures")
+	_expect(assets.size() == 17, "le manifest OpenAI doit décrire 17 textures")
 	for asset_value: Variant in assets:
 		if not asset_value is Dictionary:
 			_expect(false, "entrée du manifest OpenAI invalide")
@@ -141,6 +219,10 @@ func _test_asset_manifest_contract() -> void:
 		var file_name := String(Dictionary(asset_value).get("file", ""))
 		_expect(expected_files.has(file_name), "texture inattendue dans le manifest : %s" % file_name)
 		_expect(not seen.has(file_name), "texture dupliquée dans le manifest : %s" % file_name)
+		_expect(String(Dictionary(asset_value).get("generation_id", "")).begins_with("exec-"), "identifiant de génération absent : %s" % file_name)
+		_expect(String(Dictionary(asset_value).get("sha256", "")).length() == 64, "empreinte SHA-256 absente : %s" % file_name)
+		var dimensions: Array = Dictionary(asset_value).get("dimensions", [])
+		_expect(dimensions.size() == 2 and int(dimensions[0]) == 1254 and int(dimensions[1]) == 1254, "dimensions de provenance invalides : %s" % file_name)
 		seen[file_name] = true
 	for file_name: String in expected_files:
 		_expect(seen.has(file_name), "texture absente du manifest : %s" % file_name)
@@ -148,7 +230,7 @@ func _test_asset_manifest_contract() -> void:
 
 func _test_profile_contract() -> void:
 	var service: SaveSystemService = SaveScript.new()
-	_expect(SaveScript.SAVE_VERSION == 4, "SAVE_VERSION doit être 4")
+	_expect(SaveScript.SAVE_VERSION == 5, "SAVE_VERSION doit être 5")
 	var clean: Dictionary = service._sanitize_profile({
 		"version": -4,
 		"credits": -900,
@@ -159,8 +241,9 @@ func _test_profile_contract() -> void:
 	_expect(int(clean.get("credits", -1)) == 0, "les crédits négatifs doivent être normalisés")
 	_expect(String(clean.get("selected_chassis", "")) == "biped", "fallback châssis invalide")
 	_expect(Dictionary(clean.get("records", {})).is_empty(), "un chrono invalide ne doit pas survivre")
-	_expect(Dictionary(clean.get("loadouts", {})).size() == 10, "la migration v4 doit créer 10 loadouts")
-	_expect(String(Dictionary(clean.get("settings", {})).get("camera_view", "")) == "tps", "la migration v4 doit utiliser la vue TPS")
+	_expect(Dictionary(clean.get("loadouts", {})).size() == 10, "la migration v5 doit créer 10 loadouts")
+	_expect(Dictionary(clean.get("locomotions", {})).size() == 10, "la migration v5 doit créer 10 locomotions constructeur")
+	_expect(String(Dictionary(clean.get("settings", {})).get("camera_view", "")) == "tps", "la migration v5 doit utiliser la vue TPS")
 	var historic_modules: Array[String] = [
 		"core_balanced", "core_overdrive", "core_bastion",
 		"mobility_vector", "mobility_sprint", "mobility_adaptive",
@@ -276,6 +359,18 @@ func _test_performance_classes() -> void:
 	var authored: Dictionary = DatabaseScript.get_chassis("tripod").get("default_loadout", {})
 	_expect(stock == authored, "la classe Série doit imposer le loadout constructeur")
 	_expect(controller._loadout_for_class(requested, "tripod", "tuned") == requested, "la classe Préparé doit accepter les modules homologués")
+	var reserved_loadout: Dictionary = controller._loadout_for_class(requested, "tripod", "tuned", 5)
+	var reserved_power := 0
+	for reserved_slot: String in reserved_loadout:
+		reserved_power += int(DatabaseScript.get_module_option(reserved_slot, String(reserved_loadout[reserved_slot])).get("power_draw", 0))
+	_expect(reserved_power <= 1, "la puissance de locomotion réservée doit réduire réellement le budget modules")
+	var tripod := DatabaseScript.get_chassis("tripod")
+	var stock_drive := CatalogScript.homologate_configuration(tripod, "tripod__twin_antigrav__racing", DatabaseScript.get_performance_class("stock"))
+	_expect(String(stock_drive.get("id", "")) == CatalogScript.get_default_configuration_id("tripod"), "la classe Série doit imposer la locomotion constructeur")
+	var tuned_drive := CatalogScript.homologate_configuration(tripod, "tripod__twin_antigrav__racing", DatabaseScript.get_performance_class("tuned"))
+	_expect(String(tuned_drive.get("id", "")) == CatalogScript.get_default_configuration_id("tripod"), "une locomotion hors tier ou budget doit être refusée en Préparé")
+	var unlimited_drive := CatalogScript.homologate_configuration(tripod, "tripod__twin_antigrav__racing", DatabaseScript.get_performance_class("unlimited"))
+	_expect(String(unlimited_drive.get("id", "")) == "tripod__twin_antigrav__racing", "la classe Prototype doit accepter l’Aether de course")
 	var upgrades := {"biped": {"engine": 4, "servos": 4, "reactor": 4, "armor": 4}}
 	var tuned_upgrades: Dictionary = controller._player_upgrades({"upgrades": upgrades}, "biped", "tuned")
 	var unlimited_upgrades: Dictionary = controller._player_upgrades({"upgrades": upgrades}, "biped", "unlimited")
@@ -386,7 +481,7 @@ func _test_championship_migration_and_tamper_guard() -> void:
 	var migrated_v3: Dictionary = guard_service._sanitize_profile(guard_profile)
 	var guarded: Dictionary = migrated_v3.get("championship", {})
 	var command_definition := DatabaseScript.get_championship("command_cup")
-	_expect(int(migrated_v3.get("version", 0)) == 4, "une sauvegarde v3 doit migrer vers SAVE_VERSION 4")
+	_expect(int(migrated_v3.get("version", 0)) == SaveScript.SAVE_VERSION, "une sauvegarde v3 doit migrer vers le SAVE_VERSION courant")
 	_expect(guarded.get("tracks", []) == command_definition.get("track_ids", []), "une sauvegarde ne doit pas remplacer les circuits canoniques d'une coupe")
 	_expect(String(guarded.get("division_id", "")) == "command" and String(guarded.get("ruleset_id", "")) == "division_locked", "une sauvegarde ne doit pas ouvrir une coupe dédiée")
 	_expect(not bool(guarded.get("mixed_divisions", true)) and String(guarded.get("performance_class_id", "")) == "tuned", "une sauvegarde ne doit pas modifier la classe d'une coupe")
@@ -691,6 +786,67 @@ func _test_deterministic_racer() -> void:
 	_expect(float(first_snapshot.get("distance", 0.0)) > 0.0, "le racer ne progresse pas")
 
 
+func _test_mobile_touch_contract() -> void:
+	_expect(MobileTouchScript.HOLD_ACTIONS.size() == 6, "les commandes tactiles doivent exposer 6 actions maintenues")
+	_expect(MobileTouchScript.PULSE_ACTIONS.size() == 4, "les commandes tactiles doivent exposer objet/recentrage/caméra/pause")
+	for action: StringName in [&"race_left", &"race_right", &"race_accelerate", &"race_brake", &"race_drift", &"race_boost"]:
+		_expect(action in MobileTouchScript.HOLD_ACTIONS, "commande tactile maintenue absente : %s" % action)
+	for action: StringName in [&"race_item", &"race_reset", &"race_camera", &"race_pause"]:
+		_expect(action in MobileTouchScript.PULSE_ACTIONS, "commande tactile instantanée absente : %s" % action)
+	var controls: MobileTouchControls = MobileTouchScript.new()
+	controls._build_interface()
+	_expect(controls.button_count() == 10, "la surface tactile doit proposer exactement 10 commandes")
+	controls._set_hold(&"race_accelerate", 1.0)
+	controls._set_hold(&"race_left", 1.0)
+	var snapshot := controls.controls_snapshot()
+	_expect(is_equal_approx(float(snapshot.get("throttle", 0.0)), 1.0), "l'accélérateur tactile ne produit pas une valeur analogique")
+	_expect(is_equal_approx(float(snapshot.get("left", 0.0)), 1.0), "la direction tactile gauche ne produit pas une valeur analogique")
+	controls.release_controls()
+	_expect(is_zero_approx(controls.hold_strength(&"race_accelerate")), "une commande tactile reste verrouillée après relâchement")
+	_expect(MobileTouchScript.MIN_TOUCH_TARGET >= 88.0, "les cibles tactiles sont trop petites")
+	controls.free()
+
+
+func _test_ai_racecraft() -> void:
+	var spec := {
+		"racer_id": "iris_ai", "display_name": "IRIS", "chassis_id": "biped",
+		"pilot_id": "iris", "difficulty": "ace", "track_length": 800.0,
+		"total_laps": 2, "seed": 917,
+	}
+	var first: RacerState = RacerScript.new().configure(spec)
+	var second: RacerState = RacerScript.new().configure(spec)
+	first.speed = first.top_speed * 0.91
+	second.speed = second.top_speed * 0.91
+	var context := {
+		"curvature": 0.06, "curvature_ahead": 0.74, "curvature_far": 0.58,
+		"hazard": "", "hazard_ahead": "lava", "hazard_far": "eruption",
+		"position": 4, "race_progress": 0.42,
+		"racers": [
+			{"racer_id": "iris_ai", "distance": 120.0, "lane": 0.0},
+			{"racer_id": "target", "distance": 138.0, "lane": 0.04},
+		],
+	}
+	first.distance = 120.0
+	second.distance = 120.0
+	var first_controls: Dictionary
+	var second_controls: Dictionary
+	for iteration in range(20):
+		first_controls = first.ai_controls(context)
+		second_controls = second.ai_controls(context)
+	_expect(first_controls == second_controls, "les décisions de trajectoire IA ne sont pas déterministes")
+	_expect(float(first_controls.get("brake", 0.0)) > 0.0, "l'IA n'anticipe pas le virage ou le danger à venir")
+	_expect(not bool(first_controls.get("boost", true)), "l'IA surcharge malgré un virage dangereux annoncé")
+	var profile := first.snapshot()
+	_expect(String(profile.get("ai_trait", "")) == "strategist", "la personnalité du pilote IA n'est pas conservée")
+	_expect(float(profile.get("ai_precision", 0.0)) > 0.80, "le profil stratège ne reçoit pas sa précision")
+	var brakk: RacerState = RacerScript.new().configure({
+		"racer_id": "brakk_ai", "pilot_id": "brakk", "chassis_id": "tracked",
+		"difficulty": "pilot", "track_length": 800.0, "total_laps": 2, "seed": 44,
+	})
+	_expect(String(brakk.snapshot().get("ai_trait", "")) == "rammer", "le profil bélier n'est pas dérivé du pilote")
+	_expect(brakk.ai_aggression >= 0.70, "le profil bélier n'influence pas suffisamment l'agressivité")
+
+
 func _test_boost_pad_contract() -> void:
 	var first: RacerState = _configured_racer("biped", "pad_a", 0.24)
 	var second: RacerState = _configured_racer("biped", "pad_b", 0.24)
@@ -758,7 +914,7 @@ func _test_chassis_abilities() -> void:
 	monowheel.step(0.05, {"throttle": 0.8, "brake": 0.0, "steer": 0.8, "drift": true, "boost": false}, context)
 	context["elapsed"] = 1.05
 	monowheel.step(0.05, {"throttle": 1.0, "brake": 0.0, "steer": 0.0, "drift": false, "boost": false}, context)
-	_expect(bool(monowheel.chassis_ability_snapshot().get("active", false)), "micro-poussée de sortie de drift absente")
+	_expect(bool(monowheel.locomotion_ability_snapshot().get("active", false)), "micro-poussée de sortie de drift absente")
 	_expect(monowheel.heat < 0.80, "refroidissement de drift monoroue absent")
 
 	var orb: RacerState = _configured_racer("orb", "ability_orb")
@@ -772,6 +928,32 @@ func _test_chassis_abilities() -> void:
 	_expect(centurion._hazard_drag("gravity") < baseline._hazard_drag("gravity"), "résistance Centurion à la gravité absente")
 
 
+func _test_active_locomotion_abilities() -> void:
+	var aether: RacerState = _configured_locomotion_racer("biped", "drive_aether", "twin_antigrav", "racing")
+	var aether_state := aether.snapshot()
+	var aether_ability: Dictionary = aether_state.get("ability", {})
+	_expect(String(aether_state.get("locomotion_id", "")) == "biped__twin_antigrav__racing", "snapshot locomotion Aether absent")
+	_expect(String(aether_state.get("drive_id", "")) == "twin_antigrav", "snapshot drive Aether absent")
+	_expect(String(aether_ability.get("drive_id", "")) == "twin_antigrav" and bool(aether_ability.get("mine_immune", false)), "profil d'aptitude Aether incohérent")
+	var aether_armor := aether.armor
+	_expect(not aether.apply_ground_mine() and is_equal_approx(aether.armor, aether_armor), "le bi-propulseur Aether doit survoler les mines")
+	_expect(aether.offroad_drag_factor() < 0.2 and aether._hazard_drag("mud") <= 0.04, "le bi-propulseur Aether n'applique pas son profil sans contact")
+
+	var legged_hover: RacerState = _configured_locomotion_racer("hover", "drive_hover_legs", "mecha_legs")
+	var legged_hover_armor := legged_hover.armor
+	_expect(legged_hover.apply_ground_mine() and legged_hover.armor < legged_hover_armor, "un châssis hover monté sur jambes ne doit plus ignorer les mines")
+	_expect(not bool(Dictionary(legged_hover.snapshot().get("ability", {})).get("mine_immune", true)), "le profil hover sur jambes annonce encore une immunité")
+
+	var treaded_biped: RacerState = _configured_locomotion_racer("biped", "drive_treads", "treads")
+	_expect(is_zero_approx(treaded_biped._hazard_drag("sand")) and is_zero_approx(treaded_biped._hazard_drag("debris")) and treaded_biped._hazard_drag("mud") <= 0.10, "les chenilles effectives doivent résister au sable, aux débris et à la boue")
+	_expect(treaded_biped.contact_damage_multiplier() >= 1.38, "l'avantage de contact des chenilles ne suit pas le drive")
+
+	var multi_biped: RacerState = _configured_locomotion_racer("biped", "drive_multi", "multi_support")
+	var legged_biped: RacerState = _configured_locomotion_racer("biped", "drive_legs", "mecha_legs")
+	_expect(multi_biped.offroad_drag_factor() < legged_biped.offroad_drag_factor(), "les multi-appuis n'améliorent pas le hors-piste")
+	_expect(String(multi_biped.chassis_ability_snapshot().get("id", "")) == "gyro_correction", "changer de locomotion ne doit pas supprimer l'aptitude pure du châssis")
+
+
 func _test_audio_event_lifecycle() -> void:
 	var director: AudioDirector = AudioScript.new()
 	director.configure({"master_volume": 0.7, "music_volume": 0.4, "effects_volume": 0.8})
@@ -782,6 +964,15 @@ func _test_audio_event_lifecycle() -> void:
 		director._sample_frame()
 	_expect(director._events.is_empty(), "événement audio expiré non compacté")
 	director.free()
+
+
+func _configured_locomotion_racer(chassis_id: String, racer_id: String, drive_id: String, mount_id: String = "balanced") -> RacerState:
+	return RacerScript.new().configure({
+		"racer_id": racer_id, "display_name": racer_id, "chassis_id": chassis_id,
+		"locomotion_id": "%s__%s__%s" % [chassis_id, drive_id, mount_id],
+		"difficulty": "pilot", "track_length": 400.0, "total_laps": 1,
+		"seed": racer_id.hash(),
+	})
 
 
 func _configured_racer(chassis_id: String, racer_id: String, initial_boost: float = 0.55) -> RacerState:

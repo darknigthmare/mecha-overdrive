@@ -4,10 +4,12 @@ class_name CodexScreen
 signal back_requested
 
 const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
+const LoreData = preload("res://scripts/data/lore_database.gd")
 
 @onready var chassis_tab: Button = %ChassisTab
 @onready var tracks_tab: Button = %TracksTab
 @onready var items_tab: Button = %ItemsTab
+@onready var lore_tab: Button = %LoreTab
 @onready var entries_list: ItemList = %EntriesList
 @onready var count_summary: Label = %CountSummary
 @onready var detail_eyebrow: Label = %DetailEyebrow
@@ -29,6 +31,7 @@ func _ready() -> void:
 	chassis_tab.pressed.connect(_set_category.bind(&"chassis"))
 	tracks_tab.pressed.connect(_set_category.bind(&"tracks"))
 	items_tab.pressed.connect(_set_category.bind(&"items"))
+	lore_tab.pressed.connect(_set_category.bind(&"lore"))
 	entries_list.item_selected.connect(_show_entry)
 	back_button.pressed.connect(func() -> void: back_requested.emit())
 	_set_category(&"chassis")
@@ -64,15 +67,17 @@ func _set_category(category: StringName) -> void:
 	match category:
 		&"tracks": _entries = GameDatabase.get_all_tracks()
 		&"items": _entries = GameDatabase.get_all_items()
+		&"lore": _entries = LoreData.get_all()
 		_: _entries = GameDatabase.get_all_chassis()
 	chassis_tab.set_pressed_no_signal(category == &"chassis")
 	tracks_tab.set_pressed_no_signal(category == &"tracks")
 	items_tab.set_pressed_no_signal(category == &"items")
+	lore_tab.set_pressed_no_signal(category == &"lore")
 	_populate_list()
 
 
 func _cycle_category(direction: int) -> void:
-	var categories: Array[StringName] = [&"chassis", &"tracks", &"items"]
+	var categories: Array[StringName] = [&"chassis", &"tracks", &"items", &"lore"]
 	var index := categories.find(_category)
 	_set_category(categories[posmod(index + direction, categories.size())])
 	entries_list.grab_focus()
@@ -84,8 +89,8 @@ func _populate_list() -> void:
 		var entry := _entries[index]
 		entries_list.add_item(_entry_label(entry, index))
 		entries_list.set_item_metadata(index, String(entry.get("id", "")))
-	count_summary.text = "%d ARCHITECTURES   •   %d CIRCUITS   •   %d OBJETS" % [
-		GameDatabase.CHASSIS.size(), GameDatabase.TRACKS.size(), GameDatabase.ITEMS.size(),
+	count_summary.text = "%d ARCHITECTURES   •   500 CONFIGS   •   %d CIRCUITS   •   %d ARCHIVES" % [
+		GameDatabase.CHASSIS.size(), GameDatabase.TRACKS.size(), LoreData.ENTRIES.size(),
 	]
 	if not _entries.is_empty():
 		entries_list.select(0)
@@ -98,6 +103,8 @@ func _entry_label(entry: Dictionary, index: int) -> String:
 			return "%02d  //  %s\n%s" % [index + 1, String(entry.get("name", "CIRCUIT")).to_upper(), String(entry.get("region", "SECTEUR"))]
 		&"items":
 			return "%02d  //  %s\n%s" % [index + 1, String(entry.get("name", "OBJET")).to_upper(), String(entry.get("kind", "système")).to_upper()]
+		&"lore":
+			return "%02d  //  %s\n%s" % [index + 1, String(entry.get("title", "ARCHIVE")).to_upper(), String(entry.get("epoch", "NEXUS"))]
 		_:
 			return "%02d  //  %s\n%s" % [index + 1, String(entry.get("category", "ARCHITECTURE")), String(entry.get("name", "CHÂSSIS")).to_upper()]
 
@@ -110,6 +117,7 @@ func _show_entry(index: int) -> void:
 	match _category:
 		&"tracks": _show_track(entry)
 		&"items": _show_item(entry)
+		&"lore": _show_lore(entry)
 		_: _show_chassis(entry)
 
 
@@ -121,7 +129,7 @@ func _show_chassis(entry: Dictionary) -> void:
 	feature_name.text = String(entry.get("ability", "SYSTÈME PROPRIÉTAIRE")).to_upper()
 	feature_description.text = String(entry.get("ability_description", ""))
 	var stats: Dictionary = entry.get("stats", {})
-	telemetry_label.text = "VITESSE  %3d     ACCÉL.  %3d     MANIABILITÉ  %3d\nBLINDAGE %3d     STABILITÉ %3d     RÉACTEUR     %3d" % [
+	telemetry_label.text = "VITESSE  %3d     ACCÉL.  %3d     MANIABILITÉ  %3d\nBLINDAGE %3d     STABILITÉ %3d     RÉACTEUR     %3d\nCONFIGURATIONS LOCOMOTRICES  50" % [
 		int(stats.get("speed", 0)), int(stats.get("acceleration", 0)), int(stats.get("handling", 0)),
 		int(stats.get("armor", 0)), int(stats.get("stability", 0)), int(stats.get("reactor", 0)),
 	]
@@ -151,6 +159,16 @@ func _show_item(entry: Dictionary) -> void:
 	telemetry_label.text = "COMPATIBILITÉ  10 / 10 CHÂSSIS\nHOMOLOGATION   CIRCUIT ZERO\nSÉCURITÉ       DÉCHARGE À ÉNERGIE LIMITÉE"
 
 
+func _show_lore(entry: Dictionary) -> void:
+	detail_eyebrow.text = String(entry.get("epoch", "ARCHIVE DU NEXUS"))
+	detail_title.text = String(entry.get("title", "ARCHIVE")).to_upper()
+	detail_subtitle.text = String(entry.get("subtitle", "Dossier de Circuit Zero"))
+	detail_description.text = String(entry.get("description", ""))
+	feature_name.text = String(entry.get("protocol", "PROTOCOLE")).to_upper()
+	feature_description.text = String(entry.get("protocol_description", ""))
+	telemetry_label.text = String(entry.get("telemetry", "DONNÉES CLASSIFIÉES"))
+
+
 func _item_role(kind: String) -> String:
 	match kind:
 		"projectile": return "INTERCEPTION À DISTANCE"
@@ -163,8 +181,8 @@ func _item_role(kind: String) -> String:
 
 
 func _configure_focus() -> void:
-	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, items_tab, entries_list, back_button])
-	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, items_tab], true)
+	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, items_tab, lore_tab, entries_list, back_button])
+	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, items_tab, lore_tab], true)
 	entries_list.grab_focus()
 
 

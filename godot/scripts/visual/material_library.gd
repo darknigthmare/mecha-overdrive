@@ -16,6 +16,11 @@ const MODULE_ENERGY := "res://assets/textures/openai/module_energy.png"
 const MODULE_MOBILITY := "res://assets/textures/openai/module_mobility.png"
 const MODULE_UTILITY := "res://assets/textures/openai/module_utility.png"
 const GARAGE_BAY := "res://assets/textures/openai/garage_bay.png"
+const PROP_INDUSTRIAL := "res://assets/textures/openai/prop_industrial.png"
+const PROP_BIOME := "res://assets/textures/openai/prop_biome.png"
+const PROP_URBAN_WET := "res://assets/textures/openai/prop_urban_wet.png"
+const RACE_CEREMONIAL := "res://assets/textures/openai/race_ceremonial.png"
+const LOCOMOTION_ANTIGRAV := "res://assets/textures/openai/locomotion_antigrav.png"
 
 static var _textures: Dictionary = {}
 
@@ -88,6 +93,37 @@ static func road_for(track: Dictionary, color: Color, vertex_color: bool = true)
 
 static func environment(color: Color, metallic: float = 0.56, roughness: float = 0.52, repeat: float = 2.0) -> StandardMaterial3D:
 	return textured(color, metallic, roughness, ENVIRONMENT_PANELS, Vector3(repeat, repeat, 1.0))
+
+
+static func prop_for(track: Dictionary, color: Color = Color.WHITE, repeat: float = 2.4) -> StandardMaterial3D:
+	var prop_set := String(track.get("prop_set", "industrial")).to_lower()
+	var texture_path := PROP_INDUSTRIAL
+	var metallic := 0.66
+	var roughness := 0.46
+	if prop_set in ["jungle", "ice", "abyss", "desert", "volcanic"]:
+		texture_path = PROP_BIOME
+		metallic = 0.24
+		roughness = 0.68
+	elif prop_set in ["urban", "city", "wet"]:
+		texture_path = PROP_URBAN_WET
+		metallic = 0.54
+		roughness = 0.24
+	return textured(color, metallic, roughness, _available_path(texture_path, ENVIRONMENT_PANELS), Vector3(repeat, repeat, 1.0))
+
+
+static func ceremonial(color: Color = Color.WHITE, repeat: float = 2.0) -> StandardMaterial3D:
+	return textured(color, 0.78, 0.24, _available_path(RACE_CEREMONIAL, ENVIRONMENT_PANELS), Vector3(repeat, repeat, 1.0))
+
+
+static func locomotion_for(drive_id: String, color: Color) -> StandardMaterial3D:
+	var normalized_drive := drive_id.to_lower()
+	var use_antigrav := normalized_drive in ["twin_antigrav", "antigrav", "twin_engine", "remote_thruster", "aeroglider"]
+	var texture_path := _available_path(LOCOMOTION_ANTIGRAV, MODULE_MOBILITY) if use_antigrav else MODULE_MOBILITY
+	var material := textured(color, 0.84, 0.27, texture_path, Vector3(2.6, 2.6, 1.0))
+	material.set_meta("locomotion_drive_id", normalized_drive)
+	material.set_meta("texture_path", texture_path)
+	material.set_meta("uses_antigrav_texture", use_antigrav and texture_path == LOCOMOTION_ANTIGRAV)
+	return material
 
 
 static func garage_surface() -> StandardMaterial3D:

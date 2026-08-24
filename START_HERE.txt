@@ -1,4 +1,4 @@
-MECHA OVERDRIVE — CIRCUIT ZERO 1.0.0
+MECHA OVERDRIVE — CIRCUIT ZERO 2.3.0
 ====================================
 
 WINDOWS
@@ -14,12 +14,14 @@ MACOS / LINUX
 NODE.JS
 - npm start
 - Puis ouvrir l’adresse affichée.
+- Choisir « GODOT 3D — ÉDITION PRINCIPALE » sur l’accueil.
+- Accès direct : /godot3d/mecha-overdrive.html
 
 PYTHON 3
 - python3 tools/serve.py
 
 TESTS
-- npm test
+- npm run qa
 - npm run test:browser  (Playwright facultatif)
 - npm run test:flow     (QA complète bureau + mobile)
 

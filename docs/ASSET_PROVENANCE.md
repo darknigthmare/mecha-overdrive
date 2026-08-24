@@ -52,8 +52,22 @@ Huit images supplémentaires ont été créées le 22 août 2026 avec le génér
 | `track_cryo.png` | `exec-1f760e08-e083-444a-a6bf-4316d996e711` | Arc Polaire et Tranchée Hadale |
 | `garage_bay.png` | `exec-6bdc26bf-1421-4369-859e-34366af46e50` | sol et panneaux de la prévisualisation 3D |
 
-Le manifeste schema 2 archive pour les douze textures le rôle, et pour cette vague les dimensions, les empreintes SHA-256, les prompts complets et l’identifiant de génération. Les originaux restent dans le dossier de générations Codex ; les copies runtime sont celles versionnées dans le projet.
+Le manifeste schema 2 archive pour les dix-sept textures le rôle, les dimensions, les empreintes SHA-256, les prompts complets et l’identifiant de génération. Les originaux restent dans le dossier de générations Codex ; les copies runtime sont celles versionnées dans le projet.
 
 ### Statut
 
 Ces surfaces sont des créations originales du projet, sans texte, logo, marque, UI ou référence d’image tierce. Elles sont réellement branchées sur `MaterialLibrary`, `MechaFactory`, `MechaVisualModules`, `TrackFactory` et la baie interactive du garage.
+
+## Vague décors, cérémonie et locomotion — édition Godot 2.3.0
+
+Cinq images supplémentaires ont été créées le 22 août 2026 avec le générateur d’images OpenAI intégré, sans image de référence :
+
+| Fichier | Identifiant de génération | Usage runtime |
+|---|---|---|
+| `prop_industrial.png` | `exec-b7ff9eed-fc53-4054-9e38-f606ba8e7535` | accessoires industriels, portiques et structures orbitales |
+| `prop_biome.png` | `exec-0196728b-09dc-43b2-992a-f228ab7ebbba` | racines, roches, cristaux, monolithes et biomes |
+| `prop_urban_wet.png` | `exec-df7d346b-272f-4968-8e6a-c0f00a091bda` | tours, barrières et tribunes urbaines humides |
+| `race_ceremonial.png` | `exec-0f574bb4-6b07-4846-8e62-05ad41336015` | départ/arrivée, introduction et podium |
+| `locomotion_antigrav.png` | `exec-02f2e6d7-08b7-4f68-8c17-2577569c00e6` | bi-propulseur Aether, couplages et éléments antigravité |
+
+Les dix-sept PNG mesurent 1254 × 1254. Le manifeste schema 2 contient dimensions et SHA-256 vérifié pour chaque fichier. Les prompts imposent une conception originale sans texte, logo, marque, watermark ni langage visuel reconnaissable de franchise. Les cinq originaux de cette vague sont conservés dans le dossier de générations Codex et les copies runtime sont versionnées sous `godot/assets/textures/openai/`.

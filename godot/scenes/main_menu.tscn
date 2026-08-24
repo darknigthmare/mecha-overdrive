@@ -61,7 +61,7 @@ size_flags_horizontal = 3
 [node name="Series" type="Label" parent="SafeArea/Page/TopBar/Identity"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "NEXUS RACING AUTHORITY  //  SAISON 02"
+text = "NEXUS RACING AUTHORITY  //  SAISON 03"
 
 [node name="GameTitle" type="Label" parent="SafeArea/Page/TopBar/Identity"]
 layout_mode = 2
@@ -363,5 +363,5 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "SYSTÈMES PRÊTS // SAISON 02"
+text = "SYSTÈMES PRÊTS // SAISON 03"
 horizontal_alignment = 1

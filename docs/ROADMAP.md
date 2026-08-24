@@ -1,8 +1,8 @@
-# Roadmap après Godot 2.2.0
+# Roadmap après Godot 2.3.0
 
-La release Godot 2.2.0 est la branche principale. Cette roadmap distingue ce qui est déjà livré, les suites encore envisagées et l’ancien plan du compagnon web conservé à titre historique.
+La release Godot 2.3.0 est la branche principale. Cette roadmap distingue ce qui est déjà livré, les suites encore envisagées et l’ancien plan du compagnon web conservé à titre historique.
 
-## Livré dans Godot 2.2.0
+## Livré dans Godot 2.3.0
 
 - 10 châssis originaux répartis dans 5 divisions : Commandement, Stabilisés, Essaim, Sol et Expérimental ;
 - courses dédiées à une division par défaut et mélange uniquement via une option Open explicite ;
@@ -10,20 +10,23 @@ La release Godot 2.2.0 est la branche principale. Cette roadmap distingue ce qui
 - règlements `division_locked`, `open_mixed`, `elite_open` et grilles de Grand Prix stables à huit concurrents ;
 - classes `stock`, `tuned`, `unlimited`, avec plafonds d’amélioration et politique de modules effectivement appliqués ;
 - personnalisation par 3 emplacements et 18 modules, avec affinités, inventaire, économie, statistiques et silhouettes visibles ;
+- 500 configurations locomotrices, soit 50 par châssis, avec aperçu, statistiques et sauvegarde ;
 - garage 3D interactif avec rotation, zoom, peinture immédiate, comparaison base/configuration, brouillon et validation atomique ;
 - 8 circuits, dont Canopée d’Azura, Couronne Tempête, Tranchée Hadale et Caldeira Zéro ;
 - dangers physiques, profils de tracé, grip, accessoires et matériaux propres aux pistes ;
 - vues TPS et cockpit/FPS pour les 10 châssis, avec ancres dédiées et préférence persistante ;
-- douze textures OpenAI originales pour armures, modules, pistes, cockpit, environnement et baie, avec provenance manifestée ;
-- sauvegarde v4, migration des profils v2/v3, conservation des modules historiques et canonicalisation des championnats.
+- dix-sept textures OpenAI originales pour armures, modules, pistes, cockpits, décors, cérémonie et antigravité ;
+- intro Saison 03, lore Codex, briefing, 3-2-1-GO, faux départ, arrivée et podium ;
+- commandes mobiles complètes et IA à profils, trajectoires et objets contextuels ;
+- sauvegarde v5, migration des profils v2/v3/v4, conservation des modules historiques et canonicalisation des championnats.
 
-## Priorités de contenu après 2.2.0
+## Priorités après 2.3.0
 
 - affiner l’équilibrage inter-châssis à partir de télémétrie locale et de tests utilisateurs ;
 - affiner le budget énergétique et les tiers des 18 modules dans les trois classes de performance ;
 - ajouter des championnats personnalisés qui valident explicitement division, règlement, classe et rotation de pistes ;
 - créer de nouveaux circuits avec une mécanique centrale testable, des profils visuels originaux et des dangers simulés ;
-- compléter les options d’accessibilité et le remapping des commandes ;
+- ajouter le remapping complet des commandes et des profils tactiles ;
 - poursuivre l’optimisation de l’export WebGL et des temps de chargement.
 
 ## Extensions structurelles envisagées
@@ -38,7 +41,7 @@ La release Godot 2.2.0 est la branche principale. Cette roadmap distingue ce qui
 
 ## Archive — roadmap du compagnon web 1.0
 
-Les sections ci-dessous reproduisent l’ancien plan établi pour la baseline Canvas/PWA 1.0. Certaines intentions — passage en 3D, modules, circuits supplémentaires et championnats — ont depuis été livrées différemment dans Godot 2.2.0 ; elles ne constituent donc plus des travaux ouverts pour la branche principale.
+Les sections ci-dessous reproduisent l’ancien plan établi pour la baseline Canvas/PWA 1.0. Certaines intentions — passage en 3D, modules, circuits supplémentaires et championnats — ont depuis été livrées différemment dans Godot 2.3.0 ; elles ne constituent donc plus des travaux ouverts pour la branche principale.
 
 ## Mise à jour 1.1 — Saison des Arènes
 

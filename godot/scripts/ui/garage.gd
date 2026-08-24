@@ -24,6 +24,8 @@ const PRESETS: Dictionary = {
 @onready var selected_badge: Label = %SelectedBadge
 @onready var paint_option: OptionButton = %PaintOption
 @onready var paint_preview: ColorRect = %PaintPreview
+@onready var locomotion_option: OptionButton = %LocomotionOption
+@onready var locomotion_detail: Label = %LocomotionDetail
 @onready var core_option: OptionButton = %CoreOption
 @onready var mobility_option: OptionButton = %MobilityOption
 @onready var utility_option: OptionButton = %UtilityOption
@@ -70,6 +72,7 @@ var _profile: Dictionary = {}
 var _drafts: Dictionary = {}
 var _draft_paint := "#5EE7FF"
 var _draft_loadout: Dictionary = {}
+var _draft_locomotion_id := ""
 var _focused_slot := "core"
 var _syncing := false
 
@@ -118,6 +121,7 @@ func _bind_actions() -> void:
 	chassis_list.item_selected.connect(_show_chassis)
 	chassis_list.item_activated.connect(_activate_chassis)
 	paint_option.item_selected.connect(_on_paint_selected)
+	locomotion_option.item_selected.connect(_on_locomotion_selected)
 	core_option.item_selected.connect(_on_module_selected.bind("core", core_option))
 	mobility_option.item_selected.connect(_on_module_selected.bind("mobility", mobility_option))
 	utility_option.item_selected.connect(_on_module_selected.bind("utility", utility_option))
@@ -232,6 +236,7 @@ func _show_chassis(index: int) -> void:
 	select_button.disabled = is_selected or not _is_unlocked(_current_id)
 	select_button.text = "CHÂSSIS ACTIF" if is_selected else "ÉQUIPER CE CHÂSSIS"
 	_load_draft(chassis)
+	_populate_locomotions_for_current()
 	_populate_modules_for_current()
 	_refresh_configuration()
 	_refresh_upgrades()
@@ -242,18 +247,26 @@ func _show_chassis(index: int) -> void:
 func _load_draft(chassis: Dictionary) -> void:
 	var paints: Dictionary = _profile.get("paints", {}) if _profile.get("paints", {}) is Dictionary else {}
 	var all_loadouts: Dictionary = _profile.get("loadouts", {}) if _profile.get("loadouts", {}) is Dictionary else {}
+	var all_locomotions: Dictionary = _profile.get("locomotions", {}) if _profile.get("locomotions", {}) is Dictionary else {}
 	var saved_paint := String(paints.get(_current_id, chassis.get("paint", "#5EE7FF")))
 	var saved_loadout: Dictionary = all_loadouts.get(_current_id, chassis.get("default_loadout", {})) if all_loadouts.get(_current_id, {}) is Dictionary else {}
+	var saved_locomotion := String(all_locomotions.get(_current_id, LocomotionCatalog.get_default_configuration_id(_current_id)))
 	var draft: Dictionary = _drafts.get(_current_id, {}) if _drafts.get(_current_id, {}) is Dictionary else {}
 	_draft_paint = String(draft.get("paint", saved_paint))
 	_draft_loadout = Dictionary(draft.get("loadout", saved_loadout)).duplicate(true)
+	var requested_locomotion := String(draft.get("locomotion_id", saved_locomotion))
+	_draft_locomotion_id = String(LocomotionCatalog.resolve_configuration(chassis, {"locomotion_id": requested_locomotion}).get("id", ""))
 	_sync_paint()
 
 
 func _store_current_draft() -> void:
 	if _current_id.is_empty() or _draft_loadout.is_empty():
 		return
-	_drafts[_current_id] = {"paint": _draft_paint, "loadout": _draft_loadout.duplicate(true)}
+	_drafts[_current_id] = {
+		"paint": _draft_paint,
+		"loadout": _draft_loadout.duplicate(true),
+		"locomotion_id": _draft_locomotion_id,
+	}
 
 
 func _sync_paint() -> void:
@@ -274,6 +287,42 @@ func _populate_modules_for_current() -> void:
 	_populate_module_option("mobility", mobility_option)
 	_populate_module_option("utility", utility_option)
 	_syncing = false
+
+
+func _populate_locomotions_for_current() -> void:
+	_syncing = true
+	locomotion_option.clear()
+	var configurations := LocomotionCatalog.get_configurations_for_chassis(_current_id)
+	for configuration: Dictionary in configurations:
+		var index := locomotion_option.item_count
+		var configuration_id := String(configuration.get("id", ""))
+		var owned := _is_locomotion_owned(configuration_id)
+		var ownership := "POSSÉDÉ" if owned else "%d CR" % int(configuration.get("cost", 0))
+		locomotion_option.add_item("%02d  //  %s  •  T%d  •  %s" % [
+			index + 1,
+			String(configuration.get("short_name", configuration.get("name", "LOCOMOTION"))),
+			int(configuration.get("tier", 0)),
+			ownership,
+		])
+		locomotion_option.set_item_metadata(index, configuration_id)
+		locomotion_option.set_item_tooltip(index, "%s  //  %s  //  PUISSANCE %d" % [
+			String(configuration.get("description", "")),
+			_format_deltas(configuration.get("stats", {})),
+			int(configuration.get("power_draw", 0)),
+		])
+	_select_locomotion_value(_draft_locomotion_id)
+	if locomotion_option.selected >= 0:
+		_draft_locomotion_id = String(locomotion_option.get_item_metadata(locomotion_option.selected))
+	_syncing = false
+
+
+func _select_locomotion_value(locomotion_id: String) -> void:
+	for index in range(locomotion_option.item_count):
+		if String(locomotion_option.get_item_metadata(index)) == locomotion_id:
+			locomotion_option.select(index)
+			return
+	if locomotion_option.item_count > 0:
+		locomotion_option.select(0)
 
 
 func _populate_module_option(slot_id: String, option_button: OptionButton) -> void:
@@ -329,6 +378,16 @@ func _on_module_selected(index: int, slot_id: String, option_button: OptionButto
 	status_message.text = "%s // APERÇU INSTALLÉ, VALIDATION EN ATTENTE" % option_button.get_item_text(index)
 
 
+func _on_locomotion_selected(index: int) -> void:
+	if _syncing or _current_id.is_empty() or index < 0 or index >= locomotion_option.item_count:
+		return
+	_draft_locomotion_id = String(locomotion_option.get_item_metadata(index))
+	_store_current_draft()
+	_refresh_configuration()
+	status_message.theme_type_variation = &"MutedLabel"
+	status_message.text = "%s // APERÇU 3D INSTANTANÉ, VALIDATION EN ATTENTE" % locomotion_option.get_item_text(index)
+
+
 func _apply_preset(preset_id: String) -> void:
 	var preset: Dictionary = PRESETS.get(preset_id, {})
 	if preset.is_empty():
@@ -344,6 +403,7 @@ func _apply_preset(preset_id: String) -> void:
 func _refresh_configuration() -> void:
 	_update_preview()
 	_refresh_stats()
+	_refresh_locomotion_detail()
 	_refresh_module_detail()
 	_refresh_module_summary()
 	_refresh_apply_state()
@@ -357,7 +417,9 @@ func _update_preview() -> void:
 	if garage_preview.has_method(&"refresh_theme"):
 		garage_preview.call(&"refresh_theme", settings)
 	if garage_preview.has_method(&"configure"):
-		garage_preview.call(&"configure", chassis, Color(_draft_paint), _draft_loadout.duplicate(true))
+		var customization := _draft_loadout.duplicate(true)
+		customization["locomotion_id"] = _draft_locomotion_id
+		garage_preview.call(&"configure", chassis, Color(_draft_paint), customization)
 	if garage_preview.has_method(&"set_reduced_motion"):
 		garage_preview.call(&"set_reduced_motion", bool(settings.get("reduced_motion", false)))
 
@@ -366,9 +428,11 @@ func _refresh_stats() -> void:
 	var chassis := GameDatabase.get_chassis(_current_id)
 	var base: Dictionary = chassis.get("stats", {}) if chassis.get("stats", {}) is Dictionary else {}
 	var totals := GameDatabase.calculate_module_totals(_draft_loadout)
+	var locomotion := LocomotionCatalog.get_configuration(_draft_locomotion_id)
+	var locomotion_stats: Dictionary = locomotion.get("stats", {}) if locomotion.get("stats", {}) is Dictionary else {}
 	var final_values: Dictionary = {}
 	for stat_id: String in STAT_IDS:
-		final_values[stat_id] = int(base.get(stat_id, 0)) + int(totals.get(stat_id, 0))
+		final_values[stat_id] = int(base.get(stat_id, 0)) + int(totals.get(stat_id, 0)) + int(locomotion_stats.get(stat_id, 0))
 	var engine := _upgrade_level("engine")
 	var servos := _upgrade_level("servos")
 	var cooling := _upgrade_level("reactor")
@@ -421,12 +485,34 @@ func _refresh_module_detail() -> void:
 	]
 
 
+func _refresh_locomotion_detail() -> void:
+	var configuration := LocomotionCatalog.get_configuration(_draft_locomotion_id)
+	if configuration.is_empty():
+		locomotion_detail.text = "Sélectionnez une locomotion pour afficher sa fiche."
+		return
+	var ownership := "POSSÉDÉ" if _is_locomotion_owned(_draft_locomotion_id) else "À ACQUÉRIR • %d CR" % int(configuration.get("cost", 0))
+	locomotion_detail.text = "%s  //  %s  •  TIER %d  •  %s\n%s\n%s  •  PUISSANCE %d" % [
+		String(configuration.get("name", "LOCOMOTION")).to_upper(),
+		String(configuration.get("manufacturer", "NEXUS RACING")).to_upper(),
+		int(configuration.get("tier", 0)),
+		ownership,
+		String(configuration.get("description", "")),
+		_format_deltas(configuration.get("stats", {})),
+		int(configuration.get("power_draw", 0)),
+	]
+
+
 func _refresh_module_summary() -> void:
 	var names := PackedStringArray()
 	for slot_id: String in ["core", "mobility", "utility"]:
 		var option := GameDatabase.get_module_option(slot_id, String(_draft_loadout.get(slot_id, "")))
 		names.append(String(option.get("name", "MODULE")).to_upper())
+	var locomotion := LocomotionCatalog.get_configuration(_draft_locomotion_id)
+	names.append(String(locomotion.get("short_name", "LOCOMOTION")).to_upper())
 	var totals := GameDatabase.calculate_module_totals(_draft_loadout)
+	var locomotion_stats: Dictionary = locomotion.get("stats", {}) if locomotion.get("stats", {}) is Dictionary else {}
+	for stat_id: String in STAT_IDS:
+		totals[stat_id] = int(totals.get(stat_id, 0)) + int(locomotion_stats.get(stat_id, 0))
 	module_summary.text = "%s\nTOTAL CONFIGURATION  //  %s" % ["  /  ".join(names), _format_deltas(totals)]
 
 
@@ -460,9 +546,13 @@ func _apply_draft() -> void:
 	if save == null or not save.has_method(&"purchase_and_apply_garage"):
 		_show_error("SERVICE GARAGE INDISPONIBLE")
 		return
-	var retained := {"paint": _draft_paint, "loadout": _draft_loadout.duplicate(true)}
+	var retained := {
+		"paint": _draft_paint,
+		"loadout": _draft_loadout.duplicate(true),
+		"locomotion_id": _draft_locomotion_id,
+	}
 	_drafts.erase(_current_id)
-	var result: Variant = save.call(&"purchase_and_apply_garage", _current_id, _draft_paint, _draft_loadout.duplicate(true))
+	var result: Variant = save.call(&"purchase_and_apply_garage", _current_id, _draft_paint, _draft_loadout.duplicate(true), _draft_locomotion_id)
 	if not (result is bool and result):
 		_drafts[_current_id] = retained
 		_show_error("ACHAT OU MONTAGE REFUSÉ")
@@ -477,6 +567,7 @@ func _cancel_draft() -> void:
 	# Prevent _show_chassis() from persisting the outgoing draft again before it
 	# reloads the saved profile configuration.
 	_draft_loadout.clear()
+	_draft_locomotion_id = ""
 	var index := chassis_list.get_selected_items()[0] if not chassis_list.get_selected_items().is_empty() else 0
 	_show_chassis(index)
 	status_message.text = "MODIFICATIONS ANNULÉES // CONFIGURATION SAUVEGARDÉE RESTAURÉE"
@@ -484,8 +575,8 @@ func _cancel_draft() -> void:
 
 func _current_loadout_cost() -> int:
 	var save := _save_system()
-	if save != null and save.has_method(&"get_loadout_cost"):
-		return int(save.call(&"get_loadout_cost", _current_id, _draft_loadout))
+	if save != null and save.has_method(&"get_garage_cost"):
+		return int(save.call(&"get_garage_cost", _current_id, _draft_loadout, _draft_locomotion_id))
 	return 0
 
 
@@ -500,6 +591,10 @@ func _is_draft_dirty() -> bool:
 	for slot_id: String in ["core", "mobility", "utility"]:
 		if String(saved.get(slot_id, "")) != String(_draft_loadout.get(slot_id, "")):
 			return true
+	var all_locomotions: Dictionary = _profile.get("locomotions", {}) if _profile.get("locomotions", {}) is Dictionary else {}
+	var saved_locomotion := String(all_locomotions.get(_current_id, LocomotionCatalog.get_default_configuration_id(_current_id)))
+	if saved_locomotion != _draft_locomotion_id:
+		return true
 	return false
 
 
@@ -579,6 +674,11 @@ func _is_module_owned(module_id: String) -> bool:
 	return owned is Array and module_id in owned
 
 
+func _is_locomotion_owned(locomotion_id: String) -> bool:
+	var owned: Variant = _profile.get("owned_locomotions", [])
+	return owned is Array and locomotion_id in owned
+
+
 func _selected_module_id(option_button: OptionButton) -> String:
 	return String(option_button.get_item_metadata(option_button.selected)) if option_button != null and option_button.selected >= 0 else ""
 
@@ -622,7 +722,7 @@ func _configure_focus() -> void:
 	ThemeFactory.connect_focus_chain([
 		division_filter, chassis_list, select_button, paint_option,
 		preset_balanced, preset_speed, preset_control, preset_armor,
-		core_option, mobility_option, utility_option, apply_button, cancel_button,
+		locomotion_option, core_option, mobility_option, utility_option, apply_button, cancel_button,
 		engine_button, servos_button, reactor_button, armor_button, back_button,
 	])
 	chassis_list.grab_focus()

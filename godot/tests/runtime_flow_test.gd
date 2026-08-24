@@ -44,6 +44,14 @@ func _run() -> void:
 			test_profile["settings"] = test_settings
 			_save_system.set("profile", test_profile)
 
+	# New profiles receive the three-part season opening. Dismiss it through its
+	# public accessibility seam without persisting into the real user profile.
+	var opening: Node = app.get("_active_screen") as Node
+	if opening != null and opening.name == &"SeasonIntro" and opening.has_method(&"complete_now"):
+		opening.call(&"complete_now", false)
+		await process_frame
+		await process_frame
+
 	var menu: Node = app.get("_active_screen") as Node
 	_expect(menu != null and menu.name == &"MainMenu", "la scène principale doit afficher MainMenu")
 	if menu == null or not menu.has_signal(&"race_requested"):
@@ -171,11 +179,60 @@ func _run() -> void:
 		_expect(player_state.armor_max < baseline.armor_max, "les compromis de modules doivent atteindre la simulation réelle")
 		_expect(player_state.snapshot().get("division_id", "") == "command", "la division doit survivre dans les snapshots")
 
+	var runtime_aether := RacerState.new().configure({
+		"racer_id": "runtime_aether", "chassis_id": "biped",
+		"locomotion_id": "biped__twin_antigrav__racing", "track_length": 400.0, "total_laps": 1,
+	})
+	var runtime_aether_state := runtime_aether.snapshot()
+	_expect(String(runtime_aether_state.get("drive_id", "")) == "twin_antigrav", "runtime: le drive Aether n'est pas résolu")
+	_expect(String(runtime_aether_state.get("locomotion_id", "")) == "biped__twin_antigrav__racing", "runtime: la locomotion Aether n'est pas exposée")
+	_expect(not runtime_aether.apply_ground_mine() and runtime_aether.offroad_drag_factor() < 0.2, "runtime: Aether n'applique pas son profil sans contact")
+	var runtime_legged_hover := RacerState.new().configure({
+		"racer_id": "runtime_hover_legs", "chassis_id": "hover",
+		"locomotion_id": "hover__mecha_legs__balanced", "track_length": 400.0, "total_laps": 1,
+	})
+	_expect(runtime_legged_hover.apply_ground_mine(), "runtime: un hover sur jambes ignore encore les mines")
+	_expect(not bool(Dictionary(runtime_legged_hover.snapshot().get("ability", {})).get("mine_immune", true)), "runtime: profil d'aptitude hover sur jambes incohérent")
+	var runtime_treads := RacerState.new().configure({
+		"racer_id": "runtime_treads", "chassis_id": "biped",
+		"locomotion_id": "biped__treads__balanced", "track_length": 400.0, "total_laps": 1,
+	})
+	_expect(is_zero_approx(runtime_treads._hazard_drag("sand")) and is_zero_approx(runtime_treads._hazard_drag("debris")) and runtime_treads._hazard_drag("mud") <= 0.10, "runtime: résistances chenilles absentes")
+	var runtime_multi := RacerState.new().configure({
+		"racer_id": "runtime_multi", "chassis_id": "biped",
+		"locomotion_id": "biped__multi_support__balanced", "track_length": 400.0, "total_laps": 1,
+	})
+	_expect(runtime_multi.offroad_drag_factor() < runtime_legged_hover.offroad_drag_factor(), "runtime: avantage hors-piste multi-appuis absent")
 
-	# Skip only the presentation countdown; movement still runs through the real
+	# The broadcast grid is a real blocking phase, followed by three locked
+	# lights. Accelerating early must not move the player and applies a short,
+	# explicit start penalty.
+	_expect(String(race.call(&"start_phase")) == "briefing", "la course doit ouvrir sur le briefing de grille")
+	_expect(hud.has_method(&"is_briefing_visible") and bool(hud.call(&"is_briefing_visible")), "le HUD doit afficher circuit, règlement et grille")
+	var initial_distance := float(player_state.snapshot().get("distance", 0.0)) if player_state != null else -1.0
+	race.set("_briefing_remaining", 0.0)
+	hud.call(&"hide_race_briefing")
+	hud.call(&"show_countdown", 3)
+	race.set("_countdown", 2.75)
+	Input.action_press(&"race_accelerate", 1.0)
+	await process_frame
+	Input.action_release(&"race_accelerate")
+	_expect(String(race.call(&"start_phase")) == "countdown", "les feux 3-2-1 doivent précéder la simulation")
+	_expect(bool(race.call(&"has_false_start")), "une accélération sous feux rouges doit déclencher un faux départ")
+	_expect(is_equal_approx(float(player_state.snapshot().get("distance", 0.0)), initial_distance), "la simulation doit rester bloquée pendant le compte à rebours")
+	var countdown_notice: Label = hud.get("_countdown_notice_label") as Label
+	_expect(countdown_notice != null and countdown_notice.visible and countdown_notice.text.contains("FAUX DÉPART"), "le HUD doit expliquer la pénalité de faux départ")
+
+	# Skip the remaining display duration; movement still runs through the real
 	# input map and fixed-step race simulation.
 	race.set("_countdown", 0.000001)
 	await process_frame
+	_expect(String(race.call(&"start_phase")) == "racing" and float(race.call(&"start_penalty_remaining")) > 0.0, "GO doit libérer la simulation et armer la pénalité")
+	Input.action_press(&"race_accelerate", 1.0)
+	var penalized_controls: Dictionary = race.call(&"_player_controls")
+	Input.action_release(&"race_accelerate")
+	_expect(is_zero_approx(float(penalized_controls.get("throttle", 1.0))), "la pénalité doit verrouiller réellement la propulsion du joueur")
+	race.set("_start_penalty_remaining", 0.0)
 	Input.action_press(&"race_accelerate", 1.0)
 	var player: RefCounted = race.get("_player") as RefCounted
 	var movement_deadline := Time.get_ticks_msec() + MOVEMENT_TIMEOUT_MS
@@ -250,6 +307,9 @@ func _run() -> void:
 
 	player.call(&"mark_dnf", "runtime_flow_test")
 	race.call(&"_check_end_conditions")
+	await process_frame
+	_expect(String(race.call(&"start_phase")) == "finish", "l’arrivée doit ouvrir une courte séquence cinématique")
+	_expect(hud.has_method(&"is_finish_visible") and bool(hud.call(&"is_finish_visible")), "le drapeau à damier doit être annoncé avant Results")
 	var results: Node = await _wait_for_screen(app, &"Results", RESULTS_TIMEOUT_MS)
 	_expect(not _received_result.is_empty(), "race_finished doit transmettre un résultat")
 	_expect(bool(_received_result.get("dnf", false)), "la fin contrôlée doit être classée DNF")
@@ -261,6 +321,37 @@ func _run() -> void:
 
 	var result_title: Label = results.get_node_or_null("%ResultTitle") as Label
 	_expect(result_title != null and result_title.text == "COURSE INTERROMPUE", "Results doit présenter le statut DNF")
+	var podium: Node = results.get_node_or_null("%PodiumPresenter")
+	var podium_headline: Label = results.get_node_or_null("%PodiumHeadline") as Label
+	var podium_panel: Control = results.find_child("PodiumPanel", true, false) as Control
+	_expect(podium != null and podium.has_method(&"top_three") and Array(podium.call(&"top_three")).is_empty(), "un abandon précoce ne doit fabriquer aucun rival de podium")
+	_expect(podium_panel != null and not podium_panel.visible, "un podium sans classé valide doit être entièrement masqué")
+	_expect(podium_headline != null and not podium_headline.text.contains("TROPHÉE"), "un joueur DNF ne doit jamais recevoir un trophée")
+	var podium_text := ""
+	if podium != null:
+		for label_value: Node in podium.find_children("*", "Label", true, false):
+			podium_text += (label_value as Label).text + "\n"
+	_expect(not podium_text.contains("VOUS"), "un joueur DNF ne doit jamais être mis en avant sur le podium")
+
+	results.call(&"present", {
+		"mode": "time_trial", "track_name": "FONDERIE 7", "position": 1,
+		"total_racers": 1, "dnf": false, "new_record": true,
+		"elapsed": 72.4, "best_time": 72.4,
+		"classification": [{"racer_id": "player", "pilot": "PILOTE 01", "position": 1, "finished": true, "player": true}],
+	})
+	await process_frame
+	_expect(result_title.text == "NOUVEAU RECORD", "Results doit annoncer un record de contre-la-montre")
+	_expect(podium_panel != null and not podium_panel.visible, "Results ne doit jamais afficher de podium en contre-la-montre")
+	results.call(&"present", {
+		"mode": "time_trial", "track_name": "FONDERIE 7", "position": 1,
+		"total_racers": 1, "dnf": false, "new_record": false,
+		"elapsed": 74.8, "best_time": 72.4,
+		"classification": [{"racer_id": "player", "pilot": "PILOTE 01", "position": 1, "finished": true, "player": true}],
+	})
+	await process_frame
+	_expect(result_title.text == "CHRONO HOMOLOGUÉ", "Results ne doit jamais transformer une première place chrono en victoire")
+	results.call(&"present", _received_result)
+	await process_frame
 	_expect(results.has_signal(&"retry_requested"), "Results doit permettre de recommencer")
 	if results.has_signal(&"retry_requested"):
 		results.emit_signal(&"retry_requested")
@@ -337,7 +428,7 @@ func _finish() -> void:
 	Input.action_release(&"race_accelerate")
 	_restore_profile()
 	if _failures.is_empty():
-		print("MECHA GODOT RUNTIME FLOW: PASS (menu, garage 3D, visual modules, division roster, TPS/FPS cockpit, movement, DNF, results, dedicated cup, Open cup)")
+		print("MECHA GODOT RUNTIME FLOW: PASS (menu, garage 3D, briefing grille, countdown bloquant, faux départ, movement, TPS/FPS cockpit, arrivée cinématique, podium, results, dedicated cup, Open cup)")
 		quit(0)
 		return
 	for failure: String in _failures:

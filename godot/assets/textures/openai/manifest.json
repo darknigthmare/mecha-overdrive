@@ -9,24 +9,36 @@
     {
       "file": "mecha_armor.png",
       "generation_id": "exec-16c591eb-ae6f-4299-8676-8b64e361df05",
+      "sha256": "1b50b7b47483e9d2276b30aebd0050bb2d0a80b1397b246f94cd917cfbdea941",
+      "dimensions": [1254, 1254],
+      "tileable": true,
       "usage": ["all mecha primary armor", "modular body panels"],
       "prompt": "Create an original seamless square PBR-style sci-fi racing mecha armor texture for the indie game MECHA OVERDRIVE. Orthographic flat material capture, neutral cool light-gray ceramic titanium panels with fine graphite seams, micro-scratches, subtle hexagonal fasteners, restrained cyan energy filaments, believable edge wear, high-frequency details that remain readable when tiled. Perfectly tileable on all four edges, evenly lit, no perspective, no large focal object, no baked shadows, no readable text, no letters, no numbers, no logo, no UI, no watermark, no trademark, no resemblance to existing franchise designs. Premium realistic stylized game material, square 1:1, texture-only image."
     },
     {
       "file": "track_surface.png",
       "generation_id": "exec-051ea44d-aee8-4ca1-af66-c742959fca37",
+      "sha256": "59bcb78fbfd402dc6577cc6d7faaae6abd74fa57b76247e41923ec3b1b8557a9",
+      "dimensions": [1254, 1254],
+      "tileable": true,
       "usage": ["all racing surfaces", "track shoulders"],
       "prompt": "Create an original seamless square PBR-style anti-gravity racing track surface texture for the indie game MECHA OVERDRIVE. Orthographic flat material capture, dark graphite composite asphalt with dense fine aggregate, interlocking technical plates, narrow cyan and warm amber luminous guide inlays arranged as abstract broken racing lines, subtle tire abrasion and heat scuffs. Perfectly tileable on all four edges, evenly lit, no perspective, no large focal object, no baked directional shadows, no readable text, no letters, no numbers, no arrows, no logo, no UI, no watermark, no trademark, no resemblance to existing game tracks. Premium realistic stylized game material, square 1:1, texture-only image."
     },
     {
       "file": "cockpit_composite.png",
       "generation_id": "exec-12d4b298-d001-412b-b218-70544aed3470",
+      "sha256": "8f3b0f8415f49a4eb48408e59555992d80a0e6afb9958423a23324c1650a6484",
+      "dimensions": [1254, 1254],
+      "tileable": true,
       "usage": ["all cockpit shells", "dark joints", "mobility modules"],
       "prompt": "Create an original seamless square PBR-style futuristic racing cockpit composite texture for the indie game MECHA OVERDRIVE. Orthographic flat material capture of matte woven carbon composite, dark titanium ribs, compact rubberized padding zones, tiny recessed cyan status-light dots and subtle copper heat shielding, premium worn-but-maintained motorsport engineering. Perfectly tileable on all four edges, evenly lit, no perspective, no dashboard object, no readable text, no letters, no numbers, no symbols, no logo, no UI, no watermark, no trademark, no resemblance to any existing franchise cockpit. High-detail realistic stylized game material, square 1:1, texture-only image."
     },
     {
       "file": "environment_panels.png",
       "generation_id": "exec-02f22be6-b9a3-4b1f-9ab1-cdb51b864226",
+      "sha256": "ff7dd0e487139ac67d3448df8885d7cbcb05e8cf5d071c99b537436659225868",
+      "dimensions": [1254, 1254],
+      "tileable": true,
       "usage": ["trackside barriers", "environment props", "industrial scenery"],
       "prompt": "Create an original seamless square PBR-style industrial environment panel texture pack surface for the indie game MECHA OVERDRIVE. Orthographic flat material capture, rugged dark gunmetal maintenance plating mixed with compact vents, ribbed service channels, ceramic hazard inserts in muted amber, subtle cyan conduits, dust, rain marks and controlled edge wear suitable for walls, barriers, props and trackside structures across foundry, desert, ice, orbital, jungle, megacity, abyss and reactor racing circuits. Perfectly tileable on all four edges, evenly lit, no perspective, no baked directional shadows, no readable text, no letters, no numbers, no conventional hazard stripes, no logo, no UI, no watermark, no trademark. Premium realistic stylized game material, square 1:1, texture-only image."
     },
@@ -101,6 +113,51 @@
       "tileable": true,
       "usage": ["interactive garage preview floor and bay walls"],
       "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for the MECHA OVERDRIVE garage preview bay. Primary request: original premium motorsport-mecha workshop floor and service-bay panel surface. Scene/backdrop: orthographic flat material capture only. Subject: dark graphite anti-slip plates, flush cyan service conduits, muted amber maintenance inserts, compact drainage grids, subtle grease wipe marks, tire scuffs and clean professional wear. Style/medium: premium realistic stylized PBR-like game material. Composition/framing: square 1:1 texture, evenly distributed detail, no focal object. Lighting/mood: neutral even workshop illumination, no baked directional shadows. Constraints: perfectly seamless on all four edges; texture-only image; no perspective; no readable text; no letters; no numbers; no arrows; no conventional hazard stripes; no logo; no UI; no watermark; no trademark; original design only. Avoid: complete garage scene, tools, people, vehicle silhouette, franchise resemblance."
+    },
+    {
+      "file": "prop_industrial.png",
+      "generation_id": "exec-b7ff9eed-fc53-4054-9e38-f606ba8e7535",
+      "sha256": "6fd244d4dfb716377917f1da75f6ad2d58cd2527ce3eb0833257db1bb2a5fb1b",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["foundry and orbital trackside props", "race gantries and industrial scenery"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for a commercial futuristic mech racing game. Primary request: original high-detail industrial raceway prop material made of interlocking brushed titanium maintenance panels, recessed fasteners, armored seams, subtle cable channels, small cyan and amber emissive strips, realistic wear and track grime. Style/medium: polished stylized realism, PBR-inspired albedo texture, production game asset. Composition/framing: perfectly orthographic top-down material surface, uniform detail density, seamless edges, no perspective, no single focal object. Lighting/mood: neutral even material-capture lighting with restrained emissive accents. Color palette: gunmetal, charcoal, cool steel, cyan and amber accents. Constraints: genuinely seamless tile, original design only, no text, no letters, no numbers, no logos, no trademarks, no watermark, no recognizable franchise designs, no border, no UI."
+    },
+    {
+      "file": "prop_biome.png",
+      "generation_id": "exec-0196728b-09dc-43b2-992a-f228ab7ebbba",
+      "sha256": "1652500f7293bd58058a5552195fb703b1450b7bb4742aec56f03cc233b04847",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["jungle, glacier, desert, abyss and volcanic props", "rocks, roots, crystals and geological scenery"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for alien biome raceway props. Primary request: original high-detail living alien terrain material combining dark basalt, armored roots, mineral veins and small bioluminescent crystal growths, suitable for rocks, giant roots, canyon supports and trackside sculptures. Style/medium: polished stylized realism, PBR-inspired albedo texture, commercial racing game asset. Composition/framing: perfectly orthographic top-down material surface, uniform detail distribution, seamless edges, no perspective, no central focal object. Lighting/mood: neutral even material-capture lighting, subtle teal and violet biological glow. Color palette: charcoal basalt, deep umber roots, muted jade, teal and violet accents. Constraints: genuinely seamless tile, original alien ecology, no creatures, no text, no letters, no numbers, no logos, no trademarks, no watermark, no recognizable franchise designs, no border, no UI."
+    },
+    {
+      "file": "prop_urban_wet.png",
+      "generation_id": "exec-df7d346b-272f-4968-8e6a-c0f00a091bda",
+      "sha256": "7df51d9d5b00f3baff674c49faac41bf9f7357ae94d8fea9ae76a086319327b3",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["Tempest city towers", "wet urban barriers and grandstands"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for futuristic city raceway props. Primary request: original high-detail rain-wet urban racing infrastructure material, dark composite concrete and ceramic armor slabs, drainage grooves, embedded glass aggregate, restrained cyan and magenta light channels reflected in the wet surface. Style/medium: polished stylized realism, PBR-inspired albedo texture, commercial racing game asset. Composition/framing: perfectly orthographic top-down material surface, uniform detail density, seamless edges, no perspective, no focal object. Lighting/mood: neutral overcast material-capture lighting with subtle wet reflections and emissive accents. Color palette: graphite, dark navy, wet gray, cyan and restrained magenta. Constraints: genuinely seamless tile, original design only, no text, no letters, no numbers, no road signs, no logos, no trademarks, no watermark, no recognizable franchise designs, no border, no UI."
+    },
+    {
+      "file": "race_ceremonial.png",
+      "generation_id": "exec-0f574bb4-6b07-4846-8e62-05ad41336015",
+      "sha256": "5577b94ee5a6255b98b78f552b0450dd9fa0d9b87290bced4a4a246a2d47ba65",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["start and finish gantries", "championship podium and ceremonial race props"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for championship podiums, start gantries and premium race props. Primary request: original high-detail ceremonial racing composite material combining satin black carbon ceramic, champagne titanium inlays, layered geometric grooves and restrained cyan-white emissive accents, prestigious but rugged enough for a mech racing arena. Style/medium: polished stylized realism, PBR-inspired albedo texture, commercial game asset. Composition/framing: perfectly orthographic top-down material surface, uniform repeating motif, seamless edges, no perspective, no central emblem. Lighting/mood: neutral even material-capture lighting, premium championship atmosphere. Color palette: satin black, dark carbon, champagne titanium, white and cyan accents. Constraints: genuinely seamless tile, original design only, no trophies or objects baked into texture, no text, no letters, no numbers, no logos, no trademarks, no watermark, no recognizable franchise designs, no border, no UI."
+    },
+    {
+      "file": "locomotion_antigrav.png",
+      "generation_id": "exec-02f2e6d7-08b7-4f68-8c17-2577569c00e6",
+      "sha256": "8ad1f7ad3f859b0d82062edc716b6a17dae441a0713a467fb8a54659834b5fbd",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["original twin-engine antigravity locomotion family", "remote thrusters and magnetic couplers"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for original antigravity twin-engine racing propulsion modules. Primary request: high-detail original aerospace heat-shield material with ceramic turbine segments, dark iridescent alloy, concentric energy-channel patterns, subtle electric teal and hot coral plasma traces, suitable for paired remote engines and magnetic couplers on a futuristic mech racer. Style/medium: polished stylized realism, PBR-inspired albedo texture, commercial game asset. Composition/framing: perfectly orthographic top-down material surface, uniform repeatable mechanical pattern, seamless edges, no perspective, no central engine silhouette. Lighting/mood: neutral even material-capture lighting with restrained energy glow. Color palette: dark iridescent metal, graphite ceramic, teal and coral energy accents. Constraints: genuinely seamless tile, entirely original industrial design, no vehicle or cockpit baked into texture, no text, no letters, no numbers, no logos, no trademarks, no watermark, no recognizable Star Wars or other franchise design language, no border, no UI."
     }
   ]
 }

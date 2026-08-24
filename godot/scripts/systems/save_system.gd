@@ -10,7 +10,7 @@ signal profile_loaded(profile_data: Dictionary)
 signal profile_changed(profile_data: Dictionary)
 signal save_failed(message: String)
 
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
 const CHAMPIONSHIP_SCHEMA_VERSION := 3
 const HISTORIC_MODULE_IDS: Array[String] = [
 	"core_balanced", "core_overdrive", "core_bastion",
@@ -147,6 +147,33 @@ func set_module(chassis_id: String, slot_id: String, module_id: String) -> bool:
 	return _commit_profile()
 
 
+func set_locomotion(chassis_id: String, locomotion_id: String) -> bool:
+	if not GameDatabase.has_chassis(chassis_id):
+		return false
+	var configuration := LocomotionCatalog.get_configuration(locomotion_id)
+	if configuration.is_empty() or String(configuration.get("family_id", "")) != chassis_id:
+		return false
+	if not is_locomotion_owned(locomotion_id):
+		return false
+	var locomotions: Dictionary = profile.get("locomotions", {})
+	locomotions[chassis_id] = locomotion_id
+	profile["locomotions"] = locomotions
+	return _commit_profile()
+
+
+func get_locomotion(chassis_id: String = "") -> String:
+	if chassis_id.is_empty():
+		chassis_id = String(profile.get("selected_chassis", "biped"))
+	if not GameDatabase.has_chassis(chassis_id):
+		return ""
+	var locomotions: Dictionary = profile.get("locomotions", {}) if profile.get("locomotions", {}) is Dictionary else {}
+	var requested := String(locomotions.get(chassis_id, LocomotionCatalog.get_default_configuration_id(chassis_id)))
+	var configuration := LocomotionCatalog.get_configuration(requested)
+	if configuration.is_empty() or String(configuration.get("family_id", "")) != chassis_id:
+		return LocomotionCatalog.get_default_configuration_id(chassis_id)
+	return requested
+
+
 func is_module_owned(module_id: String) -> bool:
 	var owned: Variant = profile.get("owned_modules", [])
 	return owned is Array and module_id in owned
@@ -159,6 +186,37 @@ func get_owned_modules() -> Array[String]:
 		for module_id: Variant in owned:
 			output.append(String(module_id))
 	return output
+
+
+func is_locomotion_owned(locomotion_id: String) -> bool:
+	var owned: Variant = profile.get("owned_locomotions", [])
+	return owned is Array and locomotion_id in owned
+
+
+func get_owned_locomotions() -> Array[String]:
+	var output: Array[String] = []
+	var owned: Variant = profile.get("owned_locomotions", [])
+	if owned is Array:
+		for locomotion_id: Variant in owned:
+			output.append(String(locomotion_id))
+	return output
+
+
+func get_locomotion_cost(chassis_id: String, locomotion_id: String) -> int:
+	if not GameDatabase.has_chassis(chassis_id):
+		return -1
+	var configuration := LocomotionCatalog.get_configuration(locomotion_id)
+	if configuration.is_empty() or String(configuration.get("family_id", "")) != chassis_id:
+		return -1
+	return 0 if is_locomotion_owned(locomotion_id) else maxi(0, int(configuration.get("cost", 0)))
+
+
+func get_garage_cost(chassis_id: String, requested_loadout: Dictionary, locomotion_id: String) -> int:
+	var module_cost := get_loadout_cost(chassis_id, requested_loadout)
+	var locomotion_cost := get_locomotion_cost(chassis_id, locomotion_id)
+	if module_cost < 0 or locomotion_cost < 0:
+		return -1
+	return module_cost + locomotion_cost
 
 
 func get_loadout_cost(chassis_id: String, requested_loadout: Dictionary) -> int:
@@ -186,10 +244,15 @@ func purchase_and_equip_loadout(chassis_id: String, requested_loadout: Dictionar
 	return purchase_and_apply_garage(chassis_id, current_paint, requested_loadout)
 
 
-func purchase_and_apply_garage(chassis_id: String, paint_hex: String, requested_loadout: Dictionary) -> bool:
+func purchase_and_apply_garage(chassis_id: String, paint_hex: String, requested_loadout: Dictionary, locomotion_id: String = "") -> bool:
 	if not Color.html_is_valid(paint_hex):
 		return false
-	var cost := get_loadout_cost(chassis_id, requested_loadout)
+	if locomotion_id.is_empty():
+		locomotion_id = get_locomotion(chassis_id)
+	var locomotion := LocomotionCatalog.get_configuration(locomotion_id)
+	if locomotion.is_empty() or String(locomotion.get("family_id", "")) != chassis_id:
+		return false
+	var cost := get_garage_cost(chassis_id, requested_loadout, locomotion_id)
 	var credits := maxi(0, int(profile.get("credits", 0)))
 	if cost < 0 or credits < cost:
 		return false
@@ -199,13 +262,20 @@ func purchase_and_apply_garage(chassis_id: String, paint_hex: String, requested_
 		var module_id := String(requested_loadout.get(String(slot.get("id", "")), ""))
 		if module_id not in owned:
 			owned.append(module_id)
+	var owned_locomotions := get_owned_locomotions()
+	if locomotion_id not in owned_locomotions:
+		owned_locomotions.append(locomotion_id)
 	var loadouts: Dictionary = profile.get("loadouts", {})
 	loadouts[chassis_id] = _sanitize_loadout(requested_loadout, chassis_id)
 	var paints: Dictionary = profile.get("paints", {})
 	paints[chassis_id] = Color(paint_hex).to_html(false).to_upper()
+	var locomotions: Dictionary = profile.get("locomotions", {})
+	locomotions[chassis_id] = locomotion_id
 	profile["owned_modules"] = owned
+	profile["owned_locomotions"] = owned_locomotions
 	profile["loadouts"] = loadouts
 	profile["paints"] = paints
+	profile["locomotions"] = locomotions
 	profile["credits"] = credits - cost
 	if _commit_profile():
 		return true
@@ -283,7 +353,7 @@ func get_upgrade_cost(upgrade_id: String, chassis_id: String = "") -> int:
 
 func update_settings(changes: Dictionary) -> bool:
 	var settings: Dictionary = profile.get("settings", {})
-	for key: String in ["high_contrast", "reduced_motion", "large_text", "camera_shake", "metric_units"]:
+	for key: String in ["high_contrast", "reduced_motion", "large_text", "camera_shake", "metric_units", "season_intro_seen"]:
 		if changes.has(key) and changes[key] is bool:
 			settings[key] = changes[key]
 	for key: String in ["master_volume", "music_volume", "effects_volume"]:
@@ -375,6 +445,8 @@ func _default_profile() -> Dictionary:
 	var paints: Dictionary = {}
 	var upgrades: Dictionary = {}
 	var loadouts: Dictionary = {}
+	var locomotions: Dictionary = {}
+	var owned_locomotions: Array[String] = []
 	var chassis_ids: Array[String] = []
 	for chassis: Dictionary in GameDatabase.CHASSIS:
 		var chassis_id := String(chassis.get("id", "biped"))
@@ -385,6 +457,9 @@ func _default_profile() -> Dictionary:
 			levels[upgrade_id] = 0
 		upgrades[chassis_id] = levels
 		loadouts[chassis_id] = _default_loadout(chassis_id)
+		var default_locomotion := LocomotionCatalog.get_default_configuration_id(chassis_id)
+		locomotions[chassis_id] = default_locomotion
+		owned_locomotions.append(default_locomotion)
 	return {
 		"version": SAVE_VERSION,
 		"pilot_name": "PILOTE 01",
@@ -395,6 +470,8 @@ func _default_profile() -> Dictionary:
 		"unlocked_paints": GameDatabase.DEFAULT_PAINTS.duplicate(),
 		"upgrades": upgrades,
 		"loadouts": loadouts,
+		"locomotions": locomotions,
+		"owned_locomotions": owned_locomotions,
 		"owned_modules": HISTORIC_MODULE_IDS.duplicate(),
 		"records": {},
 		"championship": {},
@@ -402,6 +479,7 @@ func _default_profile() -> Dictionary:
 		"settings": {
 			"high_contrast": false, "reduced_motion": false, "large_text": false,
 			"camera_shake": true, "metric_units": true,
+			"season_intro_seen": false,
 			"master_volume": 0.85, "music_volume": 0.65, "effects_volume": 0.85,
 			"camera_view": "tps",
 		},
@@ -442,6 +520,37 @@ func _sanitize_profile(source: Dictionary) -> Dictionary:
 	for chassis_id: String in clean_loadouts.keys():
 		clean_loadouts[chassis_id] = _sanitize_loadout(source_loadouts.get(chassis_id, {}), chassis_id)
 	clean["loadouts"] = clean_loadouts
+
+	# v4 and older profiles have no locomotion choice. They migrate to the
+	# constructor mounting for each chassis; cross-family or stale IDs are
+	# rejected without affecting paint, modules, upgrades or championship data.
+	var source_locomotions: Dictionary = source.get("locomotions", {}) if source.get("locomotions", {}) is Dictionary else {}
+	var clean_locomotions: Dictionary = clean["locomotions"]
+	for chassis_id: String in clean_locomotions.keys():
+		var requested_locomotion := String(source_locomotions.get(chassis_id, clean_locomotions[chassis_id]))
+		var configuration := LocomotionCatalog.get_configuration(requested_locomotion)
+		if not configuration.is_empty() and String(configuration.get("family_id", "")) == chassis_id:
+			clean_locomotions[chassis_id] = requested_locomotion
+	clean["locomotions"] = clean_locomotions
+
+	# The unreleased v5 schema may already contain a selected drive. Preserve it
+	# while granting every chassis its constructor configuration by default.
+	var owned_locomotions: Array[String] = []
+	var clean_owned_value: Variant = clean.get("owned_locomotions", [])
+	if clean_owned_value is Array:
+		for default_id: Variant in clean_owned_value:
+			owned_locomotions.append(String(default_id))
+	var source_owned_locomotions: Variant = source.get("owned_locomotions", [])
+	if source_owned_locomotions is Array:
+		for raw_locomotion_id: Variant in source_owned_locomotions:
+			var owned_id := String(raw_locomotion_id)
+			if not LocomotionCatalog.get_configuration(owned_id).is_empty() and owned_id not in owned_locomotions:
+				owned_locomotions.append(owned_id)
+	for selected_locomotion: Variant in clean_locomotions.values():
+		var selected_id := String(selected_locomotion)
+		if selected_id not in owned_locomotions:
+			owned_locomotions.append(selected_id)
+	clean["owned_locomotions"] = owned_locomotions
 
 	# v3 exposed the original nine modules without purchase. They remain owned
 	# forever; v4 adds only validated catalogue IDs to that historical grant.

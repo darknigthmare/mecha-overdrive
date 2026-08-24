@@ -24,6 +24,10 @@ const AI_ITEM_PICKUP_DELAY := 0.45
 const AI_ITEM_REEVALUATE_INTERVAL := 0.30
 const AI_ITEM_REUSE_DELAY := 1.25
 const STRAIGHT_CURVATURE_LIMIT := 0.15
+const GRID_BRIEFING_SECONDS := 2.45
+const COUNTDOWN_SECONDS := 3.0
+const FALSE_START_PENALTY_SECONDS := 0.85
+const FINISH_BROADCAST_SECONDS := 1.65
 
 var _config: Dictionary = {}
 var _track: Node3D
@@ -38,11 +42,20 @@ var _hud: RaceHUD
 var _audio: AudioDirector
 var _accumulator := 0.0
 var _elapsed := 0.0
-var _countdown := 3.5
+var _briefing_remaining := GRID_BRIEFING_SECONDS
+var _countdown := COUNTDOWN_SECONDS
+var _last_countdown_number := 3
 var _running := false
 var _finished := false
+var _finish_cinematic := false
+var _cinematic_elapsed := 0.0
 var _paused := false
+var _false_start := false
+var _false_start_latched := false
+var _start_penalty_remaining := 0.0
 var _item_was_pressed := false
+var _mobile_item_pending := false
+var _mobile_control_strengths: Dictionary[StringName, float] = {}
 var _next_elimination := ELIMINATION_START
 var _marker_cooldowns: Dictionary[String, float] = {}
 var _ai_item_cooldowns: Dictionary[String, float] = {}
@@ -57,6 +70,14 @@ func _ready() -> void:
 
 func start(request: Dictionary) -> void:
 	_config = request.duplicate(true)
+	_briefing_remaining = GRID_BRIEFING_SECONDS
+	_countdown = COUNTDOWN_SECONDS
+	_last_countdown_number = 3
+	_false_start = false
+	_false_start_latched = false
+	_start_penalty_remaining = 0.0
+	_finish_cinematic = false
+	_cinematic_elapsed = 0.0
 	_camera_mode = String(_config.get("camera_view", "tps"))
 	if _camera_mode not in ["tps", "fps"]:
 		_camera_mode = "tps"
@@ -68,29 +89,51 @@ func start(request: Dictionary) -> void:
 	_set_camera_mode(_camera_mode, false)
 	if _hud != null and _hud.has_method(&"configure"):
 		_hud.call(&"configure", _config)
-	if _hud != null and _hud.has_method(&"show_countdown"):
-		_hud.call(&"show_countdown", 3)
+	if _hud != null and _hud.has_method(&"show_race_briefing"):
+		_hud.call(&"show_race_briefing", _config, _grid_preview())
 
 
 func _process(delta: float) -> void:
-	if _finished or _track == null:
+	if _track == null:
+		return
+	if _finish_cinematic:
+		_cinematic_elapsed += delta
+		_update_finish_camera(delta)
+		return
+	if _finished:
 		return
 	if _paused:
 		_update_camera(delta)
 		return
 
+	if _briefing_remaining > 0.0:
+		_briefing_remaining -= delta
+		if _briefing_remaining <= 0.0:
+			if _hud != null and _hud.has_method(&"hide_race_briefing"):
+				_hud.call(&"hide_race_briefing")
+			if _hud != null and _hud.has_method(&"show_countdown"):
+				_hud.call(&"show_countdown", 3)
+			_audio.play_event("count")
+		_update_grid_camera(delta)
+		return
+
 	if _countdown > 0.0:
-		var previous_second := ceili(_countdown)
+		_detect_false_start()
 		_countdown -= delta
-		var next_second := ceili(maxf(0.0, _countdown))
-		if next_second != previous_second:
+		var next_second := clampi(ceili(maxf(0.0, _countdown)), 0, 3)
+		if next_second != _last_countdown_number:
+			_last_countdown_number = next_second
 			if _hud != null and _hud.has_method(&"show_countdown"):
 				_hud.call(&"show_countdown", next_second)
 			_audio.play_event("go" if next_second == 0 else "count")
 		if _countdown <= 0.0:
 			_running = true
+			_start_penalty_remaining = FALSE_START_PENALTY_SECONDS if _false_start else 0.0
 		_update_camera(delta)
 		return
+
+	if _start_penalty_remaining > 0.0:
+		_start_penalty_remaining = maxf(0.0, _start_penalty_remaining - delta)
 
 	_accumulator = minf(_accumulator + delta, FIXED_STEP * 8.0)
 	while _accumulator >= FIXED_STEP:
@@ -116,10 +159,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		switch_camera_view()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"race_reset") and _running and _player != null:
-		var snapshot: Dictionary = _player.call(&"snapshot")
-		if bool(_player.call(&"can_reset")):
-			_player.call(&"reset_to_checkpoint", maxf(0.0, float(snapshot.get("distance", 0.0)) - 15.0), 0.0)
-			_audio.play_event("shield")
+		_try_reset_player()
 		get_viewport().set_input_as_handled()
 
 
@@ -136,8 +176,19 @@ func _step_simulation(delta: float) -> void:
 			_snapshots.append(before)
 			continue
 		var context: Dictionary = base_context.duplicate(true)
-		context["curvature"] = _curvature_at(float(before.get("distance", 0.0)))
-		context["hazard"] = _hazard_at(float(before.get("distance", 0.0)))
+		var racer_distance := float(before.get("distance", 0.0))
+		var lookahead := clampf(18.0 + float(before.get("speed", 0.0)) * 0.82, 18.0, 66.0)
+		context["curvature"] = _curvature_at(racer_distance)
+		context["curvature_ahead"] = _curvature_at(racer_distance + lookahead)
+		context["curvature_far"] = _curvature_at(racer_distance + lookahead * 1.75)
+		context["hazard"] = _hazard_at(racer_distance)
+		context["hazard_ahead"] = _hazard_at(racer_distance + lookahead)
+		context["hazard_far"] = _hazard_at(racer_distance + lookahead * 1.75)
+		context["lookahead_distance"] = lookahead
+		context["position"] = _rank_in_snapshots(String(before.get("racer_id", "")), Array(base_context.get("racers", [])))
+		context["race_progress"] = clampf(racer_distance / maxf(1.0, _track_length * int(_config.get("laps", 3))), 0.0, 1.0)
+		if not bool(before.get("is_player", false)):
+			context["speed_multiplier"] = float(base_context.get("speed_multiplier", 1.0)) * _bounded_ai_catchup(before)
 		var controls: Dictionary = _player_controls() if bool(before.get("is_player", false)) else racer.call(&"ai_controls", context)
 		var after: Dictionary = racer.call(&"step", delta, controls, context)
 		_process_marker_contact(racer, after)
@@ -156,23 +207,63 @@ func _step_simulation(delta: float) -> void:
 
 
 func _player_controls() -> Dictionary:
-	var steer := Input.get_action_strength(&"race_right") - Input.get_action_strength(&"race_left")
-	return {
-		"throttle": Input.get_action_strength(&"race_accelerate"),
-		"brake": Input.get_action_strength(&"race_brake"),
+	var left := maxf(Input.get_action_strength(&"race_left"), float(_mobile_control_strengths.get(&"race_left", 0.0)))
+	var right := maxf(Input.get_action_strength(&"race_right"), float(_mobile_control_strengths.get(&"race_right", 0.0)))
+	var steer := right - left
+	var controls := {
+		"throttle": maxf(Input.get_action_strength(&"race_accelerate"), float(_mobile_control_strengths.get(&"race_accelerate", 0.0))),
+		"brake": maxf(Input.get_action_strength(&"race_brake"), float(_mobile_control_strengths.get(&"race_brake", 0.0))),
 		"steer": clampf(steer, -1.0, 1.0),
-		"drift": Input.is_action_pressed(&"race_drift"),
-		"boost": Input.is_action_pressed(&"race_boost"),
+		"drift": Input.is_action_pressed(&"race_drift") or float(_mobile_control_strengths.get(&"race_drift", 0.0)) > 0.5,
+		"boost": Input.is_action_pressed(&"race_boost") or float(_mobile_control_strengths.get(&"race_boost", 0.0)) > 0.5,
 	}
+	if _start_penalty_remaining > 0.0:
+		controls["throttle"] = 0.0
+		controls["boost"] = false
+	return controls
+
+
+func _detect_false_start() -> void:
+	if _false_start_latched or _briefing_remaining > 0.0:
+		return
+	var throttle := maxf(Input.get_action_strength(&"race_accelerate"), float(_mobile_control_strengths.get(&"race_accelerate", 0.0)))
+	var boost := Input.is_action_pressed(&"race_boost") or float(_mobile_control_strengths.get(&"race_boost", 0.0)) > 0.5
+	if throttle < 0.12 and not boost:
+		return
+	_false_start = true
+	_false_start_latched = true
+	if _hud != null and _hud.has_method(&"show_false_start"):
+		_hud.call(&"show_false_start", FALSE_START_PENALTY_SECONDS)
+	_audio.play_event("impact")
+
+
+func start_phase() -> String:
+	if _finish_cinematic:
+		return "finish"
+	if _briefing_remaining > 0.0:
+		return "briefing"
+	if _countdown > 0.0:
+		return "countdown"
+	return "racing" if _running else "stopped"
+
+
+func has_false_start() -> bool:
+	return _false_start
+
+
+func start_penalty_remaining() -> float:
+	return _start_penalty_remaining
 
 
 func _handle_item_input() -> void:
-	var pressed := Input.is_action_pressed(&"race_item")
+	var physical_pressed := Input.is_action_pressed(&"race_item")
+	var pressed := physical_pressed or _mobile_item_pending
 	if pressed and not _item_was_pressed and _player != null:
 		var item_id := String(_player.call(&"use_item"))
 		if not item_id.is_empty():
 			_apply_item(_player, item_id)
-	_item_was_pressed = pressed
+	_mobile_item_pending = false
+	_item_was_pressed = physical_pressed
 
 
 ## AI item decisions are evaluated on the fixed simulation clock. Racers keep
@@ -206,29 +297,43 @@ func _should_ai_use_item(source: RefCounted, state: Dictionary, item_id: String)
 	var speed_ratio := float(state.get("speed_ratio", 0.0))
 	var distance := float(state.get("distance", 0.0))
 	var rank := _rank_for_racer(String(state.get("racer_id", "")))
+	var ai_style := String(state.get("ai_trait", "adaptive"))
+	var aggression := clampf(float(state.get("ai_aggression", 0.50)), 0.0, 1.0)
+	var progress := clampf(distance / maxf(1.0, _track_length * int(_config.get("laps", 3))), 0.0, 1.0)
 	var gap_ahead := _nearest_racer_gap(source, 1, 108.0)
 	var gap_behind := _nearest_racer_gap(source, -1, 28.0)
 	var nearby_count := _nearby_racer_count(source, 24.0)
 	match item_id:
 		"repair":
-			return armor_ratio <= 0.66
+			var repair_threshold := 0.74 if ai_style == "defensive" else 0.62
+			if ai_style in ["aggressive", "rammer"]:
+				repair_threshold = 0.54
+			if progress > 0.88 and rank <= 2:
+				repair_threshold -= 0.08
+			return armor_ratio <= repair_threshold
 		"shield":
-			var threatened := gap_ahead <= 24.0 or gap_behind <= 24.0
-			return not bool(state.get("shielded", false)) and armor_ratio <= 0.82 and (threatened or armor_ratio <= 0.48)
+			var threatened := gap_ahead <= 22.0 or gap_behind <= (26.0 if rank == 1 else 20.0)
+			var shield_threshold := 0.92 if ai_style == "defensive" else 0.80
+			return not bool(state.get("shielded", false)) and armor_ratio <= shield_threshold and (threatened or armor_ratio <= 0.46)
 		"overdrive":
-			var on_straight := absf(_curvature_at(distance)) <= STRAIGHT_CURVATURE_LIMIT
+			var lookahead := clampf(20.0 + float(state.get("speed", 0.0)) * 0.72, 20.0, 58.0)
+			var on_straight := absf(_curvature_at(distance)) <= STRAIGHT_CURVATURE_LIMIT and absf(_curvature_at(distance + lookahead)) <= STRAIGHT_CURVATURE_LIMIT * 1.25
+			var safe_sector := _hazard_at(distance + lookahead).is_empty()
 			var needs_energy := float(state.get("boost_energy", 0.0)) <= 0.72
-			return on_straight and speed_ratio >= 0.45 and float(state.get("heat_ratio", 0.0)) < 0.88 and (needs_energy or rank > 1)
+			var tactical_window := needs_energy or rank > 1 or progress > 0.90
+			return on_straight and safe_sector and speed_ratio >= 0.45 and float(state.get("heat_ratio", 0.0)) < (0.82 + aggression * 0.07) and tactical_window
 		"emp", "shockwave":
 			# Chasers attack a nearby racer ahead; leaders only fire defensively
 			# against a close pursuer or when the pack is clustered.
-			return nearby_count >= 2 or (rank > 1 and gap_ahead <= 24.0) or (rank == 1 and gap_behind <= 12.0)
+			var attack_reach := 18.0 + aggression * 10.0
+			return nearby_count >= (2 if aggression < 0.70 else 1) or (rank > 1 and gap_ahead <= attack_reach) or (rank == 1 and gap_behind <= 10.0 + aggression * 6.0)
 		"mine":
-			return gap_behind <= 18.0
+			var mine_reach := 14.0 + aggression * 7.0
+			return gap_behind <= mine_reach and (rank <= 4 or progress > 0.72)
 		"ion":
-			return rank > 1 and gap_ahead <= 72.0
+			return rank > 1 and gap_ahead <= 58.0 + aggression * 18.0
 		"rail":
-			return rank > 1 and gap_ahead <= 108.0
+			return rank > 1 and gap_ahead <= 88.0 + aggression * 20.0 and (speed_ratio > 0.38 or progress > 0.82)
 		_:
 			return false
 
@@ -455,18 +560,52 @@ func _check_end_conditions() -> void:
 		_finish_race(_player.call(&"snapshot"))
 
 
+## Freezes an official classification when the player's session ends. Racers
+## still on track are classified by their live order without being mislabeled
+## as finish-line crossers; DNF and eliminated entries remain ineligible.
+func _prepare_official_classification(player_state: Dictionary) -> void:
+	var player_finished := bool(player_state.get("finished", false)) \
+		and not bool(player_state.get("dnf", false)) \
+		and not bool(player_state.get("eliminated", false))
+	for index in range(_snapshots.size()):
+		var entry: Dictionary = _snapshots[index]
+		if not bool(entry.get("is_player", false)) and String(entry.get("racer_id", "")) != "player":
+			continue
+		entry["finished"] = player_finished
+		entry["dnf"] = bool(player_state.get("dnf", false)) or bool(player_state.get("eliminated", false))
+		entry["eliminated"] = bool(player_state.get("eliminated", false))
+		entry["reason"] = String(player_state.get("reason", entry.get("reason", "")))
+		_snapshots[index] = entry
+		var racer_id := String(entry.get("racer_id", "player"))
+		if player_finished and not racer_id in _finish_order:
+			_finish_order.append(racer_id)
+		break
+	_sort_and_rank_snapshots()
+	if not player_finished or String(_config.get("mode", "quick")) == "time_trial":
+		return
+	for index in range(_snapshots.size()):
+		var entry: Dictionary = _snapshots[index]
+		entry["classified"] = not bool(entry.get("dnf", false)) and not bool(entry.get("eliminated", false))
+		_snapshots[index] = entry
+
+
 func _finish_race(player_state: Dictionary) -> void:
 	if _finished:
 		return
 	_finished = true
 	_running = false
-	_sort_and_rank_snapshots()
+	_finish_cinematic = true
+	_cinematic_elapsed = 0.0
+	_release_mobile_controls()
+	_prepare_official_classification(player_state)
 	var result := player_state.duplicate(true)
 	result["position"] = _player_position()
 	result["elapsed"] = _elapsed
 	result["track_id"] = String(_config.get("track_id", "foundry"))
 	result["mode"] = String(_config.get("mode", "quick"))
-	result["finished"] = bool(player_state.get("finished", false)) and not bool(player_state.get("eliminated", false))
+	result["finished"] = bool(player_state.get("finished", false)) \
+		and not bool(player_state.get("dnf", false)) \
+		and not bool(player_state.get("eliminated", false))
 	result["dnf"] = not bool(result["finished"])
 	result["record_valid"] = bool(result["finished"])
 	result["classification"] = _snapshots.duplicate(true)
@@ -475,10 +614,13 @@ func _finish_race(player_state: Dictionary) -> void:
 		var normalized: Variant = session.call(&"complete_race", result)
 		if normalized is Dictionary:
 			result = normalized
+	result["ruleset_id"] = String(_config.get("ruleset_id", "division_locked"))
+	result["performance_class_id"] = String(_config.get("performance_class_id", "tuned"))
 	_audio.play_event("finish" if bool(result.get("finished", false)) else "impact")
-	if _hud != null:
-		_hud.visible = false
-	await get_tree().create_timer(0.35, true, false, true).timeout
+	if _hud != null and _hud.has_method(&"show_finish"):
+		_hud.call(&"show_finish", result)
+	await get_tree().create_timer(FINISH_BROADCAST_SECONDS, true, false, true).timeout
+	_finish_cinematic = false
 	race_finished.emit(result)
 
 
@@ -498,8 +640,29 @@ func _race_context() -> Dictionary:
 		"curvature": 0.0,
 		"hazard": "",
 		"speed_multiplier": float(difficulty.get("speed", 1.0)),
+		"difficulty_skill": float(difficulty.get("skill", 0.69)),
+		"difficulty_aggression": float(difficulty.get("aggression", 0.50)),
 		"racers": _snapshots.duplicate(true),
 	}
+
+
+func _bounded_ai_catchup(state: Dictionary) -> float:
+	if _player == null or _racers.size() <= 1:
+		return 1.0
+	var player_state: Dictionary = _player.call(&"snapshot")
+	var gap := float(player_state.get("distance", 0.0)) - float(state.get("distance", 0.0))
+	var normalized_gap := clampf(gap / maxf(220.0, _track_length * 0.55), -1.0, 1.0)
+	var race_progress := clampf(float(state.get("distance", 0.0)) / maxf(1.0, _track_length * int(_config.get("laps", 3))), 0.0, 1.0)
+	var late_race_falloff := lerpf(1.0, 0.55, race_progress)
+	return 1.0 + normalized_gap * 0.035 * late_race_falloff
+
+
+func _rank_in_snapshots(racer_id: String, racers: Array) -> int:
+	for index in range(racers.size()):
+		var value: Variant = racers[index]
+		if value is Dictionary and String(Dictionary(value).get("racer_id", "")) == racer_id:
+			return index + 1
+	return maxi(1, _racers.size())
 
 
 func _track_grip() -> float:
@@ -560,6 +723,10 @@ func _build_racers() -> void:
 	var roster_value: Variant = _config.get("roster", [])
 	var roster: Array = roster_value if roster_value is Array else []
 	var performance_class_id := String(_config.get("performance_class_id", "tuned"))
+	var performance_class := GameDatabase.get_performance_class(performance_class_id)
+	if performance_class.is_empty():
+		performance_class_id = "tuned"
+		performance_class = GameDatabase.get_performance_class("tuned")
 	var racer_count := clampi(int(_config.get("racer_count", GRID_SIZE)), 1, GRID_SIZE)
 	for index in range(racer_count):
 		var entrant: Dictionary = roster[index] if index < roster.size() and roster[index] is Dictionary else {}
@@ -577,7 +744,20 @@ func _build_racers() -> void:
 		var racer_id := "player" if is_player else String(entrant.get("racer_id", entrant.get("id", pilot.get("id", "rival_%02d" % index))))
 		var fallback_loadout := _player_loadout(profile, chassis_id) if is_player else _default_loadout(chassis_id)
 		var requested_loadout: Variant = entrant.get("loadout", fallback_loadout)
-		var loadout := _loadout_for_class(requested_loadout, chassis_id, performance_class_id)
+		var fallback_locomotion := _player_locomotion(profile, chassis_id) if is_player else LocomotionCatalog.get_default_configuration_id(chassis_id)
+		var requested_locomotion := String(entrant.get("locomotion_id", fallback_locomotion))
+		var locomotion := LocomotionCatalog.homologate_configuration(chassis, requested_locomotion, performance_class)
+		var locomotion_id := String(locomotion.get("id", fallback_locomotion))
+		if is_player and requested_locomotion != locomotion_id:
+			_config["homologation_notice"] = "HOMOLOGATION // %s REFUSÉ EN %s — MONTAGE CONSTRUCTEUR APPLIQUÉ" % [
+				String(LocomotionCatalog.get_configuration(requested_locomotion).get("short_name", "MONTAGE")),
+				String(performance_class.get("name", performance_class_id)).to_upper(),
+			]
+		var loadout := _loadout_for_class(requested_loadout, chassis_id, performance_class_id, int(locomotion.get("power_draw", 0)))
+		var tuning_stats := _module_stats(loadout)
+		var locomotion_stats: Dictionary = locomotion.get("stats", {}) if locomotion.get("stats", {}) is Dictionary else {}
+		for stat_id: String in tuning_stats.keys():
+			tuning_stats[stat_id] = float(tuning_stats[stat_id]) + float(locomotion_stats.get(stat_id, 0.0))
 		var paint_text := String(entrant.get("paint", _player_paint(profile, chassis) if is_player else pilot.get("paint", chassis.get("paint", "#5EE7FF"))))
 		if not Color.html_is_valid(paint_text):
 			paint_text = String(chassis.get("paint", "#5EE7FF"))
@@ -592,7 +772,8 @@ func _build_racers() -> void:
 			"track_length": _track_length,
 			"total_laps": int(_config.get("laps", 3)),
 			"upgrades": _player_upgrades(profile, chassis_id, performance_class_id) if is_player else {},
-			"module_stats": _module_stats(loadout),
+			"module_stats": tuning_stats,
+			"locomotion_id": locomotion_id,
 			"grid_index": index,
 			"seed": String(_config.get("track_id", "foundry")).hash() + index * 733,
 		}
@@ -600,13 +781,29 @@ func _build_racers() -> void:
 		_racers.append(racer)
 		if is_player:
 			_player = racer
-		var visual: RacerVisual = MechaFactoryType.build(chassis, Color(paint_text), is_player, loadout)
+		var customization := loadout.duplicate(true)
+		customization["locomotion_id"] = locomotion_id
+		var visual: RacerVisual = MechaFactoryType.build(chassis, Color(paint_text), is_player, customization)
 		visual.name = racer_id
 		# Animate limbs first, then reapply the authored track elevation.
 		# This prevents visual bounce from flattening vertical circuits.
 		visual.process_priority = -10
 		add_child(visual)
 		_visuals[racer_id] = visual
+
+
+func _grid_preview() -> Array[Dictionary]:
+	var grid: Array[Dictionary] = []
+	for racer: RefCounted in _racers:
+		var snapshot: Dictionary = racer.call(&"snapshot")
+		grid.append({
+			"racer_id": String(snapshot.get("racer_id", "")),
+			"display_name": String(snapshot.get("display_name", "PILOTE")),
+			"chassis_id": String(snapshot.get("chassis_id", "")),
+			"division_id": String(snapshot.get("division_id", "")),
+			"is_player": bool(snapshot.get("is_player", false)),
+		})
+	return grid
 
 
 func _player_paint(profile: Dictionary, chassis: Dictionary) -> String:
@@ -621,6 +818,15 @@ func _player_loadout(profile: Dictionary, chassis_id: String) -> Dictionary:
 	return Dictionary(value).duplicate(true) if value is Dictionary else _default_loadout(chassis_id)
 
 
+func _player_locomotion(profile: Dictionary, chassis_id: String) -> String:
+	var locomotions: Dictionary = profile.get("locomotions", {}) if profile.get("locomotions", {}) is Dictionary else {}
+	var requested := String(locomotions.get(chassis_id, LocomotionCatalog.get_default_configuration_id(chassis_id)))
+	var configuration := LocomotionCatalog.get_configuration(requested)
+	if configuration.is_empty() or String(configuration.get("family_id", "")) != chassis_id:
+		return LocomotionCatalog.get_default_configuration_id(chassis_id)
+	return requested
+
+
 func _default_loadout(chassis_id: String = "") -> Dictionary:
 	var output: Dictionary = {}
 	var chassis := GameDatabase.get_chassis(chassis_id)
@@ -633,20 +839,29 @@ func _default_loadout(chassis_id: String = "") -> Dictionary:
 	return output
 
 
-func _loadout_for_class(value: Variant, chassis_id: String, performance_class_id: String) -> Dictionary:
-	var defaults := _default_loadout(chassis_id)
+func _loadout_for_class(value: Variant, chassis_id: String, performance_class_id: String, reserved_power: int = 0) -> Dictionary:
+	var authored_defaults := _default_loadout(chassis_id)
 	var performance_class := GameDatabase.get_performance_class(performance_class_id)
 	if String(performance_class.get("module_policy", "all")) == "defaults_only":
-		return defaults
+		return authored_defaults
 	var source: Dictionary = value if value is Dictionary else {}
 	var division_id := String(GameDatabase.get_chassis(chassis_id).get("division_id", ""))
 	var max_tier := int(performance_class.get("max_module_tier", 1))
-	for slot_id: String in defaults.keys():
-		var option_id := String(source.get(slot_id, defaults[slot_id]))
+	var available_power := maxi(0, int(performance_class.get("module_power_budget", 0)) - maxi(0, reserved_power))
+	var used_power := 0
+	var output: Dictionary = {}
+	for slot: Dictionary in GameDatabase.MODULE_SLOTS:
+		var slot_id := String(slot.get("id", ""))
+		var safe_option_id := String(slot.get("default_option_id", ""))
+		var option_id := String(source.get(slot_id, authored_defaults.get(slot_id, safe_option_id)))
 		var option := GameDatabase.get_module_option(slot_id, option_id)
-		if not option.is_empty() and int(option.get("tier", 0)) <= max_tier and GameDatabase.is_module_allowed_for_division(option_id, division_id):
-			defaults[slot_id] = option_id
-	return defaults
+		var option_power := maxi(0, int(option.get("power_draw", 0)))
+		if not option.is_empty() and int(option.get("tier", 0)) <= max_tier and used_power + option_power <= available_power and GameDatabase.is_module_allowed_for_division(option_id, division_id):
+			output[slot_id] = option_id
+			used_power += option_power
+		else:
+			output[slot_id] = safe_option_id
+	return output
 
 
 func _module_stats(loadout: Dictionary) -> Dictionary:
@@ -684,6 +899,42 @@ func _build_camera() -> void:
 	add_child(_camera)
 
 
+func _update_grid_camera(delta: float) -> void:
+	if _camera == null or _track == null:
+		return
+	var pose := TrackFactoryType.sample_pose(_track, 0.0, 0.0)
+	var forward := -pose.basis.z.normalized()
+	var side := pose.basis.x.normalized()
+	var progress := clampf(1.0 - _briefing_remaining / GRID_BRIEFING_SECONDS, 0.0, 1.0)
+	var target_position := pose.origin - forward * 15.0 + side * lerpf(-10.5, 7.0, progress) + pose.basis.y.normalized() * 7.6
+	var look_target := pose.origin + forward * 3.5 + pose.basis.y.normalized() * 1.7
+	var weight := 1.0 - exp(-delta * 3.8)
+	_camera.global_position = _camera.global_position.lerp(target_position, weight)
+	var next_basis := _camera.global_transform.looking_at(look_target, Vector3.UP, false).basis
+	_camera.global_basis = _camera.global_basis.slerp(next_basis, weight)
+	_camera.fov = lerpf(_camera.fov, 64.0, weight)
+
+
+func _update_finish_camera(delta: float) -> void:
+	if _camera == null or _player == null or _track == null:
+		return
+	var state: Dictionary = _player.call(&"snapshot")
+	var pose := TrackFactoryType.sample_pose(_track, float(state.get("distance", 0.0)), float(state.get("lane", 0.0)))
+	var player_visual: RacerVisual = _visuals.get("player")
+	if player_visual != null and player_visual.has_method(&"set_camera_mode"):
+		player_visual.call(&"set_camera_mode", "tps")
+	var forward := -pose.basis.z.normalized()
+	var side := pose.basis.x.normalized()
+	var orbit := sin(_cinematic_elapsed * 0.85)
+	var center := pose.origin + pose.basis.y.normalized() * 1.8
+	var target_position := center - forward * (10.5 - orbit * 1.2) + side * (5.8 + orbit * 2.2) + pose.basis.y.normalized() * 3.8
+	var weight := 1.0 - exp(-delta * 4.4)
+	_camera.global_position = _camera.global_position.lerp(target_position, weight)
+	var next_basis := _camera.global_transform.looking_at(center + forward * 2.5, Vector3.UP, false).basis
+	_camera.global_basis = _camera.global_basis.slerp(next_basis, weight)
+	_camera.fov = lerpf(_camera.fov, 57.0, weight)
+
+
 func camera_mode() -> String:
 	return _camera_mode
 
@@ -717,10 +968,56 @@ func _build_feedback() -> void:
 	_hud.pause_requested.connect(_on_hud_pause)
 	_hud.retry_requested.connect(_request_retry)
 	_hud.menu_requested.connect(_request_menu)
+	_hud.mobile_control_changed.connect(_on_mobile_control_changed)
+	_hud.mobile_action_triggered.connect(_on_mobile_action_triggered)
 
 
 func _on_hud_pause(paused: bool) -> void:
 	_paused = paused
+	if paused:
+		_release_mobile_controls()
+
+
+func _on_mobile_control_changed(action: StringName, strength: float) -> void:
+	if action not in MobileTouchControls.HOLD_ACTIONS:
+		return
+	_mobile_control_strengths[action] = clampf(strength, 0.0, 1.0)
+
+
+func _on_mobile_action_triggered(action: StringName) -> void:
+	match action:
+		&"race_item":
+			if _running and not _paused:
+				_mobile_item_pending = true
+		&"race_camera":
+			if not _paused:
+				switch_camera_view()
+		&"race_reset":
+			if _running and not _paused:
+				_try_reset_player()
+		&"race_pause":
+			_paused = not _paused
+			if _hud != null:
+				_hud.show_pause(_paused)
+			if _paused:
+				_release_mobile_controls()
+
+
+func _try_reset_player() -> bool:
+	if _player == null or not bool(_player.call(&"can_reset")):
+		return false
+	var snapshot: Dictionary = _player.call(&"snapshot")
+	var reset := bool(_player.call(&"reset_to_checkpoint", maxf(0.0, float(snapshot.get("distance", 0.0)) - 15.0), 0.0))
+	if reset:
+		_audio.play_event("shield")
+	return reset
+
+
+func _release_mobile_controls() -> void:
+	_mobile_control_strengths.clear()
+	_mobile_item_pending = false
+	if _hud != null and _hud.has_method(&"release_mobile_controls"):
+		_hud.call(&"release_mobile_controls")
 
 
 func _request_retry() -> void:
@@ -797,6 +1094,8 @@ func _update_feedback() -> void:
 		hud_snapshot["mode"] = String(_config.get("mode", "quick"))
 		hud_snapshot["next_elimination"] = maxf(0.0, _next_elimination - _elapsed)
 		hud_snapshot["camera_view"] = _camera_mode
+		if _start_penalty_remaining > 0.0:
+			hud_snapshot["warning"] = "PÉNALITÉ FAUX DÉPART // PROPULSEURS %.1f S" % _start_penalty_remaining
 		_hud.call(&"update_race", hud_snapshot)
 	_audio.set_motion(float(player_state.get("speed_ratio", 0.0)), bool(player_state.get("boosting", false)), 1.0 - float(player_state.get("armor_ratio", 1.0)), _chassis_tone(String(player_state.get("chassis_id", "biped"))))
 

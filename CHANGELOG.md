@@ -2,6 +2,29 @@
 
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
+## [2.3.0] — 2026-08-24
+
+### Ajouté
+
+- 500 configurations de locomotion : 50 par châssis, dix technologies et cinq géométries ;
+- bi-propulseur Aether original à deux nacelles antigravité, sans asset ou identité de franchise tierce ;
+- sélecteur locomotion au garage, aperçu 3D instantané, effets statistiques et persistance v5 ;
+- ouverture narrative Saison 03 et huit archives d’univers dans le Codex ;
+- briefing de grille, compte à rebours bloquant, faux départ, arrivée cinématique et podium top 3 ;
+- commandes mobiles multitouch à dix actions avec zones sûres, haptique et disposition responsive ;
+- cinq textures OpenAI originales pour décors, biomes, ville humide, cérémonie et propulsion.
+
+### Amélioré
+
+- IA avec profils de pilote, anticipation des virages/dangers, évitement du trafic, objets contextuels et rattrapage borné ;
+- circuits densifiés avec complexes départ/arrivée, tribunes, signaux et accessoires propres à chaque biome ;
+- garage, course et résultats reliés au même contrat de locomotion visuelle et physique ;
+- manifeste de provenance étendu à 17 textures, toutes munies de dimensions et SHA-256 vérifiables.
+
+### Validation
+
+- validateur statique, import Godot, smoke global, test locomotion ciblé et parcours runtime complets réussis localement.
+
 ## [2.2.0] — 2026-08-22
 
 ### Ajouté

@@ -5,6 +5,7 @@ extends Node
 ## while this node owns transitions and input defaults shared by every scene.
 
 const MAIN_MENU_SCENE := preload("res://scenes/main_menu.tscn")
+const SEASON_INTRO_SCENE := preload("res://scenes/season_intro.tscn")
 const GARAGE_SCENE := preload("res://scenes/garage.tscn")
 const CODEX_SCENE := preload("res://scenes/codex.tscn")
 const RESULTS_SCENE := preload("res://scenes/results.tscn")
@@ -17,7 +18,40 @@ var _last_config: Dictionary = {}
 
 func _ready() -> void:
 	_register_input_defaults()
+	_show_opening()
+
+
+func _show_opening() -> void:
+	if _season_intro_seen():
+		_show_main_menu()
+		return
+	var intro := SEASON_INTRO_SCENE.instantiate() as SeasonIntroScreen
+	if intro == null:
+		push_error("Season intro scene root must use SeasonIntroScreen.")
+		_show_main_menu()
+		return
+	intro.completed.connect(_complete_opening)
+	_replace_screen(intro)
+
+
+func _complete_opening(mark_seen: bool = true) -> void:
+	if mark_seen:
+		var save := get_node_or_null("/root/SaveSystem")
+		if save != null and save.has_method(&"update_settings"):
+			save.call(&"update_settings", {"season_intro_seen": true})
 	_show_main_menu()
+
+
+func _season_intro_seen() -> bool:
+	var save := get_node_or_null("/root/SaveSystem")
+	if save == null:
+		return false
+	var profile_value: Variant = save.get("profile")
+	if profile_value is Dictionary:
+		var settings_value: Variant = Dictionary(profile_value).get("settings", {})
+		if settings_value is Dictionary:
+			return bool(Dictionary(settings_value).get("season_intro_seen", false))
+	return false
 
 
 func _replace_screen(next_screen: Node) -> void:

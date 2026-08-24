@@ -5,8 +5,8 @@ config_version=5
 [application]
 
 config/name="MECHA OVERDRIVE: Circuit Zero"
-config/description="Arcade combat racer built around ten distinct mecha locomotion architectures."
-config/version="2.2.0"
+config/description="Professional arcade combat racer with 500 modular locomotion configurations, championships, mobile controls and original lore."
+config/version="2.3.0"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 run/main_scene="res://scenes/app.tscn"
 

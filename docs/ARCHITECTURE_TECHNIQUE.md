@@ -26,7 +26,7 @@ Le dépôt contient deux runtimes indépendants qui partagent la même identité
 
 ## 2. Architecture de l’édition Godot 3D
 
-Cette section décrit le contrat de la release **Godot 2.2.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
+Cette section décrit le contrat de la release **Godot 2.3.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
 
 ### 2.1 Configuration du projet
 
@@ -47,6 +47,7 @@ Le viewport logique est 1920 × 1080 avec une fenêtre de référence 1280 × 72
 
 ```text
 MechaOverdriveApp
+├── SeasonIntroScreen (premier lancement)
 ├── MainMenuScreen
 ├── GarageScreen
 ├── CodexScreen
@@ -70,6 +71,8 @@ Le coordinateur écoute des signaux de haut niveau (`race_requested`, `screen_re
 - six championnats : cinq coupes dédiées à une division et `nexus_open`, seule coupe ouverte aux divisions mélangées ;
 - pilotes IA, trois difficultés, quatre familles d’améliorations et barème de championnat.
 
+`scripts/data/locomotion_catalog.gd` compose dix technologies et cinq montages pour chacune des dix familles, soit exactement 500 configurations. `scripts/data/lore_database.gd` expose huit archives originales au Codex.
+
 Les consommateurs passent par les méthodes de recherche (`get_chassis`, `get_track`, `get_item`, `get_difficulty`) et reçoivent des copies profondes pour limiter les mutations accidentelles.
 
 ### 2.4 Construction procédurale des circuits
@@ -80,7 +83,7 @@ Les consommateurs passent par les méthodes de recherche (`get_chassis`, `get_tr
 2. calcul du relief à partir de plusieurs harmoniques et d’une seed ;
 3. construction des meshes de route, accotements et rails lumineux ;
 4. création de l’environnement, du brouillard et de la lumière ;
-5. placement déterministe des décors ;
+5. placement déterministe des décors et du complexe professionnel départ/arrivée ;
 6. création de marqueurs de pickups et pads de boost ;
 7. exposition de la courbe, de la longueur et des marqueurs via les métadonnées du nœud.
 
@@ -90,7 +93,7 @@ La méthode `sample_pose(track, distance, lane)` fournit un `Transform3D` commun
 
 ### 2.5 Construction procédurale des méchas
 
-`scripts/mecha/mecha_factory.gd` génère une silhouette 3D propre à chaque architecture avec les primitives Godot. `scripts/visual/mecha_visual_modules.gd` installe les trois modules visibles de la configuration, et `scripts/mecha/racer_visual.gd` anime les parties mobiles, le boost et l’état de dégâts.
+`scripts/mecha/mecha_factory.gd` génère une silhouette 3D propre à chaque architecture avec les primitives Godot. `scripts/visual/mecha_visual_modules.gd` installe les trois modules visibles et `scripts/visual/locomotion_visuals.gd` construit les roues, jambes, chenilles, appuis, sphères, propulseurs, rails ou turbines sélectionnés. `scripts/mecha/racer_visual.gd` anime les parties mobiles, rotors, boost et dégâts.
 
 Le visuel ne possède pas la vérité physique. Il reçoit à chaque trame un snapshot du pilote puis est replacé sur la pose de piste. La simulation peut ainsi rester déterministe et indépendante de la fréquence d’affichage.
 
@@ -100,16 +103,18 @@ Chaque châssis expose des ancres TPS et cockpit. Le changement de vue masque le
 
 `scripts/race/race_controller.gd` orchestre le runtime et exécute la simulation à pas fixe de **1/120 s** :
 
-1. compte à rebours ;
-2. lecture des commandes du joueur ou calcul des commandes IA ;
-3. mise à jour de chaque `RacerState` ;
-4. contacts avec pickups et pads ;
-5. collisions proches ;
-6. classement ;
-7. objets ;
-8. élimination éventuelle ;
-9. conditions de fin ou de DNF ;
-10. interpolation visuelle, caméra, HUD et audio.
+1. briefing de grille et caméra panoramique ;
+2. compte à rebours 3-2-1-GO, propulsion verrouillée et faux départ pénalisé ;
+3. lecture des commandes du joueur ou calcul des commandes IA ;
+4. mise à jour de chaque `RacerState` ;
+5. contacts avec pickups et pads ;
+6. collisions proches ;
+7. classement ;
+8. objets ;
+9. élimination éventuelle ;
+10. conditions de fin ou de DNF ;
+11. arrivée cinématique, interpolation visuelle, caméra, HUD et audio ;
+12. podium top 3 et résultats complets.
 
 L’accumulateur est borné pour éviter une spirale de rattrapage lors d’un ralentissement prolongé.
 
@@ -124,7 +129,9 @@ L’accumulateur est borné pour éviter une spirale de rattrapage lors d’un r
 - fin, DNF, élimination et motif ;
 - paramètres physiques calculés depuis le châssis, les améliorations, les modules et la classe de performance.
 
-L’IA utilise le même chemin de simulation que le joueur. Le contrôleur lui fournit la courbure, le danger, l’adhérence et la situation de course.
+L’IA utilise le même chemin de simulation que le joueur. Le contrôleur lui fournit courbure anticipée, ligne entrée/apex/sortie, danger, adhérence, trafic et situation de course. Les neuf profils de pilote pilotent agressivité, défense, dérive et usage contextuel des objets ; le rattrapage reste borné à 3,5 %.
+
+`scripts/input/mobile_touch_controls.gd` fournit dix actions multitouch, des cibles d’au moins 88 px, les zones sûres, l’haptique et des dispositions paysage/portrait sans émuler les entrées clavier/manette.
 
 ### 2.8 Modes et résultats
 
@@ -141,9 +148,9 @@ Un résultat n’est commité qu’une fois par session. `complete_race` normali
 
 Par défaut, `GameSession` construit une grille de la division du châssis sélectionné. Le mélange n’est autorisé que par une demande explicite compatible avec `open_mixed` ou `elite_open`. Les classes appliquent aussi une politique réelle : configuration d’usine et améliorations nulles en `stock`, plafond de niveau 2 en `tuned`, plafond de niveau 4 en `unlimited`.
 
-### 2.9 Sauvegarde v4
+### 2.9 Sauvegarde v5
 
-Le schéma courant est `SAVE_VERSION = 4` et le fichier principal :
+Le schéma courant est `SAVE_VERSION = 5` et le fichier principal :
 
 ```text
 user://mecha_overdrive_profile.json
@@ -161,19 +168,19 @@ paints[chassis_id]
 unlocked_paints[]
 upgrades[chassis_id][engine|servos|reactor|armor]
 loadouts[chassis_id][slot_id]
+locomotions[chassis_id]
 owned_modules[]
-camera_modes[chassis_id]
 records[track_id][mode]
 stats[races|wins|podiums|championships|credits_earned]
-settings[accessibilité|audio]
+settings[accessibilité|audio|camera_view|season_intro_seen]
 championship[id|round|tracks|division_id|ruleset_id|grid_policy|performance_class|roster]
 ```
 
-À chaque lecture, le service reconstruit un profil par défaut puis n’accepte que les valeurs valides et bornées. Une sauvegarde v2 est migrée vers un chargement par châssis, une vue persistante et la coupe dédiée correspondant à la division sélectionnée. Une sauvegarde v3 conserve ses chargements et reçoit les neuf modules historiques. Les propriétés immuables d’un championnat sont ensuite recopiées depuis le catalogue canonique : une sauvegarde modifiée ne peut pas injecter des circuits, une division ou un règlement arbitraires. L’écriture suit un flux temporaire → backup → remplacement. Un JSON invalide est archivé en `.corrupt.json`. Les DNF n’accordent ni crédits ni record.
+À chaque lecture, le service reconstruit un profil par défaut puis n’accepte que les valeurs valides et bornées. Une sauvegarde v2 est migrée vers un chargement par châssis, une vue persistante et la coupe dédiée correspondant à la division sélectionnée. Une sauvegarde v3 conserve ses chargements et reçoit les neuf modules historiques ; une v4 reçoit dix locomotions constructeur valides. Les propriétés immuables d’un championnat sont ensuite recopiées depuis le catalogue canonique : une sauvegarde modifiée ne peut pas injecter des circuits, une division ou un règlement arbitraires. L’écriture suit un flux temporaire → backup → remplacement. Un JSON invalide est archivé en `.corrupt.json`. Les DNF n’accordent ni crédits ni record.
 
 ### 2.10 UI, accessibilité et audio
 
-Les scripts `scripts/ui/` construisent les écrans de menu, garage, codex, HUD et résultats. Le menu expose division, politique de grille, championnat et classe de performance ; le garage utilise un unique SubViewport Web-friendly pour montrer le vrai mécha, sa peinture et ses modules, puis applique atomiquement le brouillon validé. `ui_theme.gd` centralise la direction visuelle. Les réglages persistants couvrent contraste élevé, mouvement réduit, texte agrandi, secousse caméra, unités métriques et volumes.
+Les scripts `scripts/ui/` construisent l’introduction, les écrans de menu, garage, codex, HUD et résultats. Le menu expose division, politique de grille, championnat et classe de performance ; le garage utilise un unique SubViewport Web-friendly pour montrer le vrai mécha, sa peinture, sa locomotion et ses modules, puis applique atomiquement le brouillon validé. `ui_theme.gd` centralise la direction visuelle. Les réglages persistants couvrent contraste élevé, mouvement réduit, texte agrandi, secousse caméra, unités métriques et volumes.
 
 `scripts/audio/audio_director.gd` génère l’ambiance moteur et les événements de course à l’exécution. Aucun fichier audio externe n’est requis par cette branche.
 
@@ -190,6 +197,9 @@ La vue bascule entre TPS et cockpit avec `V`/`Tab` ou le bouton `Y` de la manett
 ## 3. Flux Godot de bout en bout
 
 ```text
+SeasonIntroScreen (premier lancement)
+   │
+   ▼
 MainMenuScreen
    │ demande Dictionary
    ▼
@@ -200,7 +210,7 @@ RaceController
    ├── TrackFactory ──► Node3D circuit
    ├── RacerState[] ──► simulation fixe
    ├── MechaFactory ──► RacerVisual[]
-   ├── RaceHUD
+   ├── RaceHUD + MobileTouchControls
    └── AudioDirector
    │ résultat brut
    ▼
@@ -209,12 +219,12 @@ GameSession.complete_race
    └── SaveSystem.record_race_result
    │ résultat normalisé
    ▼
-ResultsScreen
+ResultsScreen + PodiumPresenter
 ```
 
 ## 4. Architecture historique de l’édition compagnon web
 
-Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.2.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
+Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.3.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
 
 | Fichier | Responsabilité |
 |---|---|
@@ -262,7 +272,7 @@ Les deux surfaces sont publiées ensemble :
 ### Godot
 
 - `tools/validate-godot.mjs` : contrat statique des ressources et données Godot.
-- `godot/tests/smoke_test.gd` : 10 châssis, 5 divisions, 8 circuits, 6 coupes, 18 modules, sauvegarde v4, achat atomique, migration/canonicalisation, classes, dangers et déterminisme.
+- `godot/tests/smoke_test.gd` : 10 châssis, 500 locomotions, 5 divisions, 8 circuits, 6 coupes, 18 modules, 17 textures, sauvegarde v5, mobile, IA, podium, migrations et déterminisme.
 - `godot/tests/runtime_flow_test.gd` : vraie scène, grille par division, modules, vues TPS/cockpit, mouvement, DNF, résultats et coupes dédiée/ouverte avec sauvegarde isolée.
 - `godot --headless --path godot --editor --quit` : import et parse par le vrai moteur.
 

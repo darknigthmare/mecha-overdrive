@@ -10,17 +10,17 @@ Le visuel de présentation est une création originale générée avec OpenAI po
 
 | Édition | Emplacement | Contenu | Exécution |
 |---|---|---|---|
-| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 5 divisions, 8 circuits, 6 championnats, 18 modules, garage 3D, TPS/cockpit et sauvegarde v4 | Godot **4.7.2** ou navigateur WebGL2 |
+| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 500 locomotions, 8 circuits, 6 championnats, garage 3D, mobile, TPS/cockpit et sauvegarde v5 | Godot **4.7.2** ou navigateur WebGL2 |
 | **Web — compagnon autonome** | racine du dépôt | 8 châssis, Course rapide, Grand Prix et Contre-la-montre, PWA hors ligne | Navigateur moderne, Node.js facultatif |
 
-La version déclarée dans le projet Godot est `2.2.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+La version déclarée dans le projet Godot est `2.3.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
 
 ## Jouer en ligne
 
-- **Godot 3D 2.2.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
+- **Godot 3D 2.3.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
 - **Édition web légère** : [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app)
 
-L’export Godot est mono-thread, WebGL2 et destiné aux ordinateurs avec clavier ou manette. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste l’option tactile et PWA hors ligne.
+L’export Godot est mono-thread et WebGL2. Il prend en charge clavier, manette et une surface tactile responsive à dix commandes sur mobile. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste la variante PWA hors ligne.
 
 ## Lancer l’édition Godot 3D
 
@@ -95,29 +95,29 @@ Les classes **Série**, **Préparé** et **Prototype** imposent réellement leur
 - **Tranchée Hadale** — océan de Néréide ;
 - **Caldeira Zéro** — réacteur tellurique IX.
 
-Les circuits sont assemblés en 3D par `TrackFactory` à partir de huit profils géométriques et de dangers jouables distincts. Les dix silhouettes sont générées par `MechaFactory`, sans modèle 3D externe ; les matériaux bitmap originaux OpenAI sont appliqués aux méchas, cockpits, pistes et décors.
+Les circuits sont assemblés en 3D par `TrackFactory` à partir de huit profils géométriques et de dangers jouables distincts. La 2.3.0 densifie leurs silhouettes avec complexes départ/arrivée, tribunes, signaux, tours, cristaux, racines, monolithes et accessoires propres aux biomes. Les dix silhouettes sont générées par `MechaFactory`, sans modèle 3D externe ; les matériaux bitmap originaux OpenAI sont appliqués aux méchas, cockpits, pistes et décors.
 
 ### Combat et progression
 
-La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cellule Overdrive, charge gravitique, drone réparateur, onde cinétique et Railburst. Le garage expose un aperçu 3D manipulable, les peintures, quatre familles d’améliorations et **trois emplacements modulaires** — noyau, mobilité, utilitaire — avec 18 modules visibles, achetables et réellement montés sur le châssis. Les coûts, affinités de division, budgets de classe et compromis statistiques sont détaillés avant une application atomique de la configuration. Chaque architecture conserve sa capacité propre en course.
+La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cellule Overdrive, charge gravitique, drone réparateur, onde cinétique et Railburst. Le garage expose un aperçu 3D manipulable, les peintures, quatre familles d’améliorations, **trois emplacements modulaires** — noyau, mobilité, utilitaire — avec 18 modules visibles, ainsi qu’un sélecteur de **50 locomotions par châssis**. Dix technologies (jambes, roues, chenilles, multi-appuis, sphères, gyro, patins magnétiques, bi-propulseur Aether, rails et turbines) se combinent à cinq géométries et modifient réellement le visuel et les statistiques.
 
 ## Contrôles Godot
 
-| Action | Clavier | Manette |
-|---|---|---|
-| Accélérer | `Z`, `W` ou `↑` | gâchette haute droite / `RB` |
-| Freiner | `S` ou `↓` | gâchette haute gauche / `LB` |
-| Diriger | `Q`/`D`, `A`/`D` ou `←`/`→` | stick gauche |
-| Dérive | `Ctrl` ou `C` | `B` |
-| Surcharge | `Maj` ou `X` | `X` |
-| Utiliser l’objet | `Espace`, `E` ou `Entrée` | `A` |
-| Recaler le mécha | `R` | — |
-| Pause | `Échap` ou `P` | `Start` |
-| Basculer TPS / cockpit | `V` ou `Tab` | `Y` |
+| Action | Clavier | Manette | Mobile |
+|---|---|---|---|
+| Accélérer | `Z`, `W` ou `↑` | `RB` | GAZ |
+| Freiner | `S` ou `↓` | `LB` | FREIN |
+| Diriger | `Q`/`D`, `A`/`D` ou `←`/`→` | stick gauche | GAUCHE / DROITE |
+| Dérive | `Ctrl` ou `C` | `B` | DRIFT |
+| Surcharge | `Maj` ou `X` | `X` | BOOST |
+| Utiliser l’objet | `Espace`, `E` ou `Entrée` | `A` | OBJET |
+| Recaler le mécha | `R` | — | RESET |
+| Pause | `Échap` ou `P` | `Start` | PAUSE |
+| Basculer TPS / cockpit | `V` ou `Tab` | `Y` | CAM |
 
 Le menu et les écrans garage, codex et résultats acceptent aussi les actions d’interface standard de Godot.
 
-## Sauvegarde Godot v4
+## Sauvegarde Godot v5
 
 Le service autoloadé `SaveSystem` écrit un profil JSON versionné dans :
 
@@ -125,12 +125,13 @@ Le service autoloadé `SaveSystem` écrit un profil JSON versionné dans :
 user://mecha_overdrive_profile.json
 ```
 
-La sauvegarde v4 conserve notamment :
+La sauvegarde v5 conserve notamment :
 
 - nom du pilote, crédits et châssis actif ;
 - peintures et niveaux d’amélioration par châssis ;
 - records par circuit et mode ;
 - inventaire de modules possédés et loadout modulaire propre à chacun des dix châssis ;
+- locomotion choisie pour chacun des dix châssis, avec migration automatique vers le montage constructeur ;
 - vue caméra TPS/cockpit sélectionnée ;
 - statistiques de carrière ;
 - identité de la coupe, règlement, division/Open, classe de performance, roster stable, points et manche suivante ;
@@ -204,7 +205,7 @@ MECHA_OVERDRIVE/
 │   ├── project.godot
 │   ├── scenes/                    app, menu, garage, codex, résultats
 │   ├── scripts/                   données, systèmes, course, UI, audio, fabriques visuelles
-│   ├── assets/textures/openai/    douze textures bitmap et manifeste de provenance
+│   ├── assets/textures/openai/    dix-sept textures bitmap et manifeste de provenance
 │   ├── assets/                    key art original intégré
 │   └── tests/
 │       ├── smoke_test.gd          contrat déterministe headless

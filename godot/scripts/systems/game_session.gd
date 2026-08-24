@@ -552,6 +552,10 @@ func _sanitize_classification(value: Variant) -> Array[Dictionary]:
 			"delta": String(entry.get("delta", entry.get("gap", ""))),
 			"position": output.size() + 1,
 			"elapsed": maxf(0.0, float(entry.get("elapsed", 0.0))),
+			"finished": bool(entry.get("finished", false)),
+			"classified": bool(entry.get("classified", entry.get("finished", false))),
+			"dnf": bool(entry.get("dnf", entry.get("did_not_finish", false))),
+			"eliminated": bool(entry.get("eliminated", false)),
 		})
 	return output
 

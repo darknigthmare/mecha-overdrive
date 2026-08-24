@@ -57,44 +57,80 @@ static func prop_mesh(spec: Dictionary, shape_kind: int, rng: RandomNumberGenera
 	if prop_set.is_empty():
 		prop_set = _default_prop_set(String(spec.get("id", "foundry")))
 	if prop_set.contains("jungle") or prop_set.contains("canopy"):
-		if shape_kind % 2 == 0:
+		if shape_kind % 3 == 0:
 			var trunk := CylinderMesh.new()
 			trunk.top_radius = rng.randf_range(0.3, 0.7)
 			trunk.bottom_radius = rng.randf_range(0.8, 1.4)
 			trunk.height = rng.randf_range(7.0, 16.0)
 			return trunk
-		var crown := SphereMesh.new()
-		crown.radius = rng.randf_range(1.4, 3.4)
-		crown.height = crown.radius * rng.randf_range(1.1, 1.8)
-		return crown
+		if shape_kind % 3 == 1:
+			var crown := SphereMesh.new()
+			crown.radius = rng.randf_range(1.4, 3.4)
+			crown.height = crown.radius * rng.randf_range(1.1, 1.8)
+			return crown
+		var root_shard := PrismMesh.new()
+		root_shard.size = Vector3(rng.randf_range(2.4, 5.8), rng.randf_range(2.0, 5.5), rng.randf_range(4.0, 9.0))
+		return root_shard
 	if prop_set.contains("ice") or prop_set.contains("crystal"):
-		var crystal := PrismMesh.new()
-		crystal.size = Vector3(rng.randf_range(1.0, 3.0), rng.randf_range(5.0, 14.0), rng.randf_range(1.0, 2.8))
-		return crystal
+		if shape_kind % 2 == 0:
+			var crystal := PrismMesh.new()
+			crystal.size = Vector3(rng.randf_range(1.0, 3.0), rng.randf_range(5.0, 14.0), rng.randf_range(1.0, 2.8))
+			return crystal
+		var ice_boulder := SphereMesh.new()
+		ice_boulder.radius = rng.randf_range(1.8, 4.2)
+		ice_boulder.height = ice_boulder.radius * rng.randf_range(0.9, 1.35)
+		return ice_boulder
 	if prop_set.contains("urban") or prop_set.contains("city"):
-		var tower := BoxMesh.new()
-		tower.size = Vector3(rng.randf_range(3.0, 7.0), rng.randf_range(9.0, 27.0), rng.randf_range(3.0, 7.0))
-		return tower
+		if shape_kind % 2 == 0:
+			var tower := BoxMesh.new()
+			tower.size = Vector3(rng.randf_range(3.0, 7.0), rng.randf_range(9.0, 27.0), rng.randf_range(3.0, 7.0))
+			return tower
+		var city_spire := CylinderMesh.new()
+		city_spire.top_radius = rng.randf_range(0.5, 1.2)
+		city_spire.bottom_radius = rng.randf_range(1.4, 3.2)
+		city_spire.height = rng.randf_range(10.0, 24.0)
+		return city_spire
 	if prop_set.contains("abyss") or prop_set.contains("coral"):
-		var vent := CylinderMesh.new()
-		vent.top_radius = rng.randf_range(0.35, 0.8)
-		vent.bottom_radius = rng.randf_range(1.0, 2.2)
-		vent.height = rng.randf_range(4.0, 11.0)
-		return vent
+		if shape_kind % 2 == 0:
+			var vent := CylinderMesh.new()
+			vent.top_radius = rng.randf_range(0.35, 0.8)
+			vent.bottom_radius = rng.randf_range(1.0, 2.2)
+			vent.height = rng.randf_range(4.0, 11.0)
+			return vent
+		var coral := SphereMesh.new()
+		coral.radius = rng.randf_range(1.5, 3.6)
+		coral.height = coral.radius * rng.randf_range(1.4, 2.1)
+		return coral
 	if prop_set.contains("volcan") or prop_set.contains("lava"):
-		var shard := PrismMesh.new()
-		shard.size = Vector3(rng.randf_range(2.0, 5.5), rng.randf_range(5.0, 13.0), rng.randf_range(2.0, 5.0))
-		return shard
+		if shape_kind % 2 == 0:
+			var shard := PrismMesh.new()
+			shard.size = Vector3(rng.randf_range(2.0, 5.5), rng.randf_range(5.0, 13.0), rng.randf_range(2.0, 5.0))
+			return shard
+		var chimney := CylinderMesh.new()
+		chimney.top_radius = rng.randf_range(0.7, 1.4)
+		chimney.bottom_radius = rng.randf_range(1.5, 3.0)
+		chimney.height = rng.randf_range(5.0, 14.0)
+		return chimney
 	if prop_set.contains("orbital") or prop_set.contains("antenna"):
-		var mast := CylinderMesh.new()
-		mast.top_radius = rng.randf_range(0.2, 0.55)
-		mast.bottom_radius = rng.randf_range(0.7, 1.4)
-		mast.height = rng.randf_range(8.0, 19.0)
-		return mast
+		if shape_kind % 2 == 0:
+			var mast := CylinderMesh.new()
+			mast.top_radius = rng.randf_range(0.2, 0.55)
+			mast.bottom_radius = rng.randf_range(0.7, 1.4)
+			mast.height = rng.randf_range(8.0, 19.0)
+			return mast
+		var salvage := BoxMesh.new()
+		salvage.size = Vector3(rng.randf_range(3.0, 8.0), rng.randf_range(2.0, 6.0), rng.randf_range(2.0, 7.0))
+		return salvage
 	if prop_set.contains("desert") or prop_set.contains("dune"):
-		var monolith := PrismMesh.new()
-		monolith.size = Vector3(rng.randf_range(2.5, 6.0), rng.randf_range(3.0, 9.0), rng.randf_range(2.0, 5.0))
-		return monolith
+		if shape_kind % 2 == 0:
+			var monolith := PrismMesh.new()
+			monolith.size = Vector3(rng.randf_range(2.5, 6.0), rng.randf_range(3.0, 9.0), rng.randf_range(2.0, 5.0))
+			return monolith
+		var condenser := CylinderMesh.new()
+		condenser.top_radius = rng.randf_range(0.9, 1.8)
+		condenser.bottom_radius = rng.randf_range(1.2, 2.4)
+		condenser.height = rng.randf_range(4.0, 10.0)
+		return condenser
 	if shape_kind == 0:
 		var cylinder := CylinderMesh.new()
 		cylinder.top_radius = rng.randf_range(0.5, 1.2)

@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/podium_presenter.gd" id="1_podium"]
+
+[node name="PodiumPresenter" type="HBoxContainer"]
+custom_minimum_size = Vector2(386, 144)
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("1_podium")

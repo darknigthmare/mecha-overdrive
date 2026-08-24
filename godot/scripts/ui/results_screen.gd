@@ -14,6 +14,9 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 @onready var best_value: Label = %BestValue
 @onready var reward_value: Label = %RewardValue
 @onready var result_summary: Label = %ResultSummary
+@onready var podium_headline: Label = %PodiumHeadline
+@onready var podium: PodiumPresenter = %PodiumPresenter
+@onready var podium_panel: PanelContainer = $SafeArea/ContentPanel/Content/Classification/PodiumPanel
 @onready var standings_list: ItemList = %StandingsList
 @onready var championship_panel: PanelContainer = %ChampionshipPanel
 @onready var championship_summary: Label = %ChampionshipSummary
@@ -68,6 +71,10 @@ func _apply_result() -> void:
 		result_title.text = "COURSE INTERROMPUE"
 		position_value.text = "DNF"
 		result_summary.text = "La télémétrie a été conservée, mais aucun record ni bonus de classement n’est attribué."
+	elif mode == "time_trial":
+		result_title.text = "NOUVEAU RECORD" if is_record else "CHRONO HOMOLOGUÉ"
+		position_value.text = "RECORD" if is_record else "VALIDÉ"
+		result_summary.text = "Nouvelle référence enregistrée dans les archives du Nexus." if is_record else "Session validée. Analysez la télémétrie pour attaquer la référence au prochain passage."
 	elif position == 1:
 		result_title.text = "VICTOIRE"
 		position_value.text = "1ER / %d" % total
@@ -87,6 +94,13 @@ func _apply_result() -> void:
 	if points > 0:
 		reward_value.text += "   •   +%d PTS" % points
 
+	var classification: Variant = _value(["standings", "classification", "racers"], [])
+	podium.present(classification, position, dnf, mode)
+	var winner := podium.winner_name().to_upper()
+	podium_headline.text = "PODIUM // CLASSEMENT HOMOLOGUÉ"
+	podium_panel.visible = mode != "time_trial" and not podium.top_three().is_empty()
+	if podium_panel.visible and not dnf and not winner.is_empty():
+		podium_headline.text = "PODIUM // %s PREND LE TROPHÉE" % winner
 	_populate_standings(position, total)
 	_populate_championship(mode)
 	var championship_complete := bool(_value(["championship_complete", "series_complete"], false))
@@ -111,7 +125,7 @@ func _populate_standings(player_position: int, total: int) -> void:
 			if entry is Dictionary:
 				var entry_dictionary: Dictionary = entry
 				var rank := int(entry_dictionary.get("position", entry_dictionary.get("rank", index + 1)))
-				var pilot := String(entry_dictionary.get("pilot", entry_dictionary.get("name", "PILOTE %02d" % (index + 1))))
+				var pilot := String(entry_dictionary.get("pilot", entry_dictionary.get("name", entry_dictionary.get("display_name", "PILOTE %02d" % (index + 1)))))
 				var delta := String(entry_dictionary.get("delta", entry_dictionary.get("gap", "")))
 				standings_list.add_item("%02d   %-18s   %s" % [rank, pilot.to_upper(), delta])
 				if bool(entry_dictionary.get("player", false)) or rank == player_position:

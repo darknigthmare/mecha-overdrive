@@ -4,8 +4,12 @@ class_name RaceHUD
 signal pause_requested(paused: bool)
 signal retry_requested
 signal menu_requested
+signal mobile_control_changed(action: StringName, strength: float)
+signal mobile_action_triggered(action: StringName)
 
 const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
+const RaceBroadcast = preload("res://scripts/data/race_broadcast.gd")
+const MobileTouchControlsType = preload("res://scripts/input/mobile_touch_controls.gd")
 
 var _config: Dictionary = {}
 var _paused := false
@@ -24,12 +28,31 @@ var _heat_bar: ProgressBar
 var _armor_bar: ProgressBar
 var _item_label: Label
 var _warning_label: Label
+var _race_layout: Control
+var _briefing_overlay: Control
+var _briefing_eyebrow: Label
+var _briefing_track: Label
+var _briefing_region: Label
+var _briefing_session: Label
+var _briefing_rules: Label
+var _briefing_grid: Label
+var _briefing_announcer: Label
+var _briefing_lore: Label
+var _briefing_conditions: Label
 var _countdown_panel: PanelContainer
 var _countdown_label: Label
+var _countdown_stage_label: Label
+var _countdown_notice_label: Label
+var _finish_overlay: Control
+var _finish_title: Label
+var _finish_position: Label
+var _finish_callout: Label
+var _finish_venue: Label
 var _pause_overlay: Control
 var _resume_button: Button
 var _retry_button: Button
 var _menu_button: Button
+var _mobile_controls: MobileTouchControls
 
 
 func _ready() -> void:
@@ -70,8 +93,52 @@ func configure(config: Dictionary) -> void:
 	_armor_bar.value = 100.0
 	_item_label.text = "MODULE  //  VIDE"
 	_warning_label.visible = false
+	_countdown_notice_label.visible = false
+	_race_layout.visible = true
+	_briefing_overlay.visible = false
+	_finish_overlay.visible = false
 	show_countdown(null)
 	show_pause(false)
+	if _mobile_controls != null:
+		_mobile_controls.configure(bool(config.get("force_touch_controls", false)))
+
+
+func show_race_briefing(config: Dictionary, grid_entries: Array = []) -> void:
+	if not is_node_ready() or not _built:
+		return
+	var briefing: Dictionary = RaceBroadcast.briefing(config)
+	_briefing_eyebrow.text = String(briefing.get("eyebrow", "NEXUS RACING NETWORK"))
+	_briefing_track.text = String(briefing.get("track_name", "CIRCUIT ZERO"))
+	_briefing_region.text = String(briefing.get("region", "SECTEUR NEXUS"))
+	_briefing_session.text = String(briefing.get("session", "COURSE RAPIDE"))
+	_briefing_rules.text = String(briefing.get("rules", "RÈGLEMENT STANDARD")) + "\n" + String(briefing.get("rules_detail", ""))
+	_briefing_grid.text = _grid_text(grid_entries)
+	_briefing_announcer.text = "DIRECT // « %s »" % String(briefing.get("announcer", "Grille scellée."))
+	_briefing_lore.text = String(briefing.get("lore", "Circuit homologué par le Nexus."))
+	_briefing_conditions.text = "%s\n%s" % [String(briefing.get("objective", "OBJECTIF // VICTOIRE")), String(briefing.get("conditions", "CIRCUIT HOMOLOGUÉ"))]
+	_briefing_overlay.visible = true
+	_finish_overlay.visible = false
+	_countdown_panel.visible = false
+	if _mobile_controls != null:
+		_mobile_controls.set_suppressed(true)
+	var duration := ThemeFactory.motion_duration(_settings(), 0.22)
+	if duration > 0.0:
+		_briefing_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		create_tween().tween_property(_briefing_overlay, "modulate", Color.WHITE, duration)
+	else:
+		_briefing_overlay.modulate = Color.WHITE
+
+
+func hide_race_briefing() -> void:
+	if is_instance_valid(_briefing_overlay):
+		_briefing_overlay.visible = false
+	if _mobile_controls != null:
+		_mobile_controls.set_suppressed(false)
+		_mobile_controls.configure(bool(_config.get("force_touch_controls", false)))
+
+
+func is_briefing_visible() -> bool:
+	return is_instance_valid(_briefing_overlay) and _briefing_overlay.visible
 
 
 func update_race(snapshot: Dictionary) -> void:
@@ -114,6 +181,8 @@ func update_race(snapshot: Dictionary) -> void:
 		_objective_label.text = String(snapshot.objective).to_upper()
 	if snapshot.has("countdown"):
 		show_countdown(snapshot.countdown)
+	if _mobile_controls != null:
+		_mobile_controls.update_context(snapshot)
 
 
 func show_countdown(value: Variant) -> void:
@@ -126,7 +195,10 @@ func show_countdown(value: Variant) -> void:
 		return
 	var text := str(value).to_upper()
 	if value is int or value is float:
-		text = "OVERDRIVE !" if float(value) <= 0.0 else str(ceili(float(value)))
+		text = "GO !" if float(value) <= 0.0 else str(ceili(float(value)))
+		_countdown_stage_label.text = "PROPULSEURS LIBÉRÉS" if float(value) <= 0.0 else "DÉPART VERROUILLÉ // FEUX %d / 3" % (4 - clampi(ceili(float(value)), 1, 3))
+	else:
+		_countdown_stage_label.text = "CONTRÔLE COURSE"
 	_countdown_label.text = text
 	_countdown_panel.visible = true
 	_countdown_panel.modulate = Color.WHITE
@@ -137,6 +209,46 @@ func show_countdown(value: Variant) -> void:
 		create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).tween_property(_countdown_panel, "scale", Vector2.ONE, duration)
 	if (value is int or value is float) and float(value) <= 0.0:
 		_hide_countdown_after_delay(revision)
+
+
+func show_false_start(penalty_seconds: float) -> void:
+	if not is_node_ready() or not _built:
+		return
+	_countdown_notice_label.text = "FAUX DÉPART // PROPULSEURS VERROUILLÉS %.1f S" % penalty_seconds
+	_countdown_notice_label.visible = true
+	_warning_label.text = "FAUX DÉPART DÉTECTÉ // PÉNALITÉ DE GRILLE"
+	_warning_label.visible = true
+
+
+func show_finish(result: Dictionary) -> void:
+	if not is_node_ready() or not _built:
+		return
+	var call: Dictionary = RaceBroadcast.finish_call(result)
+	_race_layout.visible = false
+	_briefing_overlay.visible = false
+	_countdown_panel.visible = false
+	_finish_title.text = String(call.get("title", "ARRIVÉE HOMOLOGUÉE"))
+	_finish_position.text = String(call.get("position", "-- / 08"))
+	_finish_callout.text = String(call.get("callout", "Drapeau à damier."))
+	_finish_venue.text = String(call.get("venue", "NEXUS RACING NETWORK"))
+	_finish_overlay.visible = true
+	if _mobile_controls != null:
+		_mobile_controls.set_suppressed(true)
+	var duration := ThemeFactory.motion_duration(_settings(), 0.24)
+	if duration > 0.0:
+		_finish_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		var panel := _finish_overlay.get_node_or_null("Center/Panel") as Control
+		if panel != null:
+			panel.scale = Vector2(0.92, 0.92)
+			panel.pivot_offset = panel.size * 0.5
+			create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).tween_property(panel, "scale", Vector2.ONE, duration)
+		create_tween().tween_property(_finish_overlay, "modulate", Color.WHITE, duration)
+	else:
+		_finish_overlay.modulate = Color.WHITE
+
+
+func is_finish_visible() -> bool:
+	return is_instance_valid(_finish_overlay) and _finish_overlay.visible
 
 
 func _hide_countdown_after_delay(revision: int) -> void:
@@ -150,6 +262,9 @@ func show_pause(paused: bool) -> void:
 	if not is_node_ready() or not _built:
 		return
 	_pause_overlay.visible = paused
+	if _mobile_controls != null:
+		var presentation_blocked := (_briefing_overlay != null and _briefing_overlay.visible) or (_finish_overlay != null and _finish_overlay.visible)
+		_mobile_controls.set_suppressed(paused or presentation_blocked)
 	if paused:
 		_focus_before_pause = get_viewport().gui_get_focus_owner()
 		_resume_button.call_deferred("grab_focus")
@@ -164,6 +279,7 @@ func _build_interface() -> void:
 	_built = true
 
 	var safe_margin := MarginContainer.new()
+	_race_layout = safe_margin
 	safe_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	safe_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for side: StringName in [&"margin_left", &"margin_top", &"margin_right", &"margin_bottom"]:
@@ -254,20 +370,175 @@ func _build_interface() -> void:
 	_item_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	bottom.add_child(_item_label)
 
+	_build_briefing_overlay()
+
 	var countdown_center := CenterContainer.new()
 	countdown_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	countdown_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(countdown_center)
 	_countdown_panel = PanelContainer.new()
 	_countdown_panel.theme_type_variation = &"HeroPanel"
-	_countdown_panel.custom_minimum_size = Vector2(300.0, 170.0)
+	_countdown_panel.custom_minimum_size = Vector2(390.0, 205.0)
 	_countdown_panel.visible = false
 	countdown_center.add_child(_countdown_panel)
+	var countdown_stack := VBoxContainer.new()
+	countdown_stack.alignment = BoxContainer.ALIGNMENT_CENTER
+	countdown_stack.add_theme_constant_override(&"separation", 4)
+	_countdown_panel.add_child(countdown_stack)
+	_countdown_stage_label = _label("DÉPART VERROUILLÉ", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	countdown_stack.add_child(_countdown_stage_label)
 	_countdown_label = _label("3", &"DisplayLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_countdown_panel.add_child(_countdown_label)
+	countdown_stack.add_child(_countdown_label)
+	_countdown_notice_label = _label("FAUX DÉPART", &"WarningLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_countdown_notice_label.visible = false
+	countdown_stack.add_child(_countdown_notice_label)
 
+	_build_finish_overlay()
+
+	_build_mobile_controls()
 	_build_pause_overlay()
+
+
+func _build_briefing_overlay() -> void:
+	_briefing_overlay = Control.new()
+	_briefing_overlay.name = "RaceBriefingOverlay"
+	_briefing_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_briefing_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_briefing_overlay.visible = false
+	add_child(_briefing_overlay)
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.006, 0.016, 0.03, 0.90)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_briefing_overlay.add_child(shade)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override(&"margin_left", 92)
+	margin.add_theme_constant_override(&"margin_top", 56)
+	margin.add_theme_constant_override(&"margin_right", 92)
+	margin.add_theme_constant_override(&"margin_bottom", 56)
+	_briefing_overlay.add_child(margin)
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"HeroPanel"
+	margin.add_child(panel)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override(&"separation", 8)
+	panel.add_child(content)
+	_briefing_eyebrow = _label("NEXUS RACING NETWORK // GRILLE OFFICIELLE", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_track = _label("FONDERIE NÉON", &"DisplayLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_region = _label("NEXUS INDUSTRIEL 7", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_session = _label("COURSE RAPIDE // 3 TOURS // 08 PARTANTS", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	content.add_child(_briefing_eyebrow)
+	content.add_child(_briefing_track)
+	content.add_child(_briefing_region)
+	content.add_child(_briefing_session)
+	var cards := HBoxContainer.new()
+	cards.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cards.add_theme_constant_override(&"separation", 12)
+	content.add_child(cards)
+	var rules_panel := _panel()
+	rules_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cards.add_child(rules_panel)
+	_briefing_rules = _label("DIVISION DÉDIÉE", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_briefing_rules.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rules_panel.add_child(_briefing_rules)
+	var grid_panel := _panel()
+	grid_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cards.add_child(grid_panel)
+	_briefing_grid = _label("GRILLE // 01 VOUS", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_grid.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_briefing_grid.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	grid_panel.add_child(_briefing_grid)
+	_briefing_announcer = _label("DIRECT // GRILLE SCELLÉE", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_announcer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_briefing_lore = _label("Circuit homologué par le Nexus.", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_briefing_conditions = _label("OBJECTIF // VICTOIRE", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_conditions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(_briefing_announcer)
+	content.add_child(_briefing_lore)
+	content.add_child(_briefing_conditions)
+
+
+func _build_finish_overlay() -> void:
+	_finish_overlay = Control.new()
+	_finish_overlay.name = "FinishBroadcastOverlay"
+	_finish_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_finish_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_finish_overlay.visible = false
+	add_child(_finish_overlay)
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.005, 0.015, 0.03, 0.72)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_finish_overlay.add_child(shade)
+	var center := CenterContainer.new()
+	center.name = "Center"
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_finish_overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.name = "Panel"
+	panel.theme_type_variation = &"HeroPanel"
+	panel.custom_minimum_size = Vector2(720.0, 330.0)
+	center.add_child(panel)
+	var stack := VBoxContainer.new()
+	stack.alignment = BoxContainer.ALIGNMENT_CENTER
+	stack.add_theme_constant_override(&"separation", 10)
+	panel.add_child(stack)
+	stack.add_child(_label("NEXUS RACING NETWORK // DRAPEAU À DAMIER", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER))
+	_finish_title = _label("ARRIVÉE HOMOLOGUÉE", &"TitleLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_finish_position = _label("1RE / 08", &"DisplayLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_finish_callout = _label("Drapeau à damier.", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_finish_venue = _label("CIRCUIT ZERO // NEXUS", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_finish_callout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stack.add_child(_finish_title)
+	stack.add_child(_finish_position)
+	stack.add_child(_finish_callout)
+	stack.add_child(_finish_venue)
+
+
+func _grid_text(entries: Array) -> String:
+	var lines := PackedStringArray(["GRILLE // APERÇU DES PARTANTS"])
+	for index in range(mini(entries.size(), 4)):
+		if not entries[index] is Dictionary:
+			continue
+		var entry: Dictionary = entries[index]
+		var name := String(entry.get("display_name", entry.get("name", "PILOTE %02d" % (index + 1)))).to_upper()
+		var chassis := GameDatabase.get_chassis(String(entry.get("chassis_id", "")))
+		var marker := "VOUS" if bool(entry.get("is_player", entry.get("player", false))) else String(chassis.get("name", "MÉCHA")).to_upper()
+		lines.append("%02d  %-14s  %s" % [index + 1, name, marker])
+	if entries.size() > 4:
+		lines.append("+ %d AUTRES SIGNATURES HOMOLOGUÉES" % (entries.size() - 4))
+	return "\n".join(lines)
+
+
+func _build_mobile_controls() -> void:
+	_mobile_controls = MobileTouchControlsType.new()
+	_mobile_controls.name = "MobileTouchControls"
+	_mobile_controls.control_changed.connect(func(action: StringName, strength: float) -> void:
+		mobile_control_changed.emit(action, strength)
+	)
+	_mobile_controls.action_triggered.connect(func(action: StringName) -> void:
+		mobile_action_triggered.emit(action)
+	)
+	add_child(_mobile_controls)
+
+
+func mobile_controls_visible() -> bool:
+	return _mobile_controls != null and _mobile_controls.is_touch_mode()
+
+
+func force_mobile_controls(enabled: bool) -> void:
+	if _mobile_controls != null:
+		_mobile_controls.configure(enabled)
+
+
+func release_mobile_controls() -> void:
+	if _mobile_controls != null:
+		_mobile_controls.release_controls()
 
 
 func _build_pause_overlay() -> void:

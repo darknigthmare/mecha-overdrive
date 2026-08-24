@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/results_screen.gd" id="1_results"]
+[ext_resource type="PackedScene" path="res://scenes/components/podium_presenter.tscn" id="2_podium"]
 
 [node name="Results" type="Control"]
 layout_mode = 3
@@ -28,9 +29,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 150
+theme_override_constants/margin_left = 96
 theme_override_constants/margin_top = 54
-theme_override_constants/margin_right = 150
+theme_override_constants/margin_right = 96
 theme_override_constants/margin_bottom = 46
 
 [node name="ContentPanel" type="PanelContainer" parent="SafeArea"]
@@ -145,6 +146,26 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 14
 
+[node name="PodiumPanel" type="PanelContainer" parent="SafeArea/ContentPanel/Content/Classification"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_type_variation = &"CardPanel"
+
+[node name="PodiumContent" type="VBoxContainer" parent="SafeArea/ContentPanel/Content/Classification/PodiumPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PodiumHeadline" type="Label" parent="SafeArea/ContentPanel/Content/Classification/PodiumPanel/PodiumContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "PODIUM // TROPHÉE NEXUS"
+horizontal_alignment = 1
+
+[node name="PodiumPresenter" parent="SafeArea/ContentPanel/Content/Classification/PodiumPanel/PodiumContent" instance=ExtResource("2_podium")]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="StandingsList" type="ItemList" parent="SafeArea/ContentPanel/Content/Classification"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 245)
@@ -154,7 +175,7 @@ tooltip_text = "Classement final de la course"
 
 [node name="ChampionshipPanel" type="PanelContainer" parent="SafeArea/ContentPanel/Content/Classification"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(380, 0)
+custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 theme_type_variation = &"CardPanel"
 [node name="ChampionshipSummary" type="Label" parent="SafeArea/ContentPanel/Content/Classification/ChampionshipPanel"]
@@ -184,4 +205,3 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(290, 58)
 layout_mode = 2
 text = "MENU PRINCIPAL"
-

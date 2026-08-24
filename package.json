@@ -1,8 +1,8 @@
 {
   "name": "mecha-overdrive-circuit-zero",
-  "version": "1.0.0",
+  "version": "2.3.0",
   "private": true,
-  "description": "Jeu de course-combat de méchas pseudo-3D, autonome et sans dépendance d’exécution.",
+  "description": "MECHA OVERDRIVE 2.3.0 : jeu de course-combat de méchas 3D sous Godot, avec compagnon web autonome.",
   "type": "module",
   "scripts": {
     "start": "node tools/server.mjs",

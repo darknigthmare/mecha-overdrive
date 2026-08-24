@@ -9,6 +9,7 @@ static func build(chassis: Dictionary, paint: Color, is_player: bool = false, cu
 	var root := RacerVisual.new()
 	root.name = "Mecha_%s" % String(chassis.get("id", "unknown"))
 	root.set_meta("chassis_id", chassis.get("id", "biped"))
+	var native_locomotion := _native_locomotion_holder(root, String(chassis.get("id", "biped")))
 
 	var primary := MaterialLibrary.mecha_for(chassis, paint, "primary")
 	var dark := MaterialLibrary.mecha_for(chassis, paint.darkened(0.64), "secondary")
@@ -18,50 +19,54 @@ static func build(chassis: Dictionary, paint: Color, is_player: bool = false, cu
 	var glow := MaterialLibrary.emissive(glow_color, 3.4 if is_player else 2.3)
 
 	match String(chassis.get("id", "biped")):
-		"tripod": _radial(root, 3, 2.35, primary, dark, joint, glow, 0.0)
-		"quadruped": _quadruped(root, primary, dark, joint, glow)
-		"hexapod": _radial(root, 6, 2.7, primary, dark, joint, glow, PI / 6.0)
-		"octopod": _radial(root, 8, 3.1, primary, dark, joint, glow, PI / 8.0)
-		"hover": _hover(root, primary, dark, glow)
-		"tracked": _tracked(root, primary, dark, joint, glow)
-		"monowheel": _monowheel(root, primary, dark, joint, glow)
-		"orb": _orb(root, primary, dark, glow)
-		"centurion": _centurion(root, primary, dark, joint, glow)
-		_: _biped(root, primary, dark, joint, glow)
+		"tripod": _radial(root, native_locomotion, 3, 2.35, primary, dark, joint, glow, 0.0)
+		"quadruped": _quadruped(root, native_locomotion, primary, dark, joint, glow)
+		"hexapod": _radial(root, native_locomotion, 6, 2.7, primary, dark, joint, glow, PI / 6.0)
+		"octopod": _radial(root, native_locomotion, 8, 3.1, primary, dark, joint, glow, PI / 8.0)
+		"hover": _hover(root, native_locomotion, primary, dark, glow)
+		"tracked": _tracked(root, native_locomotion, primary, dark, joint, glow)
+		"monowheel": _monowheel(root, native_locomotion, primary, dark, joint, glow)
+		"orb": _orb(root, native_locomotion, primary, dark, glow)
+		"centurion": _centurion(root, native_locomotion, primary, dark, joint, glow)
+		_: _biped(root, native_locomotion, primary, dark, joint, glow)
+
+	_mark_native_locomotion_parts(native_locomotion)
+	_mark_chassis_body(root, native_locomotion)
 
 	_cockpit(root, chassis, primary, dark, cockpit, glow)
 	MechaVisualModules.install(root, chassis, customization, primary, dark, joint, glow)
+	LocomotionVisuals.install(root, chassis, customization, primary, dark, joint, glow)
 	root.scale = Vector3.ONE * float(chassis.get("visual_scale", 1.0))
 	return root
 
 
-static func _biped(root: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
+static func _biped(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
 	_box(root, Vector3(2.8, 1.0, 3.6), Vector3(0, 2.4, 0.15), primary)
 	for index in range(2):
 		var x := -0.92 if index == 0 else 0.92
 		var hip := Vector3(x, 2.1, 0.2)
 		var knee := Vector3(x * 1.12, 1.0, 0.25)
 		var foot := Vector3(x * 1.18, 0.12, -0.15)
-		_limb(root, hip, knee, 0.24, dark, index * PI)
-		_limb(root, knee, foot, 0.29, joint, index * PI + 0.4)
-		_box(root, Vector3(0.8, 0.3, 1.55), foot + Vector3(0, 0.04, -0.42), primary)
+		_limb(native_locomotion, hip, knee, 0.24, dark, index * PI)
+		_limb(native_locomotion, knee, foot, 0.29, joint, index * PI + 0.4)
+		_box(native_locomotion, Vector3(0.8, 0.3, 1.55), foot + Vector3(0, 0.04, -0.42), primary)
 	_reactor(root, Vector3(0, 2.5, 1.8), Vector3(1.7, 0.45, 0.2), glow)
 
 
-static func _quadruped(root: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
+static func _quadruped(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
 	_box(root, Vector3(3.35, 0.95, 4.5), Vector3(0, 1.75, 0), primary)
 	var anchors := [Vector3(-1.25, 1.55, -1.5), Vector3(1.25, 1.55, -1.5), Vector3(-1.25, 1.55, 1.4), Vector3(1.25, 1.55, 1.4)]
 	for index in range(anchors.size()):
 		var hip: Vector3 = anchors[index]
 		var knee := hip + Vector3(signf(hip.x) * 0.7, -0.65, 0.18)
 		var foot := knee + Vector3(signf(hip.x) * 0.45, -0.78, -0.18)
-		_limb(root, hip, knee, 0.2, dark, index * PI * 0.5)
-		_limb(root, knee, foot, 0.23, joint, index * PI * 0.5 + 0.5)
-		_sphere(root, 0.32, foot, primary, Vector3(1.35, 0.55, 1.0))
+		_limb(native_locomotion, hip, knee, 0.2, dark, index * PI * 0.5)
+		_limb(native_locomotion, knee, foot, 0.23, joint, index * PI * 0.5 + 0.5)
+		_sphere(native_locomotion, 0.32, foot, primary, Vector3(1.35, 0.55, 1.0))
 	_reactor(root, Vector3(0, 1.85, 2.15), Vector3(2.2, 0.34, 0.22), glow)
 
 
-static func _radial(root: Node3D, count: int, radius: float, primary: Material, dark: Material, joint: Material, glow: Material, offset: float) -> void:
+static func _radial(root: Node3D, native_locomotion: Node3D, count: int, radius: float, primary: Material, dark: Material, joint: Material, glow: Material, offset: float) -> void:
 	var body_radius := 1.55 + count * 0.08
 	_cylinder(root, body_radius, 0.75, Vector3(0, 1.9, 0), primary)
 	_sphere(root, body_radius * 0.72, Vector3(0, 2.25, -0.15), dark, Vector3(1.0, 0.55, 1.15))
@@ -71,32 +76,32 @@ static func _radial(root: Node3D, count: int, radius: float, primary: Material, 
 		var hip := direction * body_radius * 0.72 + Vector3.UP * 1.8
 		var knee := direction * radius + Vector3.UP * 0.9
 		var foot := direction * (radius + 0.65) + Vector3.UP * 0.1
-		_limb(root, hip, knee, 0.18 + count * 0.008, dark, angle)
-		_limb(root, knee, foot, 0.21 + count * 0.008, joint, angle + PI)
-		_sphere(root, 0.26, foot, primary, Vector3(1.35, 0.55, 1.0))
+		_limb(native_locomotion, hip, knee, 0.18 + count * 0.008, dark, angle)
+		_limb(native_locomotion, knee, foot, 0.21 + count * 0.008, joint, angle + PI)
+		_sphere(native_locomotion, 0.26, foot, primary, Vector3(1.35, 0.55, 1.0))
 	_reactor(root, Vector3(0, 1.95, body_radius * 0.9), Vector3(body_radius * 1.15, 0.3, 0.2), glow)
 
 
-static func _hover(root: Node3D, primary: Material, dark: Material, glow: Material) -> void:
+static func _hover(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, glow: Material) -> void:
 	_box(root, Vector3(4.2, 0.75, 5.4), Vector3(0, 1.35, 0), primary)
 	_box(root, Vector3(2.5, 0.65, 3.5), Vector3(0, 1.9, -0.25), dark)
 	for x: float in [-1.75, 1.75]:
 		for z: float in [-1.55, 1.55]:
-			_cylinder(root, 0.52, 1.35, Vector3(x, 0.72, z), dark, Vector3(PI / 2.0, 0, 0))
-			_sphere(root, 0.34, Vector3(x, 0.55, z + 0.3), glow)
+			_cylinder(native_locomotion, 0.52, 1.35, Vector3(x, 0.72, z), dark, Vector3(PI / 2.0, 0, 0))
+			_sphere(native_locomotion, 0.34, Vector3(x, 0.55, z + 0.3), glow)
 	_reactor(root, Vector3(0, 1.25, 2.74), Vector3(3.4, 0.22, 0.18), glow)
 
 
-static func _tracked(root: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
+static func _tracked(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
 	_box(root, Vector3(3.5, 1.4, 4.4), Vector3(0, 1.55, -0.1), primary)
 	for x: float in [-1.72, 1.72]:
-		_box(root, Vector3(1.0, 0.95, 5.2), Vector3(x, 0.68, 0), dark)
+		_box(native_locomotion, Vector3(1.0, 0.95, 5.2), Vector3(x, 0.68, 0), dark)
 		for z: float in [-1.65, -0.55, 0.55, 1.65]:
-			_cylinder(root, 0.42, 0.95, Vector3(x, 0.65, z), joint, Vector3(0, 0, PI / 2.0))
+			_cylinder(native_locomotion, 0.42, 0.95, Vector3(x, 0.65, z), joint, Vector3(0, 0, PI / 2.0))
 	_reactor(root, Vector3(0, 1.6, 2.2), Vector3(2.6, 0.3, 0.22), glow)
 
 
-static func _monowheel(root: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
+static func _monowheel(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
 	var wheel := TorusMesh.new()
 	wheel.inner_radius = 1.25
 	wheel.outer_radius = 2.05
@@ -108,13 +113,13 @@ static func _monowheel(root: Node3D, primary: Material, dark: Material, joint: M
 	wheel_node.position = Vector3(0, 1.72, 0)
 	wheel_node.add_to_group("mecha_limb")
 	wheel_node.set_meta("phase", 0.0)
-	root.add_child(wheel_node)
+	native_locomotion.add_child(wheel_node)
 	_box(root, Vector3(1.55, 2.1, 2.5), Vector3(0, 1.8, 0), primary)
 	_sphere(root, 0.65, Vector3(0, 1.8, 0.2), joint)
 	_reactor(root, Vector3(0, 1.75, 1.35), Vector3(1.0, 0.25, 0.18), glow)
 
 
-static func _orb(root: Node3D, primary: Material, dark: Material, glow: Material) -> void:
+static func _orb(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, glow: Material) -> void:
 	_sphere(root, 1.75, Vector3(0, 1.8, 0), primary, Vector3(1.0, 1.0, 1.15))
 	for axis in range(3):
 		var ring := TorusMesh.new()
@@ -127,11 +132,11 @@ static func _orb(root: Node3D, primary: Material, dark: Material, glow: Material
 		node.rotation = Vector3(PI / 2.0 if axis == 0 else 0.0, PI / 2.0 if axis == 1 else 0.0, PI / 2.0 if axis == 2 else 0.0)
 		node.add_to_group("mecha_limb")
 		node.set_meta("phase", axis * 1.8)
-		root.add_child(node)
+		native_locomotion.add_child(node)
 	_reactor(root, Vector3(0, 1.8, 1.72), Vector3(1.5, 0.28, 0.18), glow)
 
 
-static func _centurion(root: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
+static func _centurion(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
 	for segment in range(6):
 		var z := (float(segment) - 2.5) * 0.95
 		_box(root, Vector3(2.0, 0.75, 1.05), Vector3(0, 1.45, z), primary if segment % 2 == 0 else dark)
@@ -139,9 +144,35 @@ static func _centurion(root: Node3D, primary: Material, dark: Material, joint: M
 			var hip := Vector3(side * 0.82, 1.35, z)
 			var knee := Vector3(side * 1.55, 0.75, z + (0.2 if segment % 2 == 0 else -0.2))
 			var foot := Vector3(side * 2.05, 0.12, z)
-			_limb(root, hip, knee, 0.12, dark, segment * 0.72 + (PI if side > 0 else 0.0))
-			_limb(root, knee, foot, 0.15, joint, segment * 0.72)
+			_limb(native_locomotion, hip, knee, 0.12, dark, segment * 0.72 + (PI if side > 0 else 0.0))
+			_limb(native_locomotion, knee, foot, 0.15, joint, segment * 0.72)
 	_reactor(root, Vector3(0, 1.5, 3.0), Vector3(1.5, 0.25, 0.18), glow)
+
+
+static func _native_locomotion_holder(root: RacerVisual, chassis_id: String) -> Node3D:
+	var holder := Node3D.new()
+	holder.name = "NativeLocomotion_%s" % chassis_id
+	holder.add_to_group("mecha_native_locomotion")
+	holder.set_meta("native_locomotion", true)
+	holder.set_meta("family_id", chassis_id)
+	root.add_child(holder)
+	return holder
+
+
+static func _mark_native_locomotion_parts(holder: Node) -> void:
+	for child: Node in holder.get_children():
+		child.add_to_group("mecha_native_locomotion_part")
+		child.set_meta("native_locomotion", true)
+		if child.get_child_count() > 0:
+			_mark_native_locomotion_parts(child)
+
+
+static func _mark_chassis_body(root: RacerVisual, native_locomotion: Node3D) -> void:
+	for child: Node in root.get_children():
+		if child == native_locomotion:
+			continue
+		child.add_to_group("mecha_chassis_body")
+		child.set_meta("chassis_body", true)
 
 
 static func _cockpit(root: Node3D, chassis: Dictionary, primary: Material, dark: Material, cockpit: Material, glow: Material) -> void:

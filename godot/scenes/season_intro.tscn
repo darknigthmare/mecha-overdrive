@@ -1,0 +1,145 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/season_intro.gd" id="1_intro"]
+[ext_resource type="Texture2D" path="res://assets/textures/openai/race_ceremonial.png" id="2_art"]
+
+[node name="SeasonIntro" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_intro")
+
+[node name="CeremonialArtwork" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+modulate = Color(0.28, 0.43, 0.52, 0.72)
+texture = ExtResource("2_art")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Atmosphere" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.008, 0.02, 0.045, 0.88)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 76
+theme_override_constants/margin_top = 62
+theme_override_constants/margin_right = 76
+theme_override_constants/margin_bottom = 54
+
+[node name="Page" type="VBoxContainer" parent="SafeArea"]
+layout_mode = 2
+theme_override_constants/separation = 26
+
+[node name="Header" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+
+[node name="Identity" type="VBoxContainer" parent="SafeArea/Page/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Authority" type="Label" parent="SafeArea/Page/Header/Identity"]
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "NEXUS RACING AUTHORITY  //  TRANSMISSION D’OUVERTURE"
+
+[node name="GameTitle" type="Label" parent="SafeArea/Page/Header/Identity"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "MECHA OVERDRIVE  //  SAISON 03"
+
+[node name="ProgressValue" type="Label" parent="SafeArea/Page/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "01 / 03"
+vertical_alignment = 1
+
+[node name="StoryPanel" type="PanelContainer" parent="SafeArea/Page"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"HeroPanel"
+
+[node name="Story" type="VBoxContainer" parent="SafeArea/Page/StoryPanel"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="StageLabel" type="Label" parent="SafeArea/Page/StoryPanel/Story"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"EyebrowLabel"
+text = "ARCHIVE 01 // LA RUPTURE"
+
+[node name="Heading" type="Label" parent="SafeArea/Page/StoryPanel/Story"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"DisplayLabel"
+text = "LES CORRIDORS SE SONT TUS."
+autowrap_mode = 2
+
+[node name="Narrative" type="Label" parent="SafeArea/Page/StoryPanel/Story"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 118)
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"SectionLabel"
+text = "En 2089, le réseau du Nexus s’est effondré. Les cités-frontières ont perdu leurs routes, leur énergie et jusqu’au bruit des convois."
+autowrap_mode = 2
+
+[node name="Divider" type="ColorRect" parent="SafeArea/Page/StoryPanel/Story"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.38, 0.906, 1, 0.45)
+
+[node name="RoleLabel" type="Label" parent="SafeArea/Page/StoryPanel/Story"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"MetricLabel"
+text = "Un anneau a continué de répondre : CIRCUIT ZERO."
+autowrap_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="SafeArea/Page"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Hint" type="Label" parent="SafeArea/Page/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"MutedLabel"
+text = "ENTRÉE / A  CONTINUER   •   ÉCHAP / B  IGNORER"
+vertical_alignment = 1
+
+[node name="SkipButton" type="Button" parent="SafeArea/Page/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 58)
+layout_mode = 2
+text = "IGNORER L’INTRO"
+
+[node name="ContinueButton" type="Button" parent="SafeArea/Page/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 58)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "CONTINUER  //  02"

@@ -2,15 +2,15 @@
 
 ## L’origine du championnat
 
-Après la fermeture des guerres de concession, les grandes cités orbitales se retrouvèrent avec des milliers de plateformes mécaniques devenues inutiles : unités de siège, marcheurs miniers, grues autonomes, drones de transport et prototypes de sustentation.
+Après la fermeture des guerres de concession, la Rupture de 2089 désaccorda les corridors énergétiques du Nexus. Les grandes cités orbitales se retrouvèrent isolées avec des milliers de plateformes mécaniques devenues inutiles : unités de siège, marcheurs miniers, grues autonomes, drones de transport et prototypes de sustentation.
 
 La Ligue des Architectures proposa une alternative à leur démantèlement. Chaque machine serait désarmée, reconstruite autour d’un cockpit de course et engagée dans une compétition où la supériorité ne dépendrait plus de la puissance militaire, mais de l’ingénierie, du pilotage et de la résistance.
 
-La première piste expérimentale reçut le nom de **Circuit Zero**. Son règlement n’imposa aucune forme de locomotion. Deux jambes, trois points d’appui, huit membres, chenilles ou champ magnétique : tout pouvait concourir à condition de respecter une limite énergétique commune et un protocole de reconstruction d’urgence.
+En 2096, la Ligue fonda la **Nexus Racing Authority** pour homologuer la reconstruction et répartir les quotas de transit. La première piste expérimentale reçut le nom de **Circuit Zero**. Son règlement n’imposa aucune forme de locomotion. Deux jambes, trois points d’appui, huit membres, chenilles ou champ magnétique : tout pouvait concourir à condition de respecter une limite énergétique commune et un protocole de reconstruction d’urgence.
 
-## La Saison 01
+## La Saison 03 — Reconquête
 
-La Saison 01 est la première à homologuer simultanément cinq divisions regroupant dix architectures. Les équipes industrielles y voient une vitrine technologique. Les pilotes indépendants y voient la seule route vers la citoyenneté orbitale, la fortune ou l’effacement de leurs dettes.
+La Saison 03 est la première à homologuer simultanément cinq divisions regroupant dix architectures. Les équipes industrielles y voient une vitrine technologique. Les pilotes indépendants y voient la seule route vers la citoyenneté orbitale, la fortune ou l’effacement de leurs dettes.
 
 Chaque course est retransmise par le Réseau Kestrel. Les impacts sont réels, mais une matrice de récupération reconstruit les unités détruites à partir d’un noyau sécurisé. Le délai de reconstruction suffit toutefois à ruiner une course.
 
@@ -84,6 +84,8 @@ Le joueur entre dans la compétition sous son propre indicatif et construit sa r
 Le Hangar 08 est un atelier neutre situé sous la tribune principale du Circuit Zero. Les crédits de course y sont convertis en pièces homologuées. Les peintures n’affectent pas les performances, mais les équipes les utilisent pour identifier leurs machines dans le nuage de poussière, la neige ou les projections thermiques.
 
 Chaque machine reçoit trois interfaces normalisées : **Noyau**, **Mobilité** et **Utilitaire**. Dix-huit modules homologués circulent entre les ateliers : neuf pièces historiques universelles et neuf systèmes spécialisés dont l’affinité dépend des divisions. Leur assemblage reste propre à chaque châssis. Les commissaires inspectent la configuration avant chaque départ selon la classe de performance engagée.
+
+À ces modules s’ajoute la baie locomotrice : dix technologies et cinq montages autorisent cinquante configurations par châssis. Le brevet le plus disputé est le **bi-propulseur Aether**, deux nacelles antigravité indépendantes reliées au cockpit central par un champ souple et pilotées en poussée différentielle. Cette conception appartient à l’univers de Circuit Zero et n’utilise aucun nom, emblème ou dessin d’une franchise tierce.
 
 Les cockpits sont eux aussi adaptés à l’architecture. Certains pilotes exigent la vision tactique extérieure des drones TPS ; d’autres ne jurent que par la vue interne, au plus près des vibrations et de la chaleur. Le Hangar 08 conserve ce choix dans le profil de chaque machine.
 

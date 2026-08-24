@@ -216,7 +216,7 @@ func _refresh_profile() -> void:
 		_select_difficulty_by_id(String(active_championship.get("difficulty", "pilot")))
 	_refresh_rule_summary()
 	_refresh_championship_action()
-	status_message.text = "SYSTÈMES PRÊTS // SAISON 02"
+	status_message.text = "SYSTÈMES PRÊTS // SAISON 03"
 
 
 func _career_text(stats: Dictionary) -> String:
