@@ -21,7 +21,7 @@ export const GODOT_WEB_ARTIFACTS = [
 
 const SOURCE_ROOTS = ['project.godot', 'export_presets.cfg', 'assets', 'scenes', 'scripts'];
 const EXCLUDED_DIRECTORIES = new Set(['.godot', 'export', 'tests']);
-const EXCLUDED_FILE_SUFFIXES = ['.import'];
+const EXCLUDED_FILE_SUFFIXES = ['.import', '.rej'];
 
 function collect(path) {
   const information = statSync(path);

@@ -67,7 +67,7 @@ Le fichier `godot3d/build.json` atteste le build testé :
 | Moteur | `4.7.2` |
 | Preset | `Web` |
 | Threads | `false` |
-| Empreinte source | `f22a3ad2673593f7bd8f051faf1f8085bbe5e674de4d168bf2b52efcc537b9f1` |
+| Empreinte source | `ee2b4cc5b6e034a7dced01308b07a42f07fec09af6370ab533bc8f82bb9ad06c` |
 | Artefacts attestés | 9/9 |
 
 `tools/stamp-godot-web.mjs` a normalisé l’HTML et attesté chaque artefact. Le validateur a confirmé l’alignement de version, l’empreinte source et les neuf SHA-256.

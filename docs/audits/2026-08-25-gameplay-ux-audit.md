@@ -46,7 +46,7 @@ Le parcours vérifie aussi le focus UI, les entrées tactiles, le pincement du g
 - Six tests Godot : smoke, runtime, catalogue locomotion, garage, sécurité gameplay/mobile et narration/progression — PASS.
 - `npm run qa` : PASS — 115/115 validations, 12/12 tests moteur, 21/21 intégration et contrat Godot statique.
 - Export Web : version 2.4.0, preset Web, threads désactivés, 9/9 artefacts attestés.
-- Empreinte source exportée : `f22a3ad2673593f7bd8f051faf1f8085bbe5e674de4d168bf2b52efcc537b9f1`.
+- Empreinte source exportée : `ee2b4cc5b6e034a7dced01308b07a42f07fec09af6370ab533bc8f82bb9ad06c`.
 - Chrome local : parcours bureau 1258 × 622 et mobile 844 × 390 vérifiés.
 - GitHub Actions, release GitHub et Vercel : à renseigner après publication distante.
 

@@ -37,7 +37,7 @@ STATUT DE PUBLICATION 2.4.0
 - Export Web 2.4.0, stamp et QA navigateur bureau/mobile : PASS local
 - Commit/push, GitHub Actions, release GitHub et Vercel 2.4.0 : à vérifier
 - Empreinte source exportée :
-  f22a3ad2673593f7bd8f051faf1f8085bbe5e674de4d168bf2b52efcc537b9f1
+  ee2b4cc5b6e034a7dced01308b07a42f07fec09af6370ab533bc8f82bb9ad06c
 
 P2 RESTANTS
 - vraies collisions 3D et interactions caméra ; hazards sensibles à la voie
