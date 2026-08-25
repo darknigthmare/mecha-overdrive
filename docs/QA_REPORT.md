@@ -95,14 +95,16 @@ Les preuves visuelles avant/après sont regroupées dans [`audits/2026-08-25-gam
 
 - **Source et export Web Godot 2.4.0 : GO local.**
 - **QA Chrome bureau/mobile : PASS.**
-- **Publication distante 2.4.0 : à vérifier** après commit, CI, release et promotion Vercel.
+- **Publication distante 2.4.0 : PASS.**
 
 | Gate distante 2.4.0 | Statut |
 |---|---|
-| Commit et push `main` | À vérifier après finalisation |
-| GitHub Actions | À vérifier |
-| Tag/release GitHub `v2.4.0` | À vérifier |
-| Déploiement et alias Vercel | À vérifier |
-| HTTP, WebGL2, console et réseau sur la production 2.4.0 | À vérifier |
+| Commit de release | [`fcf3f166c277671e4366fc2d0a930eef088fe074`](https://github.com/darknigthmare/mecha-overdrive/commit/fcf3f166c277671e4366fc2d0a930eef088fe074) sur `main` public |
+| GitHub Actions | [`Quality` 32792810394](https://github.com/darknigthmare/mecha-overdrive/actions/runs/32792810394) — `success` |
+| Tag/release GitHub | [`v2.4.0`](https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.4.0) — publique, non draft, non prerelease |
+| Archive Web | `mecha-overdrive-godot-web-v2.4.0.zip` — 50 413 876 octets — SHA-256 `6ffc2d3e06d69f8de5ce770625d9206ba707c1dd28da1a6b69446c57611a6d57` |
+| Déploiement Vercel | `dpl_9yERMTARVAR9Kgrnu9Wmsto5CL7d` — `READY` |
+| Alias public | [Jouer à MECHA OVERDRIVE 2.4.0](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive) — HTTP 200 |
+| Build public | [`build.json`](https://mecha-overdrive.vercel.app/godot3d/build.json) — 2.4.0, source `ee2b4cc5b6e034a7dced01308b07a42f07fec09af6370ab533bc8f82bb9ad06c`, 9 artefacts |
 
 Hors périmètre de cette qualification locale : certification console/store, audit juridique externe, localisation exhaustive, réseau multijoueur et QA sur parc matériel industriel.

@@ -331,5 +331,5 @@ Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le valida
 - Un déploiement Vercel `READY` prouve la publication, pas à lui seul le bon déroulement d’une course WebGL.
 - Chaque modification des sources Godot impose un nouvel export, un nouveau stamp et un parcours navigateur du build produit.
 - Toute annonce doit citer les gates réellement exécutés sur le commit publié.
-- Pour 2.4.0, sources, export Web synchronisé et QA Chrome bureau/mobile sont qualifiés localement ; GitHub Actions, release et Vercel restent à vérifier lors de la publication.
+- Pour 2.4.0, sources, export Web synchronisé, QA Chrome bureau/mobile, GitHub Actions, release GitHub et alias Vercel sont qualifiés ; les identifiants de preuve figurent dans `docs/QA_REPORT.md`.
 - P2 connus : vraies collisions 3D/caméra, hazards lane-aware, confirmation avant écrasement d’un championnat, retry save/UI, remapping complet, déblocages progressifs de contenu, coupes personnalisées et audit caméra des 500 configurations.

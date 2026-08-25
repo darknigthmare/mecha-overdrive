@@ -1,6 +1,6 @@
 # Roadmap après Godot 2.4.0
 
-Godot 2.4.0 est le candidat principal qualifié localement. L’export Web mono-thread est synchronisé, l’agrégat QA est vert et les parcours Chrome bureau/mobile sont attestés ; la publication distante reste à vérifier au moment de la release.
+Godot 2.4.0 est la branche principale qualifiée et publiée. L’export Web mono-thread est synchronisé, l’agrégat QA est vert, les parcours Chrome bureau/mobile sont attestés, GitHub Actions réussit et la release ainsi que l’alias Vercel sont publics.
 
 ## Livré dans la source Godot 2.4.0
 

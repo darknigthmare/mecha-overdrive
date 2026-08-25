@@ -7,7 +7,7 @@ MECHA OVERDRIVE — CIRCUIT ZERO 2.4.0
 - L’export Web présent dans godot3d/ est le build 2.4.0 mono-thread synchronisé.
 - `npm run qa` est vert : 115/115, 12/12, 21/21 et validation Godot statique.
 - La QA Chrome a couvert le bureau 1258 × 622 et le mobile 844 × 390.
-- GitHub Actions, la release GitHub et Vercel 2.4.0 restent à vérifier.
+- GitHub Actions, la release publique v2.4.0 et l’alias Vercel ont été vérifiés.
 
 LANCER LES SOURCES 2.4.0 AVEC GODOT
 1. Ouvrir Godot 4.7.2.

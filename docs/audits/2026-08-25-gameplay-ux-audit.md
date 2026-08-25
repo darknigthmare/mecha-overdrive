@@ -48,7 +48,7 @@ Le parcours vérifie aussi le focus UI, les entrées tactiles, le pincement du g
 - Export Web : version 2.4.0, preset Web, threads désactivés, 9/9 artefacts attestés.
 - Empreinte source exportée : `ee2b4cc5b6e034a7dced01308b07a42f07fec09af6370ab533bc8f82bb9ad06c`.
 - Chrome local : parcours bureau 1258 × 622 et mobile 844 × 390 vérifiés.
-- GitHub Actions, release GitHub et Vercel : à renseigner après publication distante.
+- GitHub Actions : PASS ; release `v2.4.0` publique ; Vercel production `READY` ; alias et `build.json` publics en HTTP 200.
 
 ## P2 restant
 

@@ -35,7 +35,7 @@ VALIDATIONS LOCALES CONFIRMÉES
 
 STATUT DE PUBLICATION 2.4.0
 - Export Web 2.4.0, stamp et QA navigateur bureau/mobile : PASS local
-- Commit/push, GitHub Actions, release GitHub et Vercel 2.4.0 : à vérifier
+- Publication distante : PASS — `main` public, CI verte, release v2.4.0 et Vercel READY
 - Empreinte source exportée :
   ee2b4cc5b6e034a7dced01308b07a42f07fec09af6370ab533bc8f82bb9ad06c
 
