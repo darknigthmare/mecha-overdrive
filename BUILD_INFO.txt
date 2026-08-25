@@ -42,7 +42,12 @@ VALIDATIONS LOCALES CONFIRMÉES
 STATUT DE PUBLICATION 2.5.0
 - Sources, neuf suites, agrégat Node et export Web stampé : PASS local
 - QA navigateur bureau/mobile finale : PASS sur l’empreinte source ci-dessous
-- Publication distante, CI, release v2.5.0 et Vercel : EN ATTENTE
+- Publication distante, CI, release v2.5.0 et Vercel : PASS
+- Commit public : 68b440ba51adb5f73891f809099b72f45f1b9270
+- GitHub Actions Quality : PASS — run 32874920449, 1 min 40 s
+- Release : https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.5.0
+- Vercel production READY : dpl_4ywg7N5SyGddErTtFawU7f8DPFDi
+- Jeu public : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
 - Empreinte source exportée :
   73435a0e59657b3f9f718b3112833b2ecc006e67296386df5bb61eb88c4bad15
 - SHA-256 et tailles des neuf artefacts : godot3d/build.json

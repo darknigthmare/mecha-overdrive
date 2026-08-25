@@ -112,16 +112,17 @@ Les captures de [`audits/2026-08-25-gameplay-ux-audit.md`](audits/2026-08-25-gam
 
 - **Sources, import, neuf suites Godot, agrégat Node et export Web 2.5.0 : GO local.**
 - **QA Chrome bureau/mobile finale 2.5.0 : PASS sur `73435a0e…`.**
-- **Publication distante 2.5.0 : EN ATTENTE.**
+- **Publication distante 2.5.0 : GO — GitHub, release et Vercel vérifiés.**
 
 | Gate distante 2.5.0 | Statut |
 |---|---|
-| Commit de release | EN ATTENTE — à renseigner après le commit final |
-| GitHub Actions | EN ATTENTE — à renseigner après le push de `main` |
-| Tag/release GitHub | EN ATTENTE — `v2.5.0` non revendiquée ici avant création vérifiée |
-| Archive Web | EN ATTENTE — taille et SHA-256 à calculer sur l’archive finale |
-| Déploiement Vercel | EN ATTENTE — identifiant et statut à relever après promotion |
-| Alias public | EN ATTENTE — HTTP et version à contrôler après déploiement |
-| Build public | EN ATTENTE — comparer version, source et neuf artefacts avec `godot3d/build.json` |
+| Commit de release | [`68b440b`](https://github.com/darknigthmare/mecha-overdrive/commit/68b440ba51adb5f73891f809099b72f45f1b9270) poussé sur `main` |
+| GitHub Actions | [Quality `32874920449`](https://github.com/darknigthmare/mecha-overdrive/actions/runs/32874920449) : PASS en 1 min 40 s, neuf suites Godot incluses |
+| Tag/release GitHub | [`v2.5.0`](https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.5.0) publique, cible `68b440b`, ni draft ni prerelease |
+| Archive Web | 54 381 642 octets ; SHA-256 `2742fa17d186ae4047558d3b3fd46511811001d31d1b583e6fa26564d9bb005c`, digest GitHub identique |
+| Déploiement Vercel | `dpl_4ywg7N5SyGddErTtFawU7f8DPFDi` ; production `READY` ; build statique 325 ms |
+| Alias public | [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive) : HTTP 200, HTML 5 650 octets et en-têtes Godot/CSP attendus |
+| Build public | Version 2.5.0, source `73435a0e…` et 9/9 empreintes strictement identiques au `build.json` local |
+| Smoke navigateur public | PASS à 844 × 390 : canvas actif, six infos Godot/WebGL attendues, 0 exception, warning/erreur ou requête échouée |
 
-Hors périmètre de cette qualification locale : certification console/store, audit juridique externe, localisation exhaustive, réseau multijoueur et QA sur parc matériel industriel.
+Hors périmètre de cette qualification de release : certification console/store, audit juridique externe, localisation exhaustive, réseau multijoueur et QA sur parc matériel industriel.

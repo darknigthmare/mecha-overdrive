@@ -12,8 +12,9 @@ MECHA OVERDRIVE — CIRCUIT ZERO 2.5.0
 - `npm run qa` est vert : 68 fichiers JavaScript, 115/115, 12/12, 21/21 et
   validation Godot statique.
 - Empreinte source exportée : 73435a0e59657b3f9f718b3112833b2ecc006e67296386df5bb61eb88c4bad15.
-- La QA Chrome finale bureau/mobile est verte sur cette empreinte ; GitHub Actions,
-  la release v2.5.0 et Vercel restent en attente.
+- La QA Chrome finale, GitHub Actions Quality 32874920449, la release publique
+  v2.5.0 et Vercel production sont verts sur cette empreinte.
+- Jouer : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
 
 LANCER LES SOURCES 2.5.0 AVEC GODOT
 1. Ouvrir Godot 4.7.2.
