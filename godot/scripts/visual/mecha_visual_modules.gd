@@ -345,6 +345,8 @@ static func _count_group_triangles(node: Node, group: String) -> int:
 static func _camera_anchors(root: RacerVisual, chassis: Dictionary) -> void:
 	var chassis_id := String(chassis.get("id", "biped"))
 	var cockpit_offset: Vector3 = chassis.get("cockpit_offset", Vector3(0, 2.75, 0.10))
+	var first_person: Dictionary = chassis.get("first_person", {}) if chassis.get("first_person", {}) is Dictionary else {}
+	var eye_offset: Vector3 = first_person.get("eye_offset", Vector3(0, 0, -1.12))
 	var tps_height := 5.2
 	var tps_distance := 7.4
 	match chassis_id:
@@ -357,7 +359,9 @@ static func _camera_anchors(root: RacerVisual, chassis: Dictionary) -> void:
 	root.add_child(tps)
 	var fps := Marker3D.new()
 	fps.name = "CameraFPS"
-	fps.position = cockpit_offset + Vector3(0, 0, -1.12)
+	fps.position = cockpit_offset + eye_offset
+	fps.set_meta("first_person_mode", String(first_person.get("mode", "cockpit")))
+	fps.set_meta("first_person_profile", String(first_person.get("profile", "command_canopy")))
 	root.add_child(fps)
 
 

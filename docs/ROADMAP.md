@@ -1,8 +1,8 @@
-# Roadmap après Godot 2.5.0
+# Roadmap après Godot 2.5.1
 
-Godot 2.5.0 est la branche principale de production visuelle. Le statut de son export Web mono-thread, de ses parcours Chrome bureau/mobile, de GitHub Actions, de sa release et de son alias Vercel est suivi avec des preuves datées dans `docs/QA_REPORT.md`.
+Godot 2.5.1 est le contrat courant de production visuelle et de présentation FPS. Le statut de son export Web mono-thread, de ses validations locales, de ses parcours Chrome bureau/mobile et de toute publication distante éventuelle est suivi avec des preuves datées dans `docs/QA_REPORT.md`.
 
-## Livré dans la source Godot 2.5.0
+## Livré dans la source Godot 2.5.1
 
 - 10 châssis originaux répartis dans 5 divisions : Commandement, Stabilisés, Essaim, Sol et Expérimental ;
 - 500 configurations locomotrices, soit 50 par châssis, et 18 modules visibles répartis sur 3 emplacements ;
@@ -13,7 +13,7 @@ Godot 2.5.0 est la branche principale de production visuelle. Le statut de son e
 - équipe de stand légère animée : deux mécanos humanoïdes et deux robots originaux, avec arrêt complet en mouvement réduit ;
 - histoire intergalactique originale de la Nexus Grand League, Saison 03 « La Couronne Libre », sur huit mondes et trois galaxies ;
 - introduction en trois chapitres, 8 archives Univers, onglet Pilotes et grille canonique de 10 pilotes (joueur + 9 IA) ;
-- vues TPS et cockpit/FPS, préférence persistante, commandes clavier/manette et surface mobile multi-touch responsive ;
+- vues TPS/FPS par architecture : sept cockpits pilotés profilés et trois sensoriums autonomes, préférence persistante, géométries exclusives, verrouillage FPS rigide à l’ancre à 60 Hz et HUD mobile responsive ;
 - briefing de grille, compte à rebours bloquant, faux départ, arrivée cinématique, podium, résultats et épilogues de championnat ;
 - 21 assets bitmap OpenAI originaux et manifestés, dont l’illustration du Grand Tour, l’équipe mécano et les surfaces détaillées méchas/infrastructures ;
 - sauvegarde v5 avec migrations et clé versionnée `season_intro_arc_2_seen` ;

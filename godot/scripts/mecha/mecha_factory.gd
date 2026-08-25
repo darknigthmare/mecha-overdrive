@@ -4,6 +4,8 @@ extends RefCounted
 ## Procedural factory for the ten original racing architectures. Every model is
 ## assembled from Godot primitives, keeping the source portable and editable.
 
+const CockpitVisualsType := preload("res://scripts/visual/cockpit_visuals.gd")
+
 const HERO_DETAIL_PART_LIMIT := 46
 const RACE_DETAIL_PART_LIMIT := 28
 const HERO_CHASSIS_DETAIL_TRIANGLE_BUDGET := 18000
@@ -57,7 +59,7 @@ static func build(chassis: Dictionary, paint: Color, is_player: bool = false, cu
 	_mark_native_locomotion_parts(native_locomotion)
 	_mark_chassis_body(root, native_locomotion)
 
-	_cockpit(root, chassis, primary, dark, cockpit, glow)
+	CockpitVisualsType.install(root, chassis, is_player, primary, dark, cockpit, glow)
 	MechaVisualModules.install(root, chassis, customization, primary, dark, joint, glow)
 	LocomotionVisuals.install(root, chassis, customization, primary, dark, joint, glow)
 	var detail_mesh_count := _count_mesh_instances(detail_holder)
@@ -528,33 +530,6 @@ static func _mark_chassis_body(root: RacerVisual, native_locomotion: Node3D) -> 
 			continue
 		child.add_to_group("mecha_chassis_body")
 		child.set_meta("chassis_body", true)
-
-
-static func _cockpit(root: Node3D, chassis: Dictionary, primary: Material, dark: Material, cockpit: Material, glow: Material) -> void:
-	var cockpit_offset: Vector3 = chassis.get("cockpit_offset", Vector3(0, 2.65, 0.10))
-	var canopy := _sphere(root, 0.72, cockpit_offset + Vector3(0, 0.20, -0.45), cockpit, Vector3(1.2, 0.65, 1.6))
-	canopy.name = "CockpitCanopy"
-	canopy.add_to_group("mecha_fps_occluder")
-	var visor := _box(root, Vector3(0.95, 0.18, 0.58), cockpit_offset + Vector3(0, 0.23, -1.25), glow)
-	visor.name = "CockpitVisor"
-	visor.add_to_group("mecha_fps_occluder")
-	var left_frame := _box(root, Vector3(0.16, 0.55, 1.25), cockpit_offset + Vector3(-0.72, -0.10, -0.60), primary)
-	left_frame.add_to_group("mecha_fps_occluder")
-	var right_frame := _box(root, Vector3(0.16, 0.55, 1.25), cockpit_offset + Vector3(0.72, -0.10, -0.60), primary)
-	right_frame.add_to_group("mecha_fps_occluder")
-	var dashboard := _box(root, Vector3(1.55, 0.12, 0.34), cockpit_offset + Vector3(0, -0.68, -2.05), cockpit)
-	dashboard.name = "CockpitDashboard"
-	dashboard.add_to_group("mecha_cockpit_interior")
-	var display := _box(root, Vector3(0.72, 0.05, 0.18), cockpit_offset + Vector3(0, -0.56, -2.17), glow)
-	display.name = "CockpitDisplay"
-	display.add_to_group("mecha_cockpit_interior")
-	for side: float in [-1.0, 1.0]:
-		var inner_frame := _box(root, Vector3(0.10, 0.78, 0.12), cockpit_offset + Vector3(side * 1.55, 0.02, -2.02), cockpit)
-		inner_frame.name = "CockpitFrameLeft" if side < 0.0 else "CockpitFrameRight"
-		inner_frame.add_to_group("mecha_cockpit_interior")
-	var top_frame := _box(root, Vector3(3.15, 0.08, 0.12), cockpit_offset + Vector3(0, 0.90, -2.04), cockpit)
-	top_frame.name = "CockpitTopFrame"
-	top_frame.add_to_group("mecha_cockpit_interior")
 
 
 static func _reactor(root: Node3D, position: Vector3, size: Vector3, material: Material) -> void:

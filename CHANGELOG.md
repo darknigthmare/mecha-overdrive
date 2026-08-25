@@ -3,6 +3,33 @@
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
 
+## [2.5.1] — 2026-08-25
+
+### Ajouté
+
+- profils FPS canoniques pour les dix architectures avec mode, géométrie, FOV, point de vue et présence opérateur ;
+- sept habitacles physiques profilés avec verrière, cadres, tableau de bord, MFD, harnais et commandes ;
+- trois sensoriums de téléprésence pour Mantis H6, Orb S7 et Centurion S12, sans faux cockpit ni pilote embarqué ;
+- HUD capteurs plein écran : liaison, noyau, coque, vitesse, vecteur, horizon et réticule, compatible tactile ;
+- suite `fps_presentation_test.gd` couvrant les dix profils, les groupes exclusifs, les ancres, les budgets et le mobile 844 × 390.
+
+### Corrigé
+
+- la vue FPS n’affiche plus le même petit cockpit générique sur toutes les machines ;
+- les corps télépilotés ne reçoivent plus de verrière ou d’intérieur de pilote incohérent ;
+- le HUD annonce désormais `VUE COCKPIT` ou `VUE CAPTEURS` selon le châssis ;
+- une préférence FPS sauvegardée ne masque plus le mécha pendant le briefing et le compte à rebours ;
+- la caméra FPS suit désormais rigidement la position et l'orientation de son ancre, sans retard visible à haute vitesse ;
+- le briefing et tout le compte à rebours conservent la caméra extérieure, puis la vue interne s'active exactement au départ ;
+- le FOV FPS est adapté à chaque architecture et reste fixe en mode mouvement réduit.
+
+### Performance et validation
+
+- intérieurs détaillés construits uniquement pour le mécha joueur ;
+- budget par cockpit limité à 24 meshes et 3 500 triangles ;
+- CI portée à dix suites Godot avec contrat statique cockpit/sensorium ;
+- régressions smoke, runtime, locomotion, modèles détaillés, animation, garage, sécurité, narration et décors conservées au vert.
+
 ## [2.5.0] — 2026-08-25
 
 ### Ajouté

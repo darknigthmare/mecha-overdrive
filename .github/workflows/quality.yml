@@ -61,3 +61,5 @@ jobs:
         run: .godot-bin/godot --headless --path godot --script res://tests/mecha_animation_test.gd
       - name: Run track scenery production test
         run: .godot-bin/godot --headless --path godot --script res://tests/track_scenery_production_test.gd
+      - name: Run cockpit and sensorium presentation test
+        run: .godot-bin/godot --headless --path godot --script res://tests/fps_presentation_test.gd

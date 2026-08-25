@@ -12,6 +12,8 @@ const files = {
   raceController: 'godot/scripts/race/race_controller.gd',
   mechaFactory: 'godot/scripts/mecha/mecha_factory.gd',
   visualModules: 'godot/scripts/visual/mecha_visual_modules.gd',
+  cockpitVisuals: 'godot/scripts/visual/cockpit_visuals.gd',
+  firstPersonOverlay: 'godot/scripts/ui/first_person_overlay.gd',
   materialLibrary: 'godot/scripts/visual/material_library.gd',
   trackSafety: 'godot/scripts/world/track_safety.gd',
   mainMenu: 'godot/scripts/ui/main_menu.gd',
@@ -36,6 +38,7 @@ const files = {
   mechaDetailTest: 'godot/tests/mecha_detail_test.gd',
   mechaAnimationTest: 'godot/tests/mecha_animation_test.gd',
   trackSceneryProductionTest: 'godot/tests/track_scenery_production_test.gd',
+  fpsPresentationTest: 'godot/tests/fps_presentation_test.gd',
 };
 
 const failures = [];
@@ -112,6 +115,13 @@ for (const [slotId, expectedIds] of Object.entries(modulesBySlot)) {
 }
 check(source.session.includes('return "mixed" if value == "mixed" else "division"'), 'session: grille fail-closed absente');
 check(source.raceController.includes('switch_camera_view'), 'course: bascule TPS/FPS absente');
+check(source.database.includes('static func _first_person_spec('), 'FPS: profils canoniques de châssis absents');
+check((source.database.match(/"mode": "sensorium"/g) ?? []).length === 3, 'FPS: exactement trois sensoriums distants requis');
+check(source.cockpitVisuals.includes('class_name CockpitVisuals') && source.cockpitVisuals.includes('FPSInteriorRoot'), 'FPS: fabrique d’habitacles physiques absente');
+check(source.cockpitVisuals.includes('HERO_INTERIOR_MESH_LIMIT := 24') && source.cockpitVisuals.includes('HERO_INTERIOR_TRIANGLE_LIMIT := 3500'), 'FPS: budgets Web cockpit absents');
+check(source.firstPersonOverlay.includes('class_name FirstPersonOverlay') && source.firstPersonOverlay.includes('SensoriumOverlay'), 'FPS: HUD sensorium dédié absent');
+check(source.raceHud.includes('first_person_interface_mode') && source.raceHud.includes('sensor_overlay_visible'), 'FPS: contrat cockpit/capteurs non exposé par le HUD');
+check(source.raceController.includes('_apply_player_camera_mode') && source.raceController.includes('camera_active_view'), 'FPS: séparation caméra grille/course absente');
 check(source.mechaFactory.includes('MaterialLibrary.mecha_for'), 'méchas: matériau OpenAI v2.2 non branché');
 check(source.materialLibrary.includes('MECHA_DETAIL_PANELS') && source.materialLibrary.includes('TRACK_INFRASTRUCTURE_DETAIL'), 'production: chemins des nouvelles textures absents de MaterialLibrary');
 check(source.materialLibrary.includes('static func mecha_detail(') && source.materialLibrary.includes('static func infrastructure('), 'production: matériaux de détail v2.5 absents');
@@ -210,6 +220,7 @@ check(source.garagePreviewTest.includes('GARAGE PREVIEW: PASS'), 'garage: test p
 check(source.mechaDetailTest.includes('MECHA DETAIL PRODUCTION: PASS') && source.mechaDetailTest.includes('visual_triangle_count'), 'production: test de densité mécha absent');
 check(source.mechaAnimationTest.includes('MECHA ANIMATION: PASS') && source.mechaAnimationTest.includes('_test_polygon_budget'), 'production: test animation/polygones absent');
 check(source.trackSceneryProductionTest.includes('MECHA TRACK SCENERY PRODUCTION: PASS') && source.trackSceneryProductionTest.includes('track_infrastructure_detail.png'), 'production: test décors/infrastructure absent');
+check(source.fpsPresentationTest.includes('MECHA FPS PRESENTATION: PASS') && source.fpsPresentationTest.includes('sensor_overlay_visible'), 'FPS: test dédié cockpit/sensorium absent');
 check(source.trackSceneryProductionTest.includes('_assert_trackside_clearance') && source.trackSceneryProductionTest.includes('_test_budget_guardrails'), 'production: garde-fous clearance/budget décors absents');
 check(source.project.includes('SaveSystem="*res://scripts/systems/save_system.gd"'), 'project: autoload SaveSystem absent');
 check(source.project.includes('GameSession="*res://scripts/systems/game_session.gd"'), 'project: autoload GameSession absent');

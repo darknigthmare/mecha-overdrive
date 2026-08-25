@@ -10,14 +10,14 @@ Le visuel de présentation est une création originale générée avec OpenAI po
 
 | Édition | Emplacement | Contenu | Exécution |
 |---|---|---|---|
-| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 500 locomotions, 8 circuits, 6 championnats, garage 3D, mobile, TPS/cockpit et sauvegarde v5 | Godot **4.7.2** ou navigateur WebGL2 |
+| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 500 locomotions, 8 circuits, 6 championnats, garage 3D, mobile, TPS/cockpit/sensorium et sauvegarde v5 | Godot **4.7.2** ou navigateur WebGL2 |
 | **Web — compagnon autonome** | racine du dépôt | 8 châssis, Course rapide, Grand Prix et Contre-la-montre, PWA hors ligne | Navigateur moderne, Node.js facultatif |
 
-La version déclarée dans le projet Godot est `2.5.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+La version déclarée dans le projet Godot est `2.5.1`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
 
 ## Jouer en ligne
 
-- **Godot 3D 2.5.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
+- **Godot 3D 2.5.1** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
 - **Édition web légère** : [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app)
 
 L’export Godot est mono-thread et WebGL2. Il prend en charge clavier, manette et une surface tactile responsive à dix commandes sur mobile. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste la variante PWA hors ligne.
@@ -119,7 +119,7 @@ La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cell
 | Utiliser l’objet | `Espace`, `E` ou `Entrée` | `A` | OBJET |
 | Recaler le mécha | `R` | — | RESET |
 | Pause | `Échap` ou `P` | `Start` | PAUSE |
-| Basculer TPS / cockpit | `V` ou `Tab` | `Y` | CAM |
+| Basculer TPS / vue interne | `V` ou `Tab` | `Y` | CAM |
 
 Le menu et les écrans garage, codex et résultats acceptent aussi les actions d’interface standard de Godot.
 
@@ -138,7 +138,7 @@ La sauvegarde v5 conserve notamment :
 - records par circuit et mode ;
 - inventaire de modules possédés et loadout modulaire propre à chacun des dix châssis ;
 - locomotion choisie pour chacun des dix châssis, avec migration automatique vers le montage constructeur ;
-- vue caméra TPS/cockpit sélectionnée ;
+- vue caméra TPS/interne sélectionnée, le châssis choisissant cockpit ou sensorium ;
 - statistiques de carrière ;
 - identité de la coupe, règlement, division/Open, classe de performance, roster stable, points et manche suivante ;
 - accessibilité et volumes audio.

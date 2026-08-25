@@ -128,7 +128,12 @@ func _test_family_support_contract() -> void:
 				_expect(int(configured_holder.get_meta("support_count", -1)) == expected, "meta appuis incorrecte: %s" % configuration_id)
 			_expect(_count_group(visual, "mecha_locomotion_contact") == expected, "%s doit créer %d contacts testables" % [configuration_id, expected])
 			_expect(_count_group(visual, "mecha_chassis_body") > 0, "carrosserie perdue: %s" % configuration_id)
-			_expect(visual.get_node_or_null("CockpitCanopy") != null, "cockpit perdu: %s" % configuration_id)
+			var first_person: Dictionary = chassis.get("first_person", {}) if chassis.get("first_person", {}) is Dictionary else {}
+			if String(first_person.get("mode", "cockpit")) == "sensorium":
+				_expect(visual.get_node_or_null("CockpitCanopy") == null, "un robot distant ne doit pas recevoir de verrière: %s" % configuration_id)
+				_expect(visual.get_node_or_null("SensorOrigin") != null, "origine sensorium perdue: %s" % configuration_id)
+			else:
+				_expect(visual.get_node_or_null("CockpitCanopy") != null, "cockpit perdu: %s" % configuration_id)
 			_expect(_count_group(visual, "mecha_module_core") == 1 and _count_group(visual, "mecha_module_mobility") == 1 and _count_group(visual, "mecha_module_utility") == 1, "modules perdus: %s" % configuration_id)
 			_expect(_all_group_hidden(visual, "mecha_native_locomotion"), "locomotion native visible: %s" % configuration_id)
 			visual.free()

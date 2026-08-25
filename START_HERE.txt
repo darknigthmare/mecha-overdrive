@@ -1,32 +1,39 @@
-MECHA OVERDRIVE — CIRCUIT ZERO 2.5.0
+MECHA OVERDRIVE — CIRCUIT ZERO 2.5.1
 ====================================
 
 ÉTAT DE CETTE COPIE
-- Les sources Godot locales sont en 2.5.0 et ont passé le parse moteur ainsi que
-  neuf suites : smoke, locomotion, runtime, narration, sécurité/mobile, garage,
-  détails mécha, animations mécaniques et décors multi-LOD ; les tests de
-  sauvegarde couvrent rollback complet, aucun faux titre/couronne, retry avec
-  feedback UI, aucune double récompense et masquage des cartes de podium
-  homologué pendant `save_failed`.
-- L’export Web présent dans godot3d/ est le build 2.5.0 mono-thread synchronisé.
-- `npm run qa` est vert : 68 fichiers JavaScript, 115/115, 12/12, 21/21 et
-  validation Godot statique.
-- Empreinte source exportée : 73435a0e59657b3f9f718b3112833b2ecc006e67296386df5bb61eb88c4bad15.
-- La QA Chrome finale, GitHub Actions Quality 32874920449, la release publique
-  v2.5.0 et Vercel production sont verts sur cette empreinte.
-- Jouer : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
+- Les sources Godot locales sont en 2.5.1 ; l’empreinte finale ciblée est :
+  e22798767175472d920ac522f766a667d793a4a84bcc338cacd8b8780871786c
+- Validation finale : PASS — 10/10 suites Godot 4.7.2, toutes code 0.
+- `npm run qa` : PASS — 68 JS, 115/115, 12/12 moteur, 21/21 intégration et
+  validation statique Godot PASS.
+- Les correctifs P1 verrouillent le FPS à l’ancre à 60 Hz et maintiennent la
+  caméra extérieure pendant briefing, compte à rebours et pause pré-GO ; le
+  contrat runtime renforcé est PASS.
+- Les quatre warnings rollback d’ouverture temporaire sont intentionnels.
+- La passe complète sur l’empreinte finale est PASS.
+- Le nouvel export/stamp est PASS : HTML 5 650 octets (`51504b6a…`) et PCK
+  44 094 764 octets (`eff4f014…`).
+- QA navigateur FPS finale : PASS — cockpit Raptor stable à 105 km/h,
+  sensorium Mantis bureau/mobile et console e227 sans erreur ni échec réseau.
+- Les preuves finales sont sous `docs/audits/assets/2.5.1-after/`.
+- Publication distante, CI, release v2.5.1 et Vercel : EN ATTENTE.
+- Aucun commit, tag, déploiement ou alias public 2.5.1 n’est revendiqué ici.
+- Publication historique 2.5.0 conservée dans `docs/QA_REPORT.md`.
+- Jeu public historique 2.5.0 :
+  https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
 
-LANCER LES SOURCES 2.5.0 AVEC GODOT
+LANCER LES SOURCES 2.5.1 AVEC GODOT
 1. Ouvrir Godot 4.7.2.
 2. Importer le projet situé dans le dossier godot/.
 3. Lancer res://scenes/app.tscn.
 
-WINDOWS — JOUER AU BUILD WEB 2.5.0
+WINDOWS — JOUER AU BUILD WEB 2.5.1
 1. Double-cliquer sur LANCER_JEU.bat.
 2. Le navigateur s’ouvre sur un port local disponible à partir de 8080.
 3. Laisser la fenêtre du serveur ouverte pendant la partie.
 
-MACOS / LINUX — JOUER AU BUILD WEB 2.5.0
+MACOS / LINUX — JOUER AU BUILD WEB 2.5.1
 1. Ouvrir un terminal dans ce dossier.
 2. Exécuter : chmod +x LANCER_JEU.sh
 3. Exécuter : ./LANCER_JEU.sh
@@ -36,11 +43,12 @@ NODE.JS
 - Puis ouvrir l’adresse affichée.
 - Accès direct au build Web actuel : /godot3d/mecha-overdrive.html
 
-POINTS FORTS 2.5.0
+POINTS FORTS 2.5.1
 - Saison 03 « La Couronne Libre » de la Nexus Grand League : huit mondes,
   trois galaxies, dix pilotes, intro en trois chapitres et huit archives Codex.
 - Garage 3D plein écran derrière le HUD avec aperçu immédiat et quatre membres
   d’équipe animés, désactivables par le réglage de mouvement réduit.
+- Sept cockpits profilés et trois sensoriums autonomes, lisibles sur bureau/mobile.
 - Dix silhouettes mécha enrichies et 18 modules dotés de micro-détails visibles.
 - Marche, roues, chenilles, rotors, propulseurs, inertie, freinage et impacts animés.
 - Huit décors multi-LOD avec portiques, tribunes, tours et bâtiments de service.
@@ -53,6 +61,7 @@ TESTS
 - npm run test:integration
 - npm run test:godot-structure
 - npm run qa
+- Godot ciblé : res://tests/fps_presentation_test.gd
 - Les commandes Godot ciblées sont détaillées dans docs/QA_REPORT.md.
 
 P2 ENCORE OUVERTS

@@ -1,0 +1,43 @@
+{
+  "url": "http://127.0.0.1:8082/godot3d/mecha-overdrive.html?build=e2279876",
+  "capturedAt": "2026-08-25T20:04:04.749Z",
+  "waitMs": 15000,
+  "entries": [
+    {
+      "domain": "console",
+      "level": "log",
+      "text": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org",
+      "timestamp": 1787687334518.876
+    },
+    {
+      "domain": "console",
+      "level": "log",
+      "text": "OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL",
+      "timestamp": 1787687334621.492
+    },
+    {
+      "domain": "console",
+      "level": "log",
+      "text": "Build configuration: Emscripten 4.0.20, single-threaded, no GDExtension support.",
+      "timestamp": 1787687334740.101
+    },
+    {
+      "domain": "console",
+      "level": "log",
+      "text": "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org",
+      "timestamp": 1787688234210.219
+    },
+    {
+      "domain": "console",
+      "level": "log",
+      "text": "OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL",
+      "timestamp": 1787688234570.539
+    },
+    {
+      "domain": "console",
+      "level": "log",
+      "text": "Build configuration: Emscripten 4.0.20, single-threaded, no GDExtension support.",
+      "timestamp": 1787688235073.837
+    }
+  ]
+}

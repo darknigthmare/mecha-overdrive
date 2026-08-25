@@ -216,6 +216,22 @@ func _run() -> void:
 	# explicit start penalty.
 	_expect(String(race.call(&"start_phase")) == "briefing", "la course doit ouvrir sur le briefing de grille")
 	_expect(hud.has_method(&"is_briefing_visible") and bool(hud.call(&"is_briefing_visible")), "le HUD doit afficher circuit, règlement et grille")
+	var prestart_camera := race.get("_camera") as Camera3D
+	var prestart_visuals_value: Variant = race.get("_visuals")
+	var prestart_player_visual: Node3D
+	if prestart_visuals_value is Dictionary:
+		prestart_player_visual = Dictionary(prestart_visuals_value).get("player") as Node3D
+	var prestart_fps_anchor: Marker3D = prestart_player_visual.call(&"camera_anchor", "fps") as Marker3D if prestart_player_visual != null else null
+	race.call(&"_set_camera_mode", "fps", false)
+	race.set("_paused", true)
+	race.call(&"_process", 1.0 / 60.0)
+	_expect(prestart_camera != null and prestart_player_visual != null and prestart_fps_anchor != null, "le départ doit exposer caméra, visuel et ancre FPS")
+	if prestart_camera != null and prestart_player_visual != null and prestart_fps_anchor != null:
+		_expect(not bool(prestart_player_visual.get("first_person")), "une préférence FPS ne doit pas masquer la coque pendant une pause de briefing")
+		_expect(prestart_camera.global_position.distance_to(prestart_fps_anchor.global_position) > 2.0, "la pause pré-départ doit conserver la caméra de grille externe")
+	race.set("_paused", false)
+
+	# The same saved FPS choice must remain external throughout the countdown.
 	var initial_distance := float(player_state.snapshot().get("distance", 0.0)) if player_state != null else -1.0
 	race.set("_briefing_remaining", 0.0)
 	hud.call(&"hide_race_briefing")
@@ -227,6 +243,11 @@ func _run() -> void:
 	_expect(String(race.call(&"start_phase")) == "countdown", "les feux 3-2-1 doivent précéder la simulation")
 	_expect(bool(race.call(&"has_false_start")), "une accélération sous feux rouges doit déclencher un faux départ")
 	_expect(is_equal_approx(float(player_state.snapshot().get("distance", 0.0)), initial_distance), "la simulation doit rester bloquée pendant le compte à rebours")
+	if prestart_camera != null and prestart_player_visual != null and prestart_fps_anchor != null:
+		_expect(not bool(prestart_player_visual.get("first_person")), "la coque doit rester visible sous les feux avec une préférence FPS")
+		_expect(prestart_camera.global_position.distance_to(prestart_fps_anchor.global_position) > 2.0, "le compte à rebours doit rester sur la caméra de grille")
+	race.call(&"_set_camera_mode", "tps", false)
+
 	var countdown_notice: Label = hud.get("_countdown_notice_label") as Label
 	_expect(countdown_notice != null and countdown_notice.visible and countdown_notice.text.contains("FAUX DÉPART"), "le HUD doit expliquer la pénalité de faux départ")
 
@@ -286,6 +307,12 @@ func _run() -> void:
 	_expect(bool(player_visual.get("first_person")), "le visuel joueur doit entrer en mode cockpit")
 	if fps_anchor != null:
 		_expect(camera.global_position.distance_to(fps_anchor.global_position) < 0.2, "la vue cockpit doit consommer l'ancre FPS")
+		var visual_transform := player_visual.global_transform
+		player_visual.global_position += Vector3(0.0, 0.0, 6.0)
+		race.call(&"_update_camera", 1.0 / 60.0)
+		_expect(camera.global_position.distance_to(fps_anchor.global_position) < 0.01, "la caméra FPS doit rester verrouillée à l''ancre pendant un déplacement 60 Hz")
+		player_visual.global_transform = visual_transform
+		race.call(&"_update_camera", 1.0 / 60.0)
 	player_visual.call(&"_process", 0.016)
 	var has_hidden_occluder := false
 	var has_visible_interior := false

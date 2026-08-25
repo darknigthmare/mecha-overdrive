@@ -49,10 +49,10 @@ const ENTRIES: Array[Dictionary] = [
 		"id": "hangar_08",
 		"title": "HANGAR 08",
 		"epoch": "LICENCE INDÉPENDANTE // DERNIÈRE ACTIVE",
-		"subtitle": "Une place, un pilote, cinq cents réponses",
-		"description": "Installé dans une ancienne navette-paddock, le Hangar 08 refuse les châssis propriétaires. Son équipage récupère, adapte et homologue chaque pièce pour défendre l’ingénierie ouverte.",
+		"subtitle": "Une licence, un pilote, cinq cents réponses",
+		"description": "Installé dans une ancienne navette-paddock, le Hangar 08 refuse les châssis propriétaires. Sept cadres embarquent leur pilote; Mantis, Orb et Centurion sont des corps de course sans habitacle joints par sensorium.",
 		"protocol": "OBJECTIF PILOTE",
-		"protocol_description": "Remporter une Coupe, obtenir l’invitation au Grand Open et ramener la Couronne au dernier paddock indépendant.",
+		"protocol_description": "La Charte reconnaît comme pilote tout contrôleur organique ou synthétique, embarqué ou lié à distance. Tous peuvent remporter une Coupe et la Couronne.",
 		"telemetry": "BUDGET       LIMITÉ\nPLACE        10 / 10\nDEVISE       AUCUNE FORME UNIQUE",
 	},
 	{

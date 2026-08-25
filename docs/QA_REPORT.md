@@ -1,10 +1,10 @@
-# Rapport QA — MECHA OVERDRIVE 2.5.0
+# Rapport QA — MECHA OVERDRIVE 2.5.1
 
 Date de validation locale : 25 août 2026
 
 Édition principale : sources Godot 4.7.2, renderer GL Compatibility
 
-Décision locale : **GO technique final pour les sources, l’export Web 2.5.0 et la QA navigateur bureau/mobile. La publication distante reste en attente.**
+Décision locale : **GO local sur l’empreinte post-revue : 10/10 suites Godot, `npm run qa`, export/stamp 9/9 et QA navigateur FPS finale sont PASS. La publication distante 2.5.1 reste en attente.**
 
 ## Périmètre livré dans les sources
 
@@ -16,6 +16,7 @@ Décision locale : **GO technique final pour les sources, l’export Web 2.5.0 e
 - garage 3D plein écran derrière le HUD avec rotation, zoom, peinture, modules et statistiques en direct ;
 - quatre acteurs de stand animés — deux mécanos humanoïdes et deux robots — avec profil Web/mobile léger et mouvement réduit ;
 - dix silhouettes enrichies, locomotions mécaniques animées et huit décors multi-LOD avec budgets Web/mobile contrôlés ;
+- présentation FPS homologuée : sept cockpits pilotés profilés, trois sensoriums autonomes, géométries exclusives et HUD mobile compact ;
 - 21 assets bitmap OpenAI originaux, manifestés avec provenance et SHA-256 ;
 - largeur de piste minimale de 35 m, trois colonnes de dépassement, gabarits physiques en mètres et grille 2 × 4 ;
 - commandes clavier, manette et mobile multi-touch, HUD tactile compact et zones paysage/portrait non superposées ;
@@ -23,6 +24,23 @@ Décision locale : **GO technique final pour les sources, l’export Web 2.5.0 e
 - sauvegarde v5 avec migrations et clé d’introduction versionnée `season_intro_arc_2_seen`.
 
 ## Contrôles locaux exécutés
+
+### Candidat post-P1 2.5.1
+
+| Gate | Résultat sur le candidat 2.5.1 |
+|---|---|
+| Empreinte source post-revue | `e22798767175472d920ac522f766a667d793a4a84bcc338cacd8b8780871786c` |
+| Dix suites Godot | PASS — 10/10, code 0, ordre CI strictement séquentiel |
+| `godot/tests/fps_presentation_test.gd` | PASS runtime post-revue — ancre FPS rigide à 60 Hz et caméra extérieure pendant briefing/countdown/pause pré-GO |
+| `npm run qa` | PASS — 68 JS, 115/115, moteur 12/12, intégration 21/21 et structure Godot |
+| Export Web mono-thread | PASS — version 2.5.1, source synchronisée et 9/9 artefacts attestés |
+| QA navigateur FPS finale | PASS — cockpit Raptor à 105 km/h, sensorium Mantis bureau/mobile et console e227 propre |
+
+La passe finale est sans échec. `narrative_progression_test.gd` émet quatre warnings intentionnels « Impossible d’ouvrir le fichier temporaire » pour exercer le rollback, puis termine PASS/code 0. Aucune ligne de cette section ne constitue une preuve de publication distante.
+
+### Baseline publiée 2.5.0 — historique conservé
+
+Les résultats ci-dessous documentent la release 2.5.0 et ne qualifient pas l’empreinte 2.5.1.
 
 | Gate | Résultat observé le 25 août 2026 |
 |---|---|
@@ -64,37 +82,39 @@ Le manifeste de schéma 2 contient 21 bitmaps originaux OpenAI. Les deux ajouts 
 
 ## Export navigateur
 
-Le fichier `godot3d/build.json` atteste le candidat exporté et validé structurellement :
+Le fichier `godot3d/build.json` atteste le candidat post-revue exporté et stampé :
 
 | Propriété | Valeur |
 |---|---|
-| Version jeu | `2.5.0` |
+| Version jeu | `2.5.1` |
 | Moteur | `4.7.2` |
 | Preset | `Web` |
 | Threads | `false` |
-| Empreinte source | `73435a0e59657b3f9f718b3112833b2ecc006e67296386df5bb61eb88c4bad15` |
+| Empreinte source | `e22798767175472d920ac522f766a667d793a4a84bcc338cacd8b8780871786c` |
 | Artefacts attestés | 9/9 |
 
 | Artefact | Octets | SHA-256 |
 |---|---:|---|
-| `mecha-overdrive.html` | 5 650 | `2d3757a1d193361c36568d8b429cf9d8ac091ffe1848165dedb82d37b7979327` |
+| `mecha-overdrive.html` | 5 650 | `51504b6a2ae642971ff74d6135a9038384909c72cb3b307153a669d4ab359979` |
 | `mecha-overdrive.js` | 279 815 | `33c94cb3175f3333b82e2a3be5e8e86f77986f0aa2042b1631f6367a4e5bb6ba` |
 | `mecha-overdrive.wasm` | 39 514 754 | `fc74679e3b97f76878947fcd4fbe1268cbfa6188182a2e33bbc3f5dc9bfa57d0` |
-| `mecha-overdrive.pck` | 44 075 748 | `3ae8ac08d84cc02135c1130efd2dc6f408e80dfe3615e251011950698ea4e4d0` |
+| `mecha-overdrive.pck` | 44 094 764 | `eff4f014bfa350d1d4802332bb6c316d41d7bdc7f59ffa4172fe0d820d424d65` |
 | `mecha-overdrive.audio.worklet.js` | 7 298 | `5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3` |
 | `mecha-overdrive.audio.position.worklet.js` | 2 973 | `be33985bc7160d6bf9646f259cd86b259cd67b02ccb297ee5c44f8ac84327bc8` |
 | `mecha-overdrive.png` | 21 443 | `3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e` |
 | `mecha-overdrive.icon.png` | 5 700 | `ad3c35ad0facf487c618204bd98db543034fc95224eadc7f08c7a9ff38d5b3b5` |
 | `mecha-overdrive.apple-touch-icon.png` | 11 944 | `01d4f63e525941e06ce74f5187dad030d20a8d52a07ce365ae4e94af97a3b1f5` |
 
-`tools/stamp-godot-web.mjs` a normalisé l’HTML et attesté chaque artefact. Le validateur a confirmé l’alignement de version, l’empreinte source et les neuf SHA-256.
+`tools/stamp-godot-web.mjs` a attesté l’alignement de version, l’empreinte source et les neuf SHA-256.
 
-**QA navigateur finale 2.5.0 : PASS** sur l’empreinte exacte ci-dessus.
+**QA navigateur FPS finale 2.5.1 : PASS** sur l’empreinte e227 ci-dessus.
 
-- bureau 1440 × 900 : introduction, garage plein écran, briefing, vrai chiffre `3`, TPS, cockpit FPS et pause ;
-- mobile 844 × 390 : introduction, menu, garage, course, surface tactile et accélération maintenue jusqu’à 70 km/h ;
-- console/reload instrumenté 14 s : 0 exception, 0 warning/erreur et 0 requête échouée ;
-- preuves et méthode : [`audits/2026-08-25-production-visual-audit.md`](audits/2026-08-25-production-visual-audit.md).
+- [`desktop-biped-cockpit-final.png`](audits/assets/2.5.1-after/desktop-biped-cockpit-final.png) : cockpit Raptor physique visible et stable à 105 km/h ;
+- [`desktop-mantis-sensorium-final.png`](audits/assets/2.5.1-after/desktop-mantis-sensorium-final.png) : sensorium Mantis bureau ;
+- [`mobile-mantis-sensorium-final.png`](audits/assets/2.5.1-after/mobile-mantis-sensorium-final.png) : sensorium Mantis mobile compact ;
+- [`console-final.json`](audits/assets/2.5.1-after/console-final.json) : URL `?build=e2279876`, six logs Godot/WebGL/Emscripten normaux, zéro warning, erreur ou échec réseau.
+
+L’audit de production 2.5.0 reste conservé comme preuve historique et n’est pas réattribué au candidat 2.5.1.
 
 Les captures de [`audits/2026-08-25-gameplay-ux-audit.md`](audits/2026-08-25-gameplay-ux-audit.md) restent les preuves historiques 2.4.0 et ne qualifient pas le candidat 2.5.0.
 
@@ -110,9 +130,21 @@ Les captures de [`audits/2026-08-25-gameplay-ux-audit.md`](audits/2026-08-25-gam
 
 ## Qualification de release
 
-- **Sources, import, neuf suites Godot, agrégat Node et export Web 2.5.0 : GO local.**
-- **QA Chrome bureau/mobile finale 2.5.0 : PASS sur `73435a0e…`.**
-- **Publication distante 2.5.0 : GO — GitHub, release et Vercel vérifiés.**
+- **Sources 2.5.1 : GO local sur `e2279876…` — 10/10 suites Godot, `npm run qa` et export/stamp 9/9 PASS.**
+- **QA Chrome FPS finale 2.5.1 : PASS sur les preuves e227 bureau/mobile et console.**
+- **Publication distante 2.5.1 : EN ATTENTE — aucun commit, tag, déploiement ou alias n’est revendiqué.**
+
+### Candidat distant 2.5.1
+
+| Gate distante 2.5.1 | Statut |
+|---|---|
+| Commit de release | EN ATTENTE — aucun commit 2.5.1 revendiqué |
+| GitHub Actions | EN ATTENTE — aucun run distant 2.5.1 revendiqué |
+| Tag/release GitHub | EN ATTENTE — aucune release 2.5.1 revendiquée |
+| Déploiement Vercel | EN ATTENTE — aucun déploiement 2.5.1 revendiqué |
+| Alias public | EN ATTENTE — aucune version publique 2.5.1 revendiquée |
+
+### Historique de publication 2.5.0
 
 | Gate distante 2.5.0 | Statut |
 |---|---|

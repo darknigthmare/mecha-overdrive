@@ -535,9 +535,11 @@ static func _chassis(
 	ability: String, ability_description: String, paint: String, accent: String,
 	stat_values: Array, physics_values: Array
 ) -> Dictionary:
+	var first_person := _first_person_spec(id)
 	return {
 		"id": id, "category": category, "name": display_name, "subtitle": subtitle,
 		"division_id": division_id, "cockpit_offset": cockpit_offset,
+		"first_person": first_person,
 		"manufacturer": _manufacturer(id), "lore": _lore(id),
 		"description": _lore(id), "ability": ability, "ability_description": ability_description,
 		"texture_set": "openai_mecha_armor", "default_loadout": _default_loadout_for(id),
@@ -545,6 +547,31 @@ static func _chassis(
 		"stats": {"speed": stat_values[0], "acceleration": stat_values[1], "handling": stat_values[2], "armor": stat_values[3], "stability": stat_values[4], "reactor": stat_values[5]},
 		"physics": {"top_speed": physics_values[0], "acceleration": physics_values[1], "handling": physics_values[2], "armor": physics_values[3], "offroad": physics_values[4], "heat": physics_values[5], "mass": physics_values[6]},
 	}
+
+static func _first_person_spec(chassis_id: String) -> Dictionary:
+	## The interface follows the chassis body, never the selected pilot or the
+	## swappable locomotion. Remote bodies still have a licensed race operator.
+	match chassis_id:
+		"tripod":
+			return {"mode": "cockpit", "profile": "tri_vector_harness", "label": "HARNAIS TRI-VECTORIEL", "operator_presence": "onboard", "fov": 78.0, "eye_offset": Vector3(0.0, 0.03, -1.05)}
+		"quadruped":
+			return {"mode": "cockpit", "profile": "predator_cradle", "label": "NACELLE PRÉDATRICE", "operator_presence": "onboard", "fov": 81.0, "eye_offset": Vector3(0.0, -0.04, -1.16)}
+		"hexapod":
+			return {"mode": "sensorium", "profile": "swarm_lidar", "label": "SENSORIUM ESSAIM", "operator_presence": "remote", "fov": 88.0, "eye_offset": Vector3(0.0, 0.10, -0.55)}
+		"octopod":
+			return {"mode": "cockpit", "profile": "armored_core", "label": "NOYAU BLINDÉ", "operator_presence": "onboard", "fov": 76.0, "eye_offset": Vector3(0.0, 0.06, -0.96)}
+		"hover":
+			return {"mode": "cockpit", "profile": "aether_flightdeck", "label": "POSTE AETHER", "operator_presence": "onboard", "fov": 84.0, "eye_offset": Vector3(0.0, 0.03, -1.28)}
+		"tracked":
+			return {"mode": "cockpit", "profile": "siege_cab", "label": "CABINE DE SIÈGE", "operator_presence": "onboard", "fov": 75.0, "eye_offset": Vector3(0.0, 0.08, -0.92)}
+		"monowheel":
+			return {"mode": "cockpit", "profile": "gyro_capsule", "label": "CAPSULE GYRO", "operator_presence": "onboard", "fov": 82.0, "eye_offset": Vector3(0.0, 0.00, -0.72)}
+		"orb":
+			return {"mode": "sensorium", "profile": "inertial_omniscan", "label": "OMNISCAN INERTIEL", "operator_presence": "remote", "fov": 92.0, "eye_offset": Vector3(0.0, 0.14, -0.35)}
+		"centurion":
+			return {"mode": "sensorium", "profile": "distributed_command", "label": "COMMANDE DISTRIBUÉE", "operator_presence": "remote", "fov": 86.0, "eye_offset": Vector3(0.0, 0.16, -0.45)}
+		_:
+			return {"mode": "cockpit", "profile": "command_canopy", "label": "COCKPIT TACTIQUE", "operator_presence": "onboard", "fov": 79.0, "eye_offset": Vector3(0.0, 0.02, -1.14)}
 
 
 
@@ -562,13 +589,13 @@ static func _lore(chassis_id: String) -> String:
 		"biped": return "Premier châssis homologué du Circuit Zero, le Raptor reste la référence des pilotes qui changent de ligne au dernier instant."
 		"tripod": return "Le Triarch fut conçu pour les plateformes minières orbitales; ses trois appuis lisent les vibrations avant que la piste ne cède."
 		"quadruped": return "Fenrir convertit chaque freinage en tension mécanique, puis libère cette énergie dans une relance prédatrice."
-		"hexapod": return "Les six jambes du Mantis négocient indépendamment boue, glace et débris, comme un seul calculateur distribué."
+		"hexapod": return "Le Mantis est un corps de course sans pilote embarqué : ses six jambes négocient indépendamment boue, glace et débris sous le sensorium distant de son opérateur."
 		"octopod": return "Arachne protège son pilote dans un noyau central entouré de huit vecteurs d’impact capables d’ouvrir une trajectoire."
 		"hover": return "Wraith est un prototype sans contact dont le coussin magnétique transforme les sols hostiles en lignes de vitesse."
 		"tracked": return "Bastion descend des engins de siège telluriques; son couple maintient la poussée lorsque le reste de la grille décroche."
 		"monowheel": return "Cyclops enferme son pilote dans un gyroscope actif et fait de chaque dérive une réserve d’énergie."
-		"orb": return "Orb S7 recompose son inertie autour d’un cœur mobile, absorbant les chocs latéraux pour les restituer en accélération."
-		"centurion": return "Les douze appuis synchronisés du Centurion furent créés pour franchir les épaves mouvantes de l’Anneau de Morrigan."
+		"orb": return "Orb S7 est un robot de course sans habitacle. Son opérateur rejoint à distance un cœur mobile qui absorbe les chocs latéraux pour les restituer en accélération."
+		"centurion": return "Le Centurion est un corps myriapode télépiloté : son noyau distribue les ordres de l’opérateur entre douze appuis et reconfigure sa foulée à chaque secteur."
 		_: return "Architecture de compétition homologuée par la Nexus Grand League."
 
 

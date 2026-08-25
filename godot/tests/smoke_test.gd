@@ -410,11 +410,19 @@ func _test_mecha_visual_contract() -> void:
 		_expect(visual.camera_anchor("tps") != null, "ancrage TPS absent : %s" % chassis.get("id", "?"))
 		_expect(visual.camera_anchor("fps") != null, "ancrage cockpit absent : %s" % chassis.get("id", "?"))
 		var cockpit_offset: Vector3 = chassis.get("cockpit_offset", Vector3(0, 2.65, 0.10))
-		var dashboard := visual.get_node_or_null("CockpitDashboard") as Node3D
+		var first_person: Dictionary = chassis.get("first_person", {}) if chassis.get("first_person", {}) is Dictionary else {}
+		var eye_offset: Vector3 = first_person.get("eye_offset", Vector3(0, 0, -1.12))
 		var fps_anchor := visual.camera_anchor("fps")
-		_expect(fps_anchor != null and fps_anchor.position.is_equal_approx(cockpit_offset + Vector3(0, 0, -1.12)), "ancrage FPS mal aligné : %s" % chassis.get("id", "?"))
-		_expect(dashboard != null and dashboard.position.is_equal_approx(cockpit_offset + Vector3(0, -0.68, -2.05)), "intérieur cockpit mal aligné : %s" % chassis.get("id", "?"))
-		_expect(visual.get_node_or_null("CockpitTopFrame") != null, "traverse cockpit absente : %s" % chassis.get("id", "?"))
+		_expect(fps_anchor != null and fps_anchor.position.is_equal_approx(cockpit_offset + eye_offset), "ancrage FPS mal aligné : %s" % chassis.get("id", "?"))
+		if String(first_person.get("mode", "cockpit")) == "sensorium":
+			_expect(visual.get_node_or_null("CockpitCanopy") == null, "verrière présente sur robot distant : %s" % chassis.get("id", "?"))
+			_expect(visual.get_node_or_null("SensorOrigin") != null, "origine sensorium absente : %s" % chassis.get("id", "?"))
+			_expect(visual.get_node_or_null("FPSInteriorRoot") == null, "habitacle présent sur robot distant : %s" % chassis.get("id", "?"))
+		else:
+			var interior := visual.get_node_or_null("FPSInteriorRoot") as Node3D
+			_expect(visual.get_node_or_null("CockpitCanopy") != null, "verrière cockpit absente : %s" % chassis.get("id", "?"))
+			_expect(interior != null and interior.get_node_or_null("CockpitDashboard") != null, "tableau de bord cockpit absent : %s" % chassis.get("id", "?"))
+			_expect(interior != null and interior.get_node_or_null("CockpitTopFrame") != null, "traverse cockpit absente : %s" % chassis.get("id", "?"))
 		_expect(visual.get_node_or_null("ModuleCore_core_bastion") != null, "module noyau non visible : %s" % chassis.get("id", "?"))
 		_expect(visual.get_node_or_null("ModuleMobility_mobility_adaptive") != null, "module mobilité non visible : %s" % chassis.get("id", "?"))
 		_expect(visual.get_node_or_null("ModuleUtility_utility_scanner") != null, "module utilitaire non visible : %s" % chassis.get("id", "?"))

@@ -1,5 +1,5 @@
 MECHA OVERDRIVE — CIRCUIT ZERO
-Version source : 2.5.0
+Version source : 2.5.1
 Build source local : 25 août 2026
 Propriétaire du projet : Darknigthmare
 
@@ -16,6 +16,7 @@ Propriétaire du projet : Darknigthmare
 - dix modèles procéduraux enrichis, 18 modules détaillés et locomotions animées
 - huit décors multi-LOD avec infrastructures et budgets Web/mobile contrôlés
 - circuits homologués à 35 m minimum, trois colonnes de dépassement et grille 2 × 4
+- présentation FPS par architecture : 7 cockpits pilotés et 3 sensoriums autonomes
 - commandes clavier, manette et mobile multi-touch avec zones sûres
 - IA profilée, trajectoires, anticipation du danger, trafic et objets contextuels
 - 21 textures bitmap OpenAI originales avec provenance et SHA-256
@@ -24,22 +25,32 @@ COMPAGNON WEB
 - Édition Canvas/PWA historique conservée à la racine
 - Serveurs Node et Python, progression locale et fonctionnement hors ligne
 
-VALIDATIONS LOCALES CONFIRMÉES
-- Validation statique Godot : PASS — 10 châssis, 500 locomotions, 8 pistes
-  homologuées, 21 assets OpenAI, détails de production, mobile et Grand Tour
-- Import/parse Godot 4.7.2 : PASS
-- Neuf suites Godot : PASS — smoke, locomotion, runtime, narration, sécurité,
-  garage, détails mécha, animations mécaniques et décors multi-LOD
-- Persistance de résultats : PASS — rollback complet, aucun faux titre/couronne,
-  retry avec feedback UI, aucune double récompense et cartes de podium homologué
-  masquées pendant `save_failed`
-- Vérification JavaScript : PASS — 68 fichiers
-- Tests moteur du compagnon : 12/12 ; intégration : 21/21
-- Validation Web : 115/115 ; agrégat `npm run qa` : PASS
-- Export Web mono-thread : 9/9 artefacts, source synchronisée
-- QA Chrome finale 2.5.0 : PASS — bureau 1440x900, mobile 844x390, console/réseau propres
+VALIDATION LOCALE FINALE 2.5.1 — PASS
+- Empreinte source post-revue définitive :
+  e22798767175472d920ac522f766a667d793a4a84bcc338cacd8b8780871786c
+- Dix suites Godot 4.7.2 : PASS 10/10, code 0, exécutées séquentiellement
+- `npm run qa` : PASS — 68 JS, 115/115, moteur 12/12, intégration 21/21,
+  validation statique Godot PASS
+- Correctifs P1 : caméra FPS verrouillée rigidement à l’ancre à 60 Hz ; caméra
+  extérieure maintenue pendant briefing, compte à rebours et pause pré-GO
+- Contrat runtime FPS renforcé : PASS
+- Quatre warnings rollback intentionnels d’ouverture temporaire, aucun échec
+- Passe complète sur l’empreinte finale : PASS
+- Nouvel export/stamp Web : PASS — version 2.5.1, source synchronisée, 9/9
+- HTML : 5 650 octets — SHA-256 `51504b6a2ae642971ff74d6135a9038384909c72cb3b307153a669d4ab359979`
+- PCK : 44 094 764 octets — SHA-256 `eff4f014bfa350d1d4802332bb6c316d41d7bdc7f59ffa4172fe0d820d424d65`
+- QA navigateur FPS finale : PASS — cockpit Raptor stable à 105 km/h et
+  sensorium Mantis validé sur bureau/mobile
+- Console finale e227 : PASS — zéro warning/erreur/échec réseau, six logs normaux
+- Preuves : `desktop-biped-cockpit-final.png`, `desktop-mantis-sensorium-final.png`,
+  `mobile-mantis-sensorium-final.png` et `console-final.json`
 
-STATUT DE PUBLICATION 2.5.0
+STATUT CANDIDAT 2.5.1
+- Validation locale finale : PASS
+- Publication distante, CI, release v2.5.1 et Vercel : EN ATTENTE
+- Aucun commit, tag, déploiement ou alias 2.5.1 n’est revendiqué ici
+
+HISTORIQUE DE PUBLICATION 2.5.0
 - Sources, neuf suites, agrégat Node et export Web stampé : PASS local
 - QA navigateur bureau/mobile finale : PASS sur l’empreinte source ci-dessous
 - Publication distante, CI, release v2.5.0 et Vercel : PASS
@@ -50,7 +61,7 @@ STATUT DE PUBLICATION 2.5.0
 - Jeu public : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
 - Empreinte source exportée :
   73435a0e59657b3f9f718b3112833b2ecc006e67296386df5bb61eb88c4bad15
-- SHA-256 et tailles des neuf artefacts : godot3d/build.json
+- Empreintes et artefacts historiques détaillés dans `docs/QA_REPORT.md`
 
 P2 RESTANTS
 - vraies collisions 3D et interactions caméra ; hazards sensibles à la voie

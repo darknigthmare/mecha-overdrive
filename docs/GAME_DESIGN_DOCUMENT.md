@@ -1,6 +1,6 @@
 # Game Design Document — MECHA OVERDRIVE: Circuit Zero
 
-## Contrat de jeu actuel — Godot 2.5.0
+## Contrat de jeu actuel — Godot 2.5.1
 
 Cette section est la spécification autoritative de l’édition Godot. Elle remplace, pour cette édition, les quantités et limites de la baseline Canvas/PWA 1.0 archivée plus bas.
 
@@ -72,7 +72,7 @@ Canopée et Glacier utilisent des courbes continues sans cassure de ruban. Les d
 
 ### Caméras, direction visuelle et persistance
 
-Tous les châssis fournissent une vue TPS et une vue cockpit/FPS avec ancres dédiées. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé par châssis. La vue interne active le composite cockpit et masque les pièces extérieures obstructives.
+Tous les châssis fournissent une vue TPS et une vue FPS avec ancres et FOV dédiés. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé. Le briefing, le compte à rebours et toute pause pré-GO conservent la caméra extérieure même si la préférence est FPS. Une fois la course lancée, la caméra FPS est verrouillée rigidement à l’ancre du mécha à 60 Hz afin d’éviter toute dérive du cadre. Sept architectures pilotées affichent un habitacle 3D propre au cadre. Mantis, Orb et Centurion, sans pilote embarqué, affichent un sensorium plein écran avec liaison, réticule, horizon, vecteur et diagnostics. Le mode dépend du châssis, jamais du pilote sélectionné ni des 50 locomotions.
 
 La bibliothèque de matériaux couvre l’armure légère et lourde, les micro-panneaux de détail, les trois familles de modules, les surfaces standard, thermiques et cryogéniques, le cockpit, les infrastructures et la baie du garage. Vingt-et-un assets raster originaux OpenAI incluent le key art intergalactique, l’équipe mécano et deux surfaces de production dédiées aux méchas et aux décors. Les fichiers, identifiants de génération, prompts, dimensions, empreintes SHA-256 et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
 
@@ -82,7 +82,7 @@ Le profil Godot utilise `SAVE_VERSION = 5`. Il conserve les chargements, locomot
 
 ## Annexe — Spécification historique du compagnon web 1.0
 
-Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.5.0 ci-dessus.
+Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.5.1 ci-dessus.
 
 ## 1. Vision
 

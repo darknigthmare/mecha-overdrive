@@ -76,6 +76,8 @@ func start(request: Dictionary) -> void:
 	var profile := _profile()
 	var settings: Dictionary = profile.get("settings", {}) if profile.get("settings", {}) is Dictionary else {}
 	_reduced_motion = bool(settings.get("reduced_motion", false))
+	_running = false
+	_finished = false
 	_briefing_remaining = GRID_BRIEFING_SECONDS
 	_countdown = COUNTDOWN_SECONDS
 	_last_countdown_number = 3
@@ -89,6 +91,11 @@ func start(request: Dictionary) -> void:
 		_camera_mode = "tps"
 	_build_track()
 	_build_racers()
+	if _player != null:
+		var player_state: Dictionary = _player.call(&"snapshot")
+		_config["chassis_id"] = String(player_state.get("chassis_id", "biped"))
+	# Grid and countdown cameras are external even when FPS is the saved choice.
+	_config["camera_active_view"] = "tps"
 	_build_camera()
 	_build_feedback()
 	_update_racer_visuals(0.0)
@@ -109,7 +116,10 @@ func _process(delta: float) -> void:
 	if _finished:
 		return
 	if _paused:
-		_update_camera(delta)
+		if _running:
+			_update_camera(delta)
+		else:
+			_update_grid_camera(delta)
 		return
 
 	if _briefing_remaining > 0.0:
@@ -134,8 +144,12 @@ func _process(delta: float) -> void:
 			_audio.play_event("go" if next_second == 0 else "count")
 		if _countdown <= 0.0:
 			_running = true
+			_apply_player_camera_mode()
 			_start_penalty_remaining = FALSE_START_PENALTY_SECONDS if _false_start else 0.0
-		_update_camera(delta)
+		if _running:
+			_update_camera(delta)
+		else:
+			_update_grid_camera(delta)
 		return
 
 	if _start_penalty_remaining > 0.0:
@@ -1039,13 +1053,17 @@ func switch_camera_view() -> String:
 func _set_camera_mode(mode: String, persist: bool) -> void:
 	_camera_mode = mode if mode in ["tps", "fps"] else "tps"
 	_config["camera_view"] = _camera_mode
-	var player_visual: RacerVisual = _visuals.get("player")
-	if player_visual != null and player_visual.has_method(&"set_camera_mode"):
-		player_visual.call(&"set_camera_mode", _camera_mode)
+	_apply_player_camera_mode()
 	if persist:
 		var save := get_node_or_null("/root/SaveSystem")
 		if save != null and save.has_method(&"set_camera_view"):
 			save.call(&"set_camera_view", _camera_mode)
+
+
+func _apply_player_camera_mode() -> void:
+	var player_visual: RacerVisual = _visuals.get("player")
+	if player_visual != null and player_visual.has_method(&"set_camera_mode"):
+		player_visual.call(&"set_camera_mode", _camera_mode if _running else "tps")
 
 
 func _build_feedback() -> void:
@@ -1160,16 +1178,21 @@ func _update_camera(delta: float) -> void:
 		forward = -anchor.global_basis.z.normalized()
 		if _camera_mode == "fps":
 			look_target = target_position + forward * 28.0 + anchor.global_basis.y.normalized() * 0.12
+			var first_person_fov := _first_person_fov(String(state.get("chassis_id", "biped")))
 			response = 15.0
-			target_fov = 79.0 if _reduced_motion else 79.0 + minf(5.0, float(state.get("speed_ratio", 0.0)) * 3.0)
+			target_fov = first_person_fov if _reduced_motion else first_person_fov + minf(5.0, float(state.get("speed_ratio", 0.0)) * 3.0)
 		else:
 			look_target = pose.origin + forward * (11.0 + float(state.get("speed_ratio", 0.0)) * 7.0) + pose.basis.y.normalized() * 1.7
 			response = 7.5
 	var weight := 1.0 - exp(-delta * response)
-	_camera.global_position = _camera.global_position.lerp(target_position, weight)
+	# A cockpit is rigidly attached to its camera anchor. Positional smoothing
+	# that is correct in TPS creates metres of lag at race speed and makes the
+	# interior slide around the player. Keep only FOV easing in first person.
+	var lock_to_anchor := anchor != null and _camera_mode == "fps"
+	_camera.global_position = target_position if lock_to_anchor else _camera.global_position.lerp(target_position, weight)
 	# Camera3D looks along -Z; `use_model_front` would turn its view away from the track.
 	var next_basis := _camera.global_transform.looking_at(look_target, Vector3.UP, false).basis
-	_camera.global_basis = _camera.global_basis.slerp(next_basis, weight)
+	_camera.global_basis = next_basis if lock_to_anchor else _camera.global_basis.slerp(next_basis, weight)
 	_camera.fov = lerpf(_camera.fov, target_fov, weight)
 
 
@@ -1208,6 +1231,12 @@ func _update_ai_item_cooldowns(delta: float) -> void:
 			_ai_item_cooldowns.erase(racer_id)
 		else:
 			_ai_item_cooldowns[racer_id] = remaining
+
+
+func _first_person_fov(chassis_id: String) -> float:
+	var chassis := GameDatabase.get_chassis(chassis_id)
+	var first_person: Dictionary = chassis.get("first_person", {}) if chassis.get("first_person", {}) is Dictionary else {}
+	return clampf(float(first_person.get("fov", 79.0)), 55.0, 110.0)
 
 
 func _chassis_tone(chassis_id: String) -> float:

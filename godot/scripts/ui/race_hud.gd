@@ -10,6 +10,7 @@ signal mobile_action_triggered(action: StringName)
 const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 const RaceBroadcast = preload("res://scripts/data/race_broadcast.gd")
 const MobileTouchControlsType = preload("res://scripts/input/mobile_touch_controls.gd")
+const FirstPersonOverlayType = preload("res://scripts/ui/first_person_overlay.gd")
 const MOBILE_TELEMETRY_COMPACT_HEIGHT := 68.0
 const MOBILE_TELEMETRY_STANDARD_HEIGHT := 96.0
 const MOBILE_TELEMETRY_MIN_WIDTH := 180.0
@@ -66,6 +67,9 @@ var _mobile_status_label: Label
 var _touch_layout_enabled := false
 var _mobile_status_item_name := "VIDE"
 var _mobile_status_view_name := "TPS"
+var _first_person_overlay: FirstPersonOverlay
+var _first_person_chassis_id := ""
+var _active_camera_view := "tps"
 
 
 func _ready() -> void:
@@ -113,9 +117,13 @@ func configure(config: Dictionary) -> void:
 	_finish_overlay.visible = false
 	show_countdown(null)
 	show_pause(false)
+	_configure_first_person(String(config.get("chassis_id", config.get("selected_chassis", "biped"))))
+	_active_camera_view = String(config.get("camera_active_view", "tps"))
+	if _first_person_overlay != null:
+		_first_person_overlay.set_camera_mode(_active_camera_view)
 	if _mobile_controls != null:
 		_mobile_controls.configure(bool(config.get("force_touch_controls", false)))
-	_update_mobile_status("VIDE", "TPS")
+	_update_mobile_status("VIDE", _view_name(_active_camera_view))
 
 
 func show_race_briefing(config: Dictionary, grid_entries: Array = []) -> void:
@@ -134,6 +142,8 @@ func show_race_briefing(config: Dictionary, grid_entries: Array = []) -> void:
 	_briefing_overlay.visible = true
 	_finish_overlay.visible = false
 	_countdown_panel.visible = false
+	if _first_person_overlay != null:
+		_first_person_overlay.visible = false
 	if _mobile_controls != null:
 		_mobile_controls.set_suppressed(true)
 	var duration := ThemeFactory.motion_duration(_settings(), 0.22)
@@ -147,6 +157,8 @@ func show_race_briefing(config: Dictionary, grid_entries: Array = []) -> void:
 func hide_race_briefing() -> void:
 	if is_instance_valid(_briefing_overlay):
 		_briefing_overlay.visible = false
+	if _first_person_overlay != null:
+		_first_person_overlay.set_camera_mode(_active_camera_view)
 	if _mobile_controls != null:
 		_mobile_controls.set_suppressed(false)
 		_mobile_controls.configure(bool(_config.get("force_touch_controls", false)))
@@ -179,8 +191,14 @@ func update_race(snapshot: Dictionary) -> void:
 	elif not String(item).is_empty():
 		var item_data := GameDatabase.get_item(String(item))
 		item_name = String(item_data.get("short", item_data.get("name", item))).to_upper()
+	var chassis_id := String(snapshot.get("chassis_id", _first_person_chassis_id if not _first_person_chassis_id.is_empty() else "biped"))
+	_configure_first_person(chassis_id)
+	_active_camera_view = String(snapshot.get("camera_view", "tps"))
+	if _first_person_overlay != null:
+		_first_person_overlay.set_camera_mode(_active_camera_view)
+		_first_person_overlay.update_telemetry(snapshot)
 	var charges := int(snapshot.get("item_charges", snapshot.get("charges", 1)))
-	var view_name := "COCKPIT" if String(snapshot.get("camera_view", "tps")) == "fps" else "TPS"
+	var view_name := _view_name(_active_camera_view)
 	_item_label.text = "MODULE  //  %s%s   •   VUE %s  [V]" % [item_name, "  ×%d" % charges if item_name != "VIDE" and charges > 1 else "", view_name]
 	_update_mobile_status(item_name, view_name)
 
@@ -244,6 +262,8 @@ func show_finish(result: Dictionary) -> void:
 	_briefing_overlay.visible = false
 	_countdown_panel.visible = false
 	_finish_title.text = String(call.get("title", "ARRIVÉE HOMOLOGUÉE"))
+	if _first_person_overlay != null:
+		_first_person_overlay.visible = false
 	_finish_position.text = String(call.get("position", "-- / 08"))
 	_finish_callout.text = String(call.get("callout", "Drapeau à damier."))
 	_finish_venue.text = String(call.get("venue", "NEXUS GRAND LEAGUE"))
@@ -293,6 +313,11 @@ func _build_interface() -> void:
 	if _built:
 		return
 	_built = true
+
+	_first_person_overlay = FirstPersonOverlayType.new()
+	_first_person_overlay.name = "FirstPersonPresentation"
+	_first_person_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_first_person_overlay)
 
 	_race_safe_margin = MarginContainer.new()
 	_race_layout = _race_safe_margin
@@ -675,6 +700,34 @@ func _refresh_mobile_status_text(compact: bool) -> void:
 		_mobile_status_item_name,
 		_mobile_status_view_name,
 	]
+
+
+func first_person_interface_mode() -> String:
+	if _first_person_overlay == null:
+		return "tps"
+	return _first_person_overlay.interface_mode()
+
+
+func sensor_overlay_visible() -> bool:
+	return _first_person_overlay != null and _first_person_overlay.sensor_overlay_visible()
+
+
+func _configure_first_person(chassis_id: String) -> void:
+	var normalized := chassis_id if GameDatabase.has_chassis(chassis_id) else "biped"
+	if normalized == _first_person_chassis_id:
+		return
+	_first_person_chassis_id = normalized
+	if _first_person_overlay != null:
+		_first_person_overlay.configure(GameDatabase.get_chassis(normalized))
+
+
+func _view_name(camera_view: String) -> String:
+	if camera_view != "fps":
+		return "TPS"
+	var chassis := GameDatabase.get_chassis(_first_person_chassis_id)
+	var first_person: Dictionary = chassis.get("first_person", {}) if chassis.get("first_person", {}) is Dictionary else {}
+	return "CAPTEURS" if String(first_person.get("mode", "cockpit")) == "sensorium" else "COCKPIT"
+
 
 func mobile_controls_visible() -> bool:
 	return _mobile_controls != null and _mobile_controls.is_touch_mode()

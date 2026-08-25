@@ -86,7 +86,11 @@ Chaque machine reçoit trois interfaces normalisées : **Noyau**, **Mobilité** 
 
 À ces modules s’ajoute la baie locomotrice : dix technologies et cinq montages autorisent cinquante configurations par châssis. Le **bi-propulseur Aether** emploie deux nacelles antigravité indépendantes reliées au cockpit central par un champ souple et pilotées en poussée différentielle.
 
-Les cockpits sont eux aussi adaptés à l’architecture. Certains pilotes exigent la vision tactique extérieure des drones TPS ; d’autres ne jurent que par la vue interne, au plus près des vibrations et de la chaleur. Le Hangar 08 conserve ce choix dans le profil de chaque machine.
+Sept architectures embarquent physiquement leur pilote. Raptor, Triarch, Fenrir, Arachne, Wraith, Bastion et Cyclops possèdent chacun un habitacle propre : verrière, montants, harnais, tableau de bord et écrans suivent leur volume et leur fonction.
+
+Mantis H6, Orb S7 et Centurion S12 sont des corps de course sans habitacle. Leur pilote reste au paddock et rejoint la machine par **sensorium de téléprésence** : horizon artificiel, réticule, vecteur de direction, qualité de liaison et état des sous-systèmes remplacent le faux cockpit. La Charte reconnaît comme pilote tout contrôleur organique ou synthétique, embarqué ou lié à distance.
+
+Tous les pilotes peuvent demander la vision tactique extérieure TPS. En FPS, la machine choisit automatiquement son cockpit physique ou son HUD capteurs canonique ; la locomotion modulaire ne change jamais ce contrat.
 
 ## La règle fondamentale
 

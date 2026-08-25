@@ -26,7 +26,7 @@ Le dépôt contient deux runtimes indépendants qui partagent la même identité
 
 ## 2. Architecture de l’édition Godot 3D
 
-Cette section décrit le contrat de la release **Godot 2.5.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
+Cette section décrit le contrat de la release **Godot 2.5.1**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
 
 ### 2.1 Configuration du projet
 
@@ -100,7 +100,9 @@ La méthode `sample_pose(track, distance, lane)` fournit un `Transform3D` commun
 
 Le visuel ne possède pas la vérité physique. Il reçoit à chaque trame un snapshot du pilote puis est replacé sur la pose de piste. La simulation peut ainsi rester déterministe et indépendante de la fréquence d’affichage.
 
-Chaque châssis expose des ancres TPS et cockpit. Le changement de vue masque les éléments extérieurs qui obstrueraient la vue interne, affiche l’habillage cockpit et persiste le choix par châssis. Les ancres sont définies par famille, mais l’audit visuel exhaustif des deux caméras sur les 500 configurations reste un P2.
+Chaque châssis expose des ancres TPS/FPS et un profil `first_person` canonique (`mode`, `profile`, `operator_presence`, `fov`, `eye_offset`). `CockpitVisuals` produit sept habitacles physiques profilés et trois réseaux de capteurs sans verrière. `FirstPersonOverlay` affiche une instrumentation discrète en cockpit ou le sensorium complet en téléprésence. Les groupes intérieur/coque sont exclusifs et les détails FPS ne sont construits que pour le mécha joueur.
+
+La grille, le briefing, le compte à rebours et toute pause pré-GO conservent une caméra extérieure même si la préférence sauvegardée est FPS ; le mode choisi n’est activé qu’au lancement de la simulation. Une fois active, la caméra FPS est verrouillée rigidement à l’ancre du mécha à 60 Hz. `fps_presentation_test.gd` couvre les dix profils, l’exclusivité cockpit/sensorium, les ancres, la préférence FPS pré-GO, le verrouillage runtime, les budgets Web et le HUD mobile, mais l’audit exhaustif des deux caméras sur les 500 configurations reste un P2.
 
 ### 2.6 Simulation de course
 
@@ -227,7 +229,7 @@ ResultsScreen + PodiumPresenter
 
 ## 4. Architecture historique de l’édition compagnon web
 
-Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.5.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
+Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.5.1. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
 
 | Fichier | Responsabilité |
 |---|---|
@@ -284,6 +286,7 @@ Les deux surfaces sont publiées ensemble :
 - `godot/tests/mecha_detail_test.gd` : densité, textures et budgets réels meshes/triangles des dix architectures et 18 modules.
 - `godot/tests/mecha_animation_test.gd` : marche, inertie, suspension, roues, chenilles, propulseurs, impacts, mouvement réduit et budget polygonal.
 - `godot/tests/track_scenery_production_test.gd` : huit signatures, LOD, déterminisme, clearance, matériau infrastructure et plafond de nœuds.
+- `godot/tests/fps_presentation_test.gd` : dix profils, sept cockpits pilotés, trois sensoriums autonomes, géométries exclusives, ancres, budgets Web et HUD mobile 844 × 390.
 - `godot --headless --path godot --editor --quit` : import et parse par le vrai moteur.
 
 ### Web
@@ -301,7 +304,7 @@ Les deux surfaces sont publiées ensemble :
 npm run qa
 ```
 
-Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le validateur statique Godot. Le parse/import et les neuf suites Godot restent exécutés séparément avec Godot 4.7.2. Les totaux et résultats effectivement observés pour le commit publié sont consignés dans `docs/QA_REPORT.md`.
+Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le validateur statique Godot. Le parse/import et les dix suites Godot restent exécutés séparément avec Godot 4.7.2. Les totaux et résultats effectivement observés pour chaque candidat sont consignés dans `docs/QA_REPORT.md` sans préjuger d’une publication distante.
 
 ## 6. Ajouter du contenu Godot
 
