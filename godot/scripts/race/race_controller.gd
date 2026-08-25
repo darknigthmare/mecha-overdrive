@@ -10,6 +10,7 @@ signal menu_requested
 signal retry_requested(config: Dictionary)
 
 const TrackFactoryType := preload("res://scripts/world/track_factory.gd")
+const TrackSafetyType := preload("res://scripts/world/track_safety.gd")
 const MechaFactoryType := preload("res://scripts/mecha/mecha_factory.gd")
 const RacerStateType := preload("res://scripts/race/racer_state.gd")
 const AudioDirectorType := preload("res://scripts/audio/audio_director.gd")
@@ -32,12 +33,14 @@ const FINISH_BROADCAST_SECONDS := 1.65
 var _config: Dictionary = {}
 var _track: Node3D
 var _track_length := 1.0
+var _track_width := TrackSafetyType.MIN_ROAD_WIDTH
 var _racers: Array[RefCounted] = []
 var _visuals: Dictionary[String, RacerVisual] = {}
 var _snapshots: Array[Dictionary] = []
 var _player: RefCounted
 var _camera: Camera3D
 var _camera_mode := "tps"
+var _reduced_motion := false
 var _hud: RaceHUD
 var _audio: AudioDirector
 var _accumulator := 0.0
@@ -70,6 +73,9 @@ func _ready() -> void:
 
 func start(request: Dictionary) -> void:
 	_config = request.duplicate(true)
+	var profile := _profile()
+	var settings: Dictionary = profile.get("settings", {}) if profile.get("settings", {}) is Dictionary else {}
+	_reduced_motion = bool(settings.get("reduced_motion", false))
 	_briefing_remaining = GRID_BRIEFING_SECONDS
 	_countdown = COUNTDOWN_SECONDS
 	_last_countdown_number = 3
@@ -187,8 +193,7 @@ func _step_simulation(delta: float) -> void:
 		context["lookahead_distance"] = lookahead
 		context["position"] = _rank_in_snapshots(String(before.get("racer_id", "")), Array(base_context.get("racers", [])))
 		context["race_progress"] = clampf(racer_distance / maxf(1.0, _track_length * int(_config.get("laps", 3))), 0.0, 1.0)
-		if not bool(before.get("is_player", false)):
-			context["speed_multiplier"] = float(base_context.get("speed_multiplier", 1.0)) * _bounded_ai_catchup(before)
+		context["speed_multiplier"] = _simulation_speed_multiplier(before, float(base_context.get("speed_multiplier", 1.0)))
 		var controls: Dictionary = _player_controls() if bool(before.get("is_player", false)) else racer.call(&"ai_controls", context)
 		var after: Dictionary = racer.call(&"step", delta, controls, context)
 		_process_marker_contact(racer, after)
@@ -493,14 +498,18 @@ func _resolve_close_contacts() -> void:
 	for first_index in range(_racers.size()):
 		var first: RefCounted = _racers[first_index]
 		var a: Dictionary = first.call(&"snapshot")
-		if bool(a.get("dnf", false)) or bool(a.get("finished", false)):
+		if bool(a.get("dnf", false)) or bool(a.get("finished", false)) or bool(a.get("eliminated", false)):
 			continue
 		for second_index in range(first_index + 1, _racers.size()):
 			var second: RefCounted = _racers[second_index]
 			var b: Dictionary = second.call(&"snapshot")
-			if bool(b.get("dnf", false)) or bool(b.get("finished", false)):
+			if bool(b.get("dnf", false)) or bool(b.get("finished", false)) or bool(b.get("eliminated", false)):
 				continue
-			if absf(float(a.get("distance", 0.0)) - float(b.get("distance", 0.0))) < 1.65 and absf(float(a.get("lane", 0.0)) - float(b.get("lane", 0.0))) < 0.18:
+			var contact_length := (maxf(1.0, float(a.get("vehicle_length", 4.0))) + maxf(1.0, float(b.get("vehicle_length", 4.0)))) * 0.5
+			var contact_width := (maxf(1.0, float(a.get("vehicle_width", 3.5))) + maxf(1.0, float(b.get("vehicle_width", 3.5)))) * 0.5
+			var physical_track_width := maxf(_track_width, maxf(float(a.get("track_width", _track_width)), float(b.get("track_width", _track_width))))
+			var lateral_gap := TrackSafetyType.lateral_gap_meters(float(a.get("lane", 0.0)), float(b.get("lane", 0.0)), physical_track_width)
+			if absf(float(a.get("distance", 0.0)) - float(b.get("distance", 0.0))) < contact_length and lateral_gap < contact_width:
 				var direction := -1.0 if float(a.get("lane", 0.0)) < float(b.get("lane", 0.0)) else 1.0
 				var first_strength := float(first.call(&"contact_damage_multiplier"))
 				var second_strength := float(second.call(&"contact_damage_multiplier"))
@@ -510,17 +519,45 @@ func _resolve_close_contacts() -> void:
 
 
 func _sort_and_rank_snapshots() -> void:
-	_snapshots.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var a_finished := String(a.get("racer_id", "")) in _finish_order
-		var b_finished := String(b.get("racer_id", "")) in _finish_order
-		if a_finished and b_finished:
-			return _finish_order.find(String(a.get("racer_id", ""))) < _finish_order.find(String(b.get("racer_id", "")))
-		if a_finished != b_finished:
-			return a_finished
-		return float(a.get("distance", 0.0)) > float(b.get("distance", 0.0))
-	)
+	_snapshots.sort_custom(Callable(self, "_classification_precedes"))
 	for index in range(_snapshots.size()):
 		_snapshots[index]["position"] = index + 1
+
+
+func _classification_precedes(a: Dictionary, b: Dictionary) -> bool:
+	var a_id := String(a.get("racer_id", ""))
+	var b_id := String(b.get("racer_id", ""))
+	var a_ineligible := bool(a.get("dnf", false)) or bool(a.get("eliminated", false))
+	var b_ineligible := bool(b.get("dnf", false)) or bool(b.get("eliminated", false))
+	if a_ineligible != b_ineligible:
+		return not a_ineligible
+	var a_distance := float(a.get("distance", 0.0))
+	var b_distance := float(b.get("distance", 0.0))
+	if a_ineligible:
+		if not is_equal_approx(a_distance, b_distance):
+			return a_distance > b_distance
+		return a_id.naturalnocasecmp_to(b_id) < 0
+
+	var a_finish_index := _finish_order.find(a_id)
+	var b_finish_index := _finish_order.find(b_id)
+	var a_finished := a_finish_index >= 0 or bool(a.get("finished", false))
+	var b_finished := b_finish_index >= 0 or bool(b.get("finished", false))
+	if a_finished != b_finished:
+		return a_finished
+	if a_finished:
+		if a_finish_index >= 0 and b_finish_index >= 0 and a_finish_index != b_finish_index:
+			return a_finish_index < b_finish_index
+		if (a_finish_index >= 0) != (b_finish_index >= 0):
+			return a_finish_index >= 0
+		var a_finish_time := maxf(0.0, float(a.get("finish_time", a.get("elapsed", 0.0))))
+		var b_finish_time := maxf(0.0, float(b.get("finish_time", b.get("elapsed", 0.0))))
+		if a_finish_time > 0.0 and b_finish_time > 0.0 and not is_equal_approx(a_finish_time, b_finish_time):
+			return a_finish_time < b_finish_time
+		if (a_finish_time > 0.0) != (b_finish_time > 0.0):
+			return a_finish_time > 0.0
+	if not is_equal_approx(a_distance, b_distance):
+		return a_distance > b_distance
+	return a_id.naturalnocasecmp_to(b_id) < 0
 
 
 func _handle_elimination_mode() -> void:
@@ -567,6 +604,9 @@ func _prepare_official_classification(player_state: Dictionary) -> void:
 	var player_finished := bool(player_state.get("finished", false)) \
 		and not bool(player_state.get("dnf", false)) \
 		and not bool(player_state.get("eliminated", false))
+	var player_finish_time := maxf(0.0, float(player_state.get("finish_time", 0.0)))
+	if player_finished and player_finish_time <= 0.0:
+		player_finish_time = _elapsed
 	for index in range(_snapshots.size()):
 		var entry: Dictionary = _snapshots[index]
 		if not bool(entry.get("is_player", false)) and String(entry.get("racer_id", "")) != "player":
@@ -575,17 +615,58 @@ func _prepare_official_classification(player_state: Dictionary) -> void:
 		entry["dnf"] = bool(player_state.get("dnf", false)) or bool(player_state.get("eliminated", false))
 		entry["eliminated"] = bool(player_state.get("eliminated", false))
 		entry["reason"] = String(player_state.get("reason", entry.get("reason", "")))
+		entry["finish_time"] = player_finish_time
 		_snapshots[index] = entry
 		var racer_id := String(entry.get("racer_id", "player"))
 		if player_finished and not racer_id in _finish_order:
 			_finish_order.append(racer_id)
 		break
 	_sort_and_rank_snapshots()
-	if not player_finished or String(_config.get("mode", "quick")) == "time_trial":
-		return
+	var allow_podium := String(_config.get("mode", "quick")) != "time_trial"
 	for index in range(_snapshots.size()):
 		var entry: Dictionary = _snapshots[index]
-		entry["classified"] = not bool(entry.get("dnf", false)) and not bool(entry.get("eliminated", false))
+		entry["classified"] = allow_podium and not bool(entry.get("dnf", false)) and not bool(entry.get("eliminated", false))
+		_snapshots[index] = entry
+	_decorate_classification()
+
+
+func _decorate_classification() -> void:
+	if _snapshots.is_empty():
+		return
+	var leader_index := -1
+	var leader_distance := 0.0
+	var leader_finish_time := 0.0
+	for index in range(_snapshots.size()):
+		var candidate: Dictionary = _snapshots[index]
+		if bool(candidate.get("dnf", false)) or bool(candidate.get("eliminated", false)):
+			continue
+		leader_index = index
+		leader_distance = float(candidate.get("distance", 0.0))
+		leader_finish_time = maxf(0.0, float(candidate.get("finish_time", 0.0)))
+		if leader_finish_time <= 0.0:
+			leader_finish_time = maxf(0.0, float(candidate.get("elapsed", 0.0)))
+		break
+	for index in range(_snapshots.size()):
+		var entry: Dictionary = _snapshots[index]
+		var finish_time := maxf(0.0, float(entry.get("finish_time", 0.0)))
+		if finish_time <= 0.0:
+			finish_time = maxf(0.0, float(entry.get("elapsed", 0.0)))
+		entry["position"] = index + 1
+		entry["finish_time"] = finish_time
+		entry["elapsed"] = finish_time
+		var delta_text := ""
+		if bool(entry.get("eliminated", false)):
+			delta_text = "ÉLIMINÉ"
+		elif bool(entry.get("dnf", false)):
+			delta_text = "DNF"
+		elif index == leader_index:
+			delta_text = "—" if leader_finish_time > 0.0 else "LEADER"
+		elif finish_time > 0.0 and leader_finish_time > 0.0:
+			delta_text = "+%.3f s" % maxf(0.0, finish_time - leader_finish_time)
+		elif leader_index >= 0:
+			delta_text = "+%.0f m" % maxf(0.0, leader_distance - float(entry.get("distance", 0.0)))
+		entry["delta"] = delta_text
+		entry["gap"] = delta_text
 		_snapshots[index] = entry
 
 
@@ -644,6 +725,14 @@ func _race_context() -> Dictionary:
 		"difficulty_aggression": float(difficulty.get("aggression", 0.50)),
 		"racers": _snapshots.duplicate(true),
 	}
+
+
+func _simulation_speed_multiplier(state: Dictionary, base_multiplier: float) -> float:
+	# Difficulty authors rival pace only. Applying it to the player's travelled
+	# distance made records and identical inputs depend on the selected AI tier.
+	if bool(state.get("is_player", false)):
+		return 1.0
+	return clampf(base_multiplier * _bounded_ai_catchup(state), 0.25, 1.75)
 
 
 func _bounded_ai_catchup(state: Dictionary) -> float:
@@ -705,6 +794,7 @@ func _build_track() -> void:
 	_track = TrackFactoryType.build(track_spec)
 	add_child(_track)
 	_track_length = TrackFactoryType.track_length(_track)
+	_track_width = maxf(TrackSafetyType.minimum_road_width(), float(_track.get_meta("width", TrackSafetyType.MIN_ROAD_WIDTH)))
 
 
 func _build_racers() -> void:
@@ -770,6 +860,7 @@ func _build_racers() -> void:
 			"is_player": is_player,
 			"difficulty": String(_config.get("difficulty", "pilot")),
 			"track_length": _track_length,
+			"track_width": _track_width,
 			"total_laps": int(_config.get("laps", 3)),
 			"upgrades": _player_upgrades(profile, chassis_id, performance_class_id) if is_player else {},
 			"module_stats": tuning_stats,
@@ -785,6 +876,7 @@ func _build_racers() -> void:
 		customization["locomotion_id"] = locomotion_id
 		var visual: RacerVisual = MechaFactoryType.build(chassis, Color(paint_text), is_player, customization)
 		visual.name = racer_id
+		visual.set_accessibility(_reduced_motion)
 		# Animate limbs first, then reapply the authored track elevation.
 		# This prevents visual bounce from flattening vertical circuits.
 		visual.process_priority = -10
@@ -925,7 +1017,7 @@ func _update_finish_camera(delta: float) -> void:
 		player_visual.call(&"set_camera_mode", "tps")
 	var forward := -pose.basis.z.normalized()
 	var side := pose.basis.x.normalized()
-	var orbit := sin(_cinematic_elapsed * 0.85)
+	var orbit := 0.0 if _reduced_motion else sin(_cinematic_elapsed * 0.85)
 	var center := pose.origin + pose.basis.y.normalized() * 1.8
 	var target_position := center - forward * (10.5 - orbit * 1.2) + side * (5.8 + orbit * 2.2) + pose.basis.y.normalized() * 3.8
 	var weight := 1.0 - exp(-delta * 4.4)
@@ -1061,7 +1153,7 @@ func _update_camera(delta: float) -> void:
 	var target_position := pose.origin - forward * 12.5 + Vector3.UP * 6.1
 	var look_target := pose.origin + forward * (10.0 + float(state.get("speed_ratio", 0.0)) * 7.0) + Vector3.UP * 1.8
 	var response := 6.5
-	var target_fov := 72.0 + minf(10.0, float(state.get("speed_ratio", 0.0)) * 5.5)
+	var target_fov := 72.0 if _reduced_motion else 72.0 + minf(10.0, float(state.get("speed_ratio", 0.0)) * 5.5)
 	var anchor: Marker3D = player_visual.camera_anchor(_camera_mode) if player_visual != null and player_visual.has_method(&"camera_anchor") else null
 	if anchor != null:
 		target_position = anchor.global_position
@@ -1069,7 +1161,7 @@ func _update_camera(delta: float) -> void:
 		if _camera_mode == "fps":
 			look_target = target_position + forward * 28.0 + anchor.global_basis.y.normalized() * 0.12
 			response = 15.0
-			target_fov = 79.0 + minf(5.0, float(state.get("speed_ratio", 0.0)) * 3.0)
+			target_fov = 79.0 if _reduced_motion else 79.0 + minf(5.0, float(state.get("speed_ratio", 0.0)) * 3.0)
 		else:
 			look_target = pose.origin + forward * (11.0 + float(state.get("speed_ratio", 0.0)) * 7.0) + pose.basis.y.normalized() * 1.7
 			response = 7.5

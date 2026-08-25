@@ -6,10 +6,12 @@ extends RefCounted
 ## `throttle`, `brake`, `steer`, `drift`, `boost`. Context accepts `elapsed`,
 ## `race_active`, `grip`, `curvature`, `hazard`, and `speed_multiplier`.
 
+const TrackSafetyType := preload("res://scripts/world/track_safety.gd")
+
 const BASE_TOP_SPEED := 56.0
 const BASE_ACCELERATION := 25.0
 const BASE_ARMOR := 100.0
-const MAX_LANE := 1.75
+const MAX_LANE := 1.12
 const RESET_STUCK_DELAY := 2.25
 const RESET_COOLDOWN := 7.0
 const QUADRUPED_RECOVERY_DURATION := 0.85
@@ -34,8 +36,13 @@ var ai_precision := 0.70
 var ai_risk := 0.50
 
 var track_length := 1000.0
+var track_width := TrackSafetyType.MIN_ROAD_WIDTH
 var total_laps := 3
 var grid_index := 0
+var vehicle_width := 3.5
+var vehicle_length := 4.0
+var lane_limit := MAX_LANE
+var offroad_lane := 0.82
 var distance := 0.0
 var lane := 0.0
 var lane_velocity := 0.0
@@ -94,6 +101,7 @@ func configure(spec: Dictionary) -> RacerState:
 	ai_risk = clampf(0.34 + ai_aggression * 0.48 + float(personality.get("risk", 0.0)), 0.12, 0.94)
 	seed = int(spec.get("seed", 1))
 	track_length = maxf(100.0, float(spec.get("track_length", 1000.0)))
+	track_width = maxf(TrackSafetyType.minimum_road_width(), float(spec.get("track_width", TrackSafetyType.MIN_ROAD_WIDTH)))
 	total_laps = clampi(int(spec.get("total_laps", 3)), 1, 9)
 	grid_index = maxi(0, int(spec.get("grid_index", 0)))
 
@@ -104,6 +112,11 @@ func configure(spec: Dictionary) -> RacerState:
 	locomotion_id = String(locomotion.get("id", LocomotionCatalog.get_default_configuration_id(chassis_id)))
 	drive_id = String(locomotion.get("drive_id", "mecha_legs"))
 	mount_id = String(locomotion.get("mount_id", "balanced"))
+	var footprint := TrackSafetyType.vehicle_footprint(chassis_id, locomotion)
+	vehicle_width = footprint.x
+	vehicle_length = footprint.y
+	lane_limit = minf(MAX_LANE, TrackSafetyType.safe_lane_limit(track_width, vehicle_width))
+	offroad_lane = minf(lane_limit - 0.04, TrackSafetyType.offroad_lane_threshold(track_width, vehicle_width))
 	var physics: Dictionary = chassis.get("physics", {})
 	var upgrades: Dictionary = spec.get("upgrades", {}) if spec.get("upgrades", {}) is Dictionary else {}
 	var engine_level := clampi(int(upgrades.get("engine", 0)), 0, 4)
@@ -128,8 +141,8 @@ func configure(spec: Dictionary) -> RacerState:
 	armor = armor_max
 	boost_energy = clampf(float(spec.get("boost_energy", 0.55 + reactor_level * 0.07)), 0.0, 1.0)
 
-	distance = maxf(0.0, float(spec.get("distance", 0.0)))
-	lane = clampf(float(spec.get("lane", _grid_lane(grid_index))), -1.0, 1.0)
+	distance = float(spec.get("distance", TrackSafetyType.grid_distance(grid_index)))
+	lane = clampf(float(spec.get("lane", _grid_lane(grid_index))), -lane_limit, lane_limit)
 	lane_velocity = 0.0
 	speed = 0.0
 	heat = 0.0
@@ -224,9 +237,9 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 	lane_velocity = move_toward(lane_velocity, desired_lane_velocity, (4.4 if drifting else 6.8) * dt)
 	lane_velocity += _impact_velocity * dt
 	_impact_velocity = move_toward(_impact_velocity, 0.0, 5.0 * dt)
-	lane = clampf(lane + lane_velocity * dt, -MAX_LANE, MAX_LANE)
+	lane = clampf(lane + lane_velocity * dt, -lane_limit, lane_limit)
 
-	var offroad_amount := clampf((absf(lane) - 0.92) / (MAX_LANE - 0.92), 0.0, 1.0)
+	var offroad_amount := clampf((absf(lane) - offroad_lane) / maxf(0.04, lane_limit - offroad_lane), 0.0, 1.0)
 	if chassis_id == "quadruped" and brake > 0.45 and speed > top_speed * 0.15:
 		_recovery_time = maxf(_recovery_time, QUADRUPED_RECOVERY_DURATION)
 	var drive_force := acceleration * throttle
@@ -281,8 +294,8 @@ func ai_controls(context: Dictionary) -> Dictionary:
 
 	# Outside/inside/outside racing line: prepare on the opposite side of the
 	# upcoming bend, then converge smoothly toward its apex.
-	var entry_weight := clampf((absf(curvature_ahead) - absf(curvature)) * 2.2 + 0.45, 0.16, 0.86)
-	var target_lane := -curvature_ahead * entry_weight * (0.64 + ai_precision * 0.20)
+	var entry_weight := clampf((absf(planned_curvature) - absf(curvature)) * 2.2 + 0.45, 0.16, 0.86)
+	var target_lane := -planned_curvature * entry_weight * (0.64 + ai_precision * 0.20)
 	target_lane += curvature * (1.0 - entry_weight) * 0.28
 	var wave_amplitude := maxf(0.018, (0.17 - skill * 0.10) * float(personality.get("line_noise", 1.0)))
 	target_lane += sin(distance * 0.0105 + seed * 0.731) * wave_amplitude
@@ -295,20 +308,20 @@ func ai_controls(context: Dictionary) -> Dictionary:
 		var escape_side := -1.0 if posmod(seed, 2) == 0 else 1.0
 		target_lane += escape_side * minf(0.34, hazard_load * (0.30 + ai_precision * 0.18))
 
+	var ai_lane_limit := maxf(0.46, lane_limit - 0.05)
 	var traffic := _traffic_ahead(context)
 	if bool(traffic.get("found", false)):
 		var traffic_gap := float(traffic.get("gap", 999.0))
 		var traffic_lane := float(traffic.get("lane", 0.0))
+		var traffic_width := float(traffic.get("vehicle_width", vehicle_width))
 		var lane_gap := traffic_lane - lane
+		var required_pass_delta := ((vehicle_width + traffic_width) * 0.5 + TrackSafetyType.PASSING_GAP_METERS) / (track_width * TrackSafetyType.LANE_SCALE)
 		if ai_trait == "rammer" and traffic_gap < 12.0 and ai_aggression > 0.62:
 			target_lane = lerpf(target_lane, traffic_lane, 0.30)
-		elif traffic_gap < 34.0 and absf(lane_gap) < 0.38:
-			var pass_side := -1.0 if lane_gap >= 0.0 else 1.0
-			if absf(lane_gap) < 0.04:
-				pass_side = -1.0 if posmod(seed + position_value, 2) == 0 else 1.0
-			target_lane += pass_side * (0.24 + (34.0 - traffic_gap) / 34.0 * 0.28)
+		elif traffic_gap < 34.0 and absf(lane_gap) < required_pass_delta:
+			target_lane = _passing_target_lane(traffic_lane, required_pass_delta, ai_lane_limit, position_value)
 
-	target_lane = clampf(target_lane, -0.86, 0.86)
+	target_lane = clampf(target_lane, -ai_lane_limit, ai_lane_limit)
 	var raw_steer := clampf((target_lane - lane) * (1.70 + ai_precision * 1.20), -1.0, 1.0)
 	_ai_steer_memory = move_toward(_ai_steer_memory, raw_steer, 0.085 + ai_precision * 0.11)
 	var steer := clampf(_ai_steer_memory, -1.0, 1.0)
@@ -336,23 +349,51 @@ func ai_controls(context: Dictionary) -> Dictionary:
 	}
 
 
+func _passing_target_lane(traffic_lane: float, required_delta: float, ai_lane_limit: float, position_value: int) -> float:
+	var safe_limit := maxf(0.05, ai_lane_limit)
+	var separation := maxf(0.02, required_delta)
+	var left_target := clampf(traffic_lane - separation, -safe_limit, safe_limit)
+	var right_target := clampf(traffic_lane + separation, -safe_limit, safe_limit)
+	var pass_side := -1.0
+	if lane > traffic_lane + 0.04:
+		pass_side = 1.0
+	elif absf(lane - traffic_lane) <= 0.04:
+		pass_side = -1.0 if posmod(seed + position_value, 2) == 0 else 1.0
+		var left_clearance := traffic_lane - left_target
+		var right_clearance := right_target - traffic_lane
+		if pass_side < 0.0 and left_clearance + 0.0001 < right_clearance:
+			pass_side = 1.0
+		elif pass_side > 0.0 and right_clearance + 0.0001 < left_clearance:
+			pass_side = -1.0
+	var explicit_target := left_target if pass_side < 0.0 else right_target
+	# Once committed to a side, never steer back toward the obstacle merely
+	# because the authored racing line is closer to the track centre.
+	if pass_side < 0.0:
+		explicit_target = minf(lane, explicit_target)
+	else:
+		explicit_target = maxf(lane, explicit_target)
+	return clampf(explicit_target, -safe_limit, safe_limit)
+
+
 func _traffic_ahead(context: Dictionary) -> Dictionary:
 	var racers_value: Variant = context.get("racers", [])
 	if not racers_value is Array:
 		return {"found": false}
 	var best_gap := INF
 	var best_lane := 0.0
+	var best_width := vehicle_width
 	for value: Variant in racers_value:
 		if not value is Dictionary:
 			continue
 		var state: Dictionary = value
-		if String(state.get("racer_id", "")) == racer_id or bool(state.get("dnf", false)) or bool(state.get("eliminated", false)):
+		if String(state.get("racer_id", "")) == racer_id or bool(state.get("finished", false)) or bool(state.get("dnf", false)) or bool(state.get("eliminated", false)):
 			continue
 		var gap := float(state.get("distance", 0.0)) - distance
 		if gap > 0.0 and gap < best_gap and gap <= 42.0:
 			best_gap = gap
 			best_lane = float(state.get("lane", 0.0))
-	return {"found": best_gap < INF, "gap": best_gap, "lane": best_lane}
+			best_width = maxf(1.0, float(state.get("vehicle_width", vehicle_width)))
+	return {"found": best_gap < INF, "gap": best_gap, "lane": best_lane, "vehicle_width": best_width}
 
 
 func _ai_personality(trait_id: String) -> Dictionary:
@@ -539,7 +580,7 @@ func use_item() -> String:
 
 
 func can_reset() -> bool:
-	return not finished and not dnf and not eliminated and _reset_cooldown <= 0.0 and (_stuck_time >= RESET_STUCK_DELAY or absf(lane) >= MAX_LANE - 0.03)
+	return not finished and not dnf and not eliminated and _reset_cooldown <= 0.0 and (_stuck_time >= RESET_STUCK_DELAY or absf(lane) >= lane_limit - 0.03)
 
 
 func reset_to_checkpoint(checkpoint_distance: float, checkpoint_lane: float = 0.0) -> bool:
@@ -600,8 +641,12 @@ func snapshot() -> Dictionary:
 		"ai_aggression": ai_aggression,
 		"ai_precision": ai_precision,
 		"is_player": is_player,
-		"distance": maxf(0.0, distance),
+		"distance": distance,
 		"lane": lane,
+		"track_width": track_width,
+		"vehicle_width": vehicle_width,
+		"vehicle_length": vehicle_length,
+		"lane_limit": lane_limit,
 		"speed": speed,
 		"speed_ratio": clampf(speed / maxf(1.0, top_speed), 0.0, 1.23),
 		"lap": lap,
@@ -690,7 +735,4 @@ func _hazard_drag(hazard: Variant) -> float:
 
 
 func _grid_lane(index: int) -> float:
-	if index == 0:
-		return 0.0
-	var row := ceili(index / 2.0)
-	return (-0.34 if index % 2 == 1 else 0.34) * minf(1.0, 0.70 + row * 0.08)
+	return TrackSafetyType.grid_lane(index)

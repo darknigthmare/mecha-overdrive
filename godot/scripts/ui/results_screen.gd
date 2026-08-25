@@ -65,6 +65,13 @@ func _apply_result() -> void:
 	var mode := String(_value(["mode"], "quick"))
 	var track_name := String(_value(["track_name", "track"], "CIRCUIT ZERO"))
 	var is_record := bool(_value(["new_record", "record"], false))
+	var championship := _championship_data()
+	var championship_complete := bool(_value(["championship_complete", "series_complete"], championship.get("complete", false)))
+	var championship_won := bool(_value(["championship_won", "series_won"], false))
+	var championship_id := String(championship.get("championship_id", championship.get("cup_id", "")))
+	var champion_id := String(championship.get("champion_id", ""))
+	if champion_id.is_empty() and championship_won:
+		champion_id = "player"
 
 	result_eyebrow.text = "%s // %s" % [_mode_name(mode), track_name.to_upper()]
 	if dnf:
@@ -74,15 +81,17 @@ func _apply_result() -> void:
 	elif mode == "time_trial":
 		result_title.text = "NOUVEAU RECORD" if is_record else "CHRONO HOMOLOGUÉ"
 		position_value.text = "RECORD" if is_record else "VALIDÉ"
-		result_summary.text = "Nouvelle référence enregistrée dans les archives du Nexus." if is_record else "Session validée. Analysez la télémétrie pour attaquer la référence au prochain passage."
+		result_summary.text = "Nouvelle référence enregistrée dans les archives des Huit Mondes." if is_record else "Session validée. Analysez la télémétrie pour attaquer la référence au prochain passage."
 	elif position == 1:
 		result_title.text = "VICTOIRE"
 		position_value.text = "1ER / %d" % total
-		result_summary.text = "Trajectoire homologuée. Le Nexus enregistre une nouvelle référence de course."
+		result_summary.text = "Victoire homologuée. Votre signature gagne du terrain face à Meridian Apex."
 	else:
 		result_title.text = "ARRIVÉE HOMOLOGUÉE"
 		position_value.text = "%s / %d" % [_ordinal(position), total]
 		result_summary.text = "Course validée. Analysez les écarts puis ajustez votre architecture au garage."
+	if championship_complete:
+		_apply_championship_epilogue(championship_id, champion_id)
 
 	var elapsed := float(_value(["time", "elapsed", "race_time"], 0.0))
 	var best := float(_value(["best_lap", "best_time", "record_time"], 0.0))
@@ -101,16 +110,50 @@ func _apply_result() -> void:
 	podium_panel.visible = mode != "time_trial" and not podium.top_three().is_empty()
 	if podium_panel.visible and not dnf and not winner.is_empty():
 		podium_headline.text = "PODIUM // %s PREND LE TROPHÉE" % winner
+	if championship_complete and championship_id == "nexus_open":
+		match champion_id:
+			"player":
+				podium_headline.text = "PODIUM // LA GRILLE LIBRE PREND LA COURONNE"
+			"vex":
+				podium_headline.text = "PODIUM // MARA VEX PREND LA COURONNE"
+			_:
+				if not champion_id.is_empty():
+					podium_headline.text = "PODIUM // LA COURONNE ÉCHAPPE À VEX"
 	_populate_standings(position, total)
 	_populate_championship(mode)
-	var championship_complete := bool(_value(["championship_complete", "series_complete"], false))
 	var can_continue := bool(_value(["can_continue", "has_next_race"], mode == "grand_prix" and not championship_complete))
 	next_button.visible = can_continue
 	next_button.disabled = not can_continue
 	retry_button.visible = not can_continue
+	retry_button.text = "REJOUER LA SAISON" if championship_complete else "RECOMMENCER"
+	menu_button.text = "RETOUR AU PADDOCK" if championship_complete else "MENU PRINCIPAL"
 	ThemeFactory.connect_focus_chain([next_button if can_continue else retry_button, menu_button])
 	(next_button if can_continue else retry_button).call_deferred("grab_focus")
 	_play_entrance()
+
+
+func _apply_championship_epilogue(championship_id: String, champion_id: String) -> void:
+	var player_champion := champion_id == "player"
+	if championship_id == "nexus_open":
+		result_eyebrow.text = "FINALE // CIRCUIT ZERO"
+		if player_champion:
+			result_title.text = "COURONNE DES HUIT MONDES"
+			position_value.text = "CHAMPION"
+			result_summary.text = "Meridian Apex perd sa clause d’exclusivité. Le Hangar 08 protège la Charte libre et gagne son siège au Conseil des constructeurs."
+		elif champion_id == "vex":
+			result_title.text = "COURONNE SOUS EXCLUSIVITÉ"
+			position_value.text = "VEX CHAMPIONNE"
+			result_summary.text = "Mara Vex décroche son troisième titre. Meridian Apex exige désormais la clause d’exclusivité : la Charte libre et l’accès ouvert à la grille sont directement menacés."
+		else:
+			result_title.text = "COURONNE CONTESTÉE"
+			position_value.text = "CHARTE PROTÉGÉE"
+			result_summary.text = "Un autre rival prive Mara Vex de son troisième titre. Sans la Couronne nécessaire à Meridian Apex pour imposer son exclusivité, la Charte libre reste temporairement protégée."
+	elif player_champion:
+		result_title.text = "COUPE REMPORTÉE"
+		position_value.text = "CHAMPION"
+		result_summary.text = "Votre titre de division offre au Hangar 08 son invitation sportive au Grand Open des Huit Mondes."
+	else:
+		result_summary.text = "La Coupe se termine sans titre. Renforcez votre architecture avant de repartir chercher l’invitation au Grand Open."
 
 
 func _populate_standings(player_position: int, total: int) -> void:
@@ -183,6 +226,11 @@ func _play_entrance() -> void:
 	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(content_panel, "modulate", Color.WHITE, duration)
 	tween.tween_property(content_panel, "position:y", 0.0, duration)
+
+
+func _championship_data() -> Dictionary:
+	var value: Variant = _value(["championship", "series"], {})
+	return Dictionary(value).duplicate(true) if value is Dictionary else {}
 
 
 func _value(keys: Array[String], fallback: Variant) -> Variant:

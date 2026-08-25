@@ -7,22 +7,22 @@ const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 
 const CHAPTERS: Array[Dictionary] = [
 	{
-		"stage": "ARCHIVE 01 // LA RUPTURE",
-		"heading": "LES CORRIDORS SE SONT TUS.",
-		"narrative": "En 2089, le réseau du Nexus s’est effondré. Les cités-frontières ont perdu leurs routes, leur énergie et jusqu’au bruit des convois.",
-		"role": "Un anneau a continué de répondre : CIRCUIT ZERO.",
+		"stage": "PROLOGUE // HUIT MONDES",
+		"heading": "LA PLUS GRANDE COURSE DE LA GALAXIE COMMENCE.",
+		"narrative": "Les Portes du Nexus relient huit mondes répartis dans trois galaxies. Une fois par cycle, leurs meilleurs pilotes se disputent la Couronne des Huit Mondes.",
+		"role": "HUIT CIRCUITS. CINQ DIVISIONS. UN SEUL GRAND OPEN.",
 	},
 	{
-		"stage": "ARCHIVE 02 // LA RÉSONANCE",
-		"heading": "LA VITESSE PEUT RÉVEILLER LE RÉSEAU.",
-		"narrative": "Les noyaux de huit méchas lancés ensemble réalignent les lignes mortes. La Nexus Racing Authority a transformé cette découverte en championnat mondial.",
-		"role": "Chaque arrivée rallume une route. Chaque podium décide qui en reçoit l’énergie.",
+		"stage": "DOSSIER RIVAL // MARA VEX",
+		"heading": "LA CHAMPIONNE VEUT FERMER LA GRILLE.",
+		"narrative": "Double tenante du titre, Mara Vex court pour Meridian Apex. Une troisième Couronne donnerait au consortium le contrôle technique de la Ligue et imposerait sa machine unique.",
+		"role": "POUR VEX, UNE SEULE ARCHITECTURE MÉRITE DE GAGNER.",
 	},
 	{
-		"stage": "DOSSIER 08 // VOTRE LICENCE",
-		"heading": "PERSONNE NE RESTE IMMOBILE.",
-		"narrative": "Le Hangar 08 vous confie sa dernière unité. Roues, jambes, chenilles, sphères ou bi-propulseur Aether : construisez votre signature et affrontez les cinq divisions.",
-		"role": "SAISON 03 // RECONQUÊTE — PRENEZ LA GRILLE.",
+		"stage": "LICENCE H08 // VOTRE SAISON",
+		"heading": "PROUVEZ QUE TOUTE ARCHITECTURE PEUT GAGNER.",
+		"narrative": "Le Hangar 08, dernière écurie indépendante, vous confie son unique place. Remportez une Coupe, traversez les huit mondes et affrontez Vex sur Circuit Zero.",
+		"role": "CONSTRUISEZ. QUALIFIEZ-VOUS. PRENEZ LA COURONNE.",
 	},
 ]
 
@@ -51,10 +51,9 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _finished:
 		return
-	if event.is_action_pressed(&"ui_accept"):
-		get_viewport().set_input_as_handled()
-		_advance()
-	elif event.is_action_pressed(&"ui_cancel"):
+	# Continue uses the focused Button release. Handling ui_accept on key-down
+	# would leak its key-up into MainMenu and immediately launch Quick Race.
+	if event.is_action_pressed(&"ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_finish(true)
 
@@ -79,7 +78,7 @@ func _show_chapter(index: int, animate: bool) -> void:
 	narrative.text = String(chapter.get("narrative", ""))
 	role_label.text = String(chapter.get("role", ""))
 	progress_value.text = "%02d / %02d" % [_chapter_index + 1, CHAPTERS.size()]
-	continue_button.text = "ENTRER DANS LE NEXUS" if _chapter_index == CHAPTERS.size() - 1 else "CONTINUER  //  %02d" % [_chapter_index + 2]
+	continue_button.text = "ENTRER DANS LA LIGUE" if _chapter_index == CHAPTERS.size() - 1 else "CONTINUER  //  %02d" % [_chapter_index + 2]
 	if not animate:
 		return
 	var duration := ThemeFactory.motion_duration(_settings(), 0.22)

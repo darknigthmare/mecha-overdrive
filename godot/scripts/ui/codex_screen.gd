@@ -8,6 +8,7 @@ const LoreData = preload("res://scripts/data/lore_database.gd")
 
 @onready var chassis_tab: Button = %ChassisTab
 @onready var tracks_tab: Button = %TracksTab
+@onready var pilots_tab: Button = %PilotsTab
 @onready var items_tab: Button = %ItemsTab
 @onready var lore_tab: Button = %LoreTab
 @onready var entries_list: ItemList = %EntriesList
@@ -30,6 +31,7 @@ func _ready() -> void:
 	theme = ThemeFactory.create_theme(_settings())
 	chassis_tab.pressed.connect(_set_category.bind(&"chassis"))
 	tracks_tab.pressed.connect(_set_category.bind(&"tracks"))
+	pilots_tab.pressed.connect(_set_category.bind(&"pilots"))
 	items_tab.pressed.connect(_set_category.bind(&"items"))
 	lore_tab.pressed.connect(_set_category.bind(&"lore"))
 	entries_list.item_selected.connect(_show_entry)
@@ -66,18 +68,20 @@ func _set_category(category: StringName) -> void:
 	_category = category
 	match category:
 		&"tracks": _entries = GameDatabase.get_all_tracks()
+		&"pilots": _entries = _pilot_entries()
 		&"items": _entries = GameDatabase.get_all_items()
 		&"lore": _entries = LoreData.get_all()
 		_: _entries = GameDatabase.get_all_chassis()
 	chassis_tab.set_pressed_no_signal(category == &"chassis")
 	tracks_tab.set_pressed_no_signal(category == &"tracks")
+	pilots_tab.set_pressed_no_signal(category == &"pilots")
 	items_tab.set_pressed_no_signal(category == &"items")
 	lore_tab.set_pressed_no_signal(category == &"lore")
 	_populate_list()
 
 
 func _cycle_category(direction: int) -> void:
-	var categories: Array[StringName] = [&"chassis", &"tracks", &"items", &"lore"]
+	var categories: Array[StringName] = [&"chassis", &"tracks", &"pilots", &"items", &"lore"]
 	var index := categories.find(_category)
 	_set_category(categories[posmod(index + direction, categories.size())])
 	entries_list.grab_focus()
@@ -89,8 +93,8 @@ func _populate_list() -> void:
 		var entry := _entries[index]
 		entries_list.add_item(_entry_label(entry, index))
 		entries_list.set_item_metadata(index, String(entry.get("id", "")))
-	count_summary.text = "%d ARCHITECTURES   •   500 CONFIGS   •   %d CIRCUITS   •   %d ARCHIVES" % [
-		GameDatabase.CHASSIS.size(), GameDatabase.TRACKS.size(), LoreData.ENTRIES.size(),
+	count_summary.text = "%d ARCHITECTURES   •   %d PILOTES   •   %d CIRCUITS   •   %d ARCHIVES" % [
+		GameDatabase.CHASSIS.size(), GameDatabase.PILOTS.size() + 1, GameDatabase.TRACKS.size(), LoreData.ENTRIES.size(),
 	]
 	if not _entries.is_empty():
 		entries_list.select(0)
@@ -101,6 +105,8 @@ func _entry_label(entry: Dictionary, index: int) -> String:
 	match _category:
 		&"tracks":
 			return "%02d  //  %s\n%s" % [index + 1, String(entry.get("name", "CIRCUIT")).to_upper(), String(entry.get("region", "SECTEUR"))]
+		&"pilots":
+			return "%02d  //  %s\n%s" % [index + 1, String(entry.get("callsign", "PILOTE")).to_upper(), String(entry.get("team", "INDÉPENDANT")).to_upper()]
 		&"items":
 			return "%02d  //  %s\n%s" % [index + 1, String(entry.get("name", "OBJET")).to_upper(), String(entry.get("kind", "système")).to_upper()]
 		&"lore":
@@ -116,6 +122,7 @@ func _show_entry(index: int) -> void:
 	index_value.text = "%02d / %02d" % [index + 1, _entries.size()]
 	match _category:
 		&"tracks": _show_track(entry)
+		&"pilots": _show_pilot(entry)
 		&"items": _show_item(entry)
 		&"lore": _show_lore(entry)
 		_: _show_chassis(entry)
@@ -149,6 +156,18 @@ func _show_track(entry: Dictionary) -> void:
 	]
 
 
+func _show_pilot(entry: Dictionary) -> void:
+	var callsign := String(entry.get("callsign", entry.get("name", "PILOTE"))).to_upper()
+	var trait_id := String(entry.get("trait", "adaptive"))
+	detail_eyebrow.text = "PILOTE // %s" % String(entry.get("team", "INDÉPENDANT")).to_upper()
+	detail_title.text = String(entry.get("name", callsign)).to_upper()
+	detail_subtitle.text = "INDICATIF %s   •   ORIGINE %s" % [callsign, String(entry.get("origin", "NEXUS")).to_upper()]
+	detail_description.text = String(entry.get("bio", "Pilote homologué pour le Grand Tour des Huit Mondes."))
+	feature_name.text = "STYLE // %s" % _trait_name(trait_id)
+	feature_description.text = _trait_description(trait_id)
+	telemetry_label.text = "ÉCURIE       %s\nORIGINE      %s\nSTATUT       %s" % [String(entry.get("team", "INDÉPENDANT")).to_upper(), String(entry.get("origin", "NEXUS")).to_upper(), "PLACE DU JOUEUR" if bool(entry.get("player", false)) else "RIVAL ACTIF"]
+
+
 func _show_item(entry: Dictionary) -> void:
 	detail_eyebrow.text = "ARSENAL DE COURSE // %s" % String(entry.get("kind", "système")).to_upper()
 	detail_title.text = String(entry.get("name", "OBJET")).to_upper()
@@ -169,6 +188,49 @@ func _show_lore(entry: Dictionary) -> void:
 	telemetry_label.text = String(entry.get("telemetry", "DONNÉES CLASSIFIÉES"))
 
 
+func _pilot_entries() -> Array[Dictionary]:
+	var entries := GameDatabase.get_all_pilots()
+	var profile := _profile()
+	entries.push_front({
+		"id": "player",
+		"name": String(profile.get("pilot_name", "PILOTE 01")),
+		"callsign": String(profile.get("pilot_name", "PILOTE 01")),
+		"paint": "#5EE7FF",
+		"trait": "adaptive",
+		"team": "Hangar 08",
+		"origin": "Licence libre",
+		"bio": "Dernière recrue indépendante de la Saison 03. Votre architecture, votre locomotion et vos résultats écrivent ce dossier.",
+		"player": true,
+	})
+	return entries
+
+
+func _trait_name(trait_id: String) -> String:
+	match trait_id:
+		"aggressive": return "ATTAQUE TARDIVE"
+		"technical": return "PRÉCISION TECHNIQUE"
+		"defensive": return "DÉFENSE DE LIGNE"
+		"opportunist": return "OPPORTUNISME"
+		"clean_line": return "TRAJECTOIRE PROPRE"
+		"rammer": return "CONTACT CONTRÔLÉ"
+		"strategist": return "GESTION TACTIQUE"
+		"drifter": return "DÉRIVE ORBITALE"
+		_: return "ADAPTATION"
+
+
+func _trait_description(trait_id: String) -> String:
+	match trait_id:
+		"aggressive": return "Ferme les portes tôt et réserve ses attaques pour les derniers secteurs."
+		"technical": return "Privilégie les apex réguliers et anticipe les changements d’adhérence."
+		"defensive": return "Protège sa ligne et conserve ses systèmes défensifs sous pression."
+		"opportunist": return "Exploite les contacts, dangers et erreurs de la grille sans prévenir."
+		"clean_line": return "Évite les contacts inutiles et construit sa vitesse sur la constance."
+		"rammer": return "Transforme sa masse et les collisions en outils de dépassement."
+		"strategist": return "Adapte objets et trajectoire à la position, aux menaces et au tour restant."
+		"drifter": return "Utilise la glisse pour conserver son élan dans les changements de gravité."
+		_: return "Change de ligne et de tactique selon le monde, la grille et les dangers."
+
+
 func _item_role(kind: String) -> String:
 	match kind:
 		"projectile": return "INTERCEPTION À DISTANCE"
@@ -181,8 +243,8 @@ func _item_role(kind: String) -> String:
 
 
 func _configure_focus() -> void:
-	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, items_tab, lore_tab, entries_list, back_button])
-	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, items_tab, lore_tab], true)
+	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, pilots_tab, items_tab, lore_tab, entries_list, back_button])
+	ThemeFactory.connect_focus_chain([chassis_tab, tracks_tab, pilots_tab, items_tab, lore_tab], true)
 	entries_list.grab_focus()
 
 
@@ -192,13 +254,17 @@ func _format_time(seconds: float) -> String:
 	return "%02d:%05.2f" % [minutes, remainder]
 
 
-func _settings() -> Dictionary:
+func _profile() -> Dictionary:
 	var save := get_node_or_null("/root/SaveSystem")
 	if save == null:
 		return {}
-	var profile: Variant = save.get("profile")
-	if profile is Dictionary:
-		var profile_dictionary: Dictionary = profile
-		var value: Variant = profile_dictionary.get("settings", {})
-		return value if value is Dictionary else {}
+	var value: Variant = save.get("profile")
+	return Dictionary(value).duplicate(true) if value is Dictionary else {}
+
+
+func _settings() -> Dictionary:
+	var profile := _profile()
+	var value: Variant = profile.get("settings", {})
+	if value is Dictionary:
+		return value
 	return {}

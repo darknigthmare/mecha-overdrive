@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "gameVersion": "2.3.0",
+  "gameVersion": "2.4.0",
   "godotVersion": "4.7.2",
   "preset": "Web",
   "threads": false,
-  "sourceSha256": "903a68d9fabd0a2e12d043a8b8d8c7e009ffaf07520c25493139ffe808d59b39",
+  "sourceSha256": "f22a3ad2673593f7bd8f051faf1f8085bbe5e674de4d168bf2b52efcc537b9f1",
   "artifacts": {
     "mecha-overdrive.html": {
-      "bytes": 5630,
-      "sha256": "dd541724a15d6511d41e684bbf8186626ad9f09f2cdcc1545b48fef388526342"
+      "bytes": 5650,
+      "sha256": "8bc565b14fba35013b0b80b2cdc2eb193b9c11625ac7c7b1aa441d5fb77a644f"
     },
     "mecha-overdrive.js": {
       "bytes": 279815,
@@ -19,8 +19,8 @@
       "sha256": "fc74679e3b97f76878947fcd4fbe1268cbfa6188182a2e33bbc3f5dc9bfa57d0"
     },
     "mecha-overdrive.pck": {
-      "bytes": 36371036,
-      "sha256": "8e4bf3a890418b155e957f9256d30123232ec6fefd79c29fadb9fdfdae26fcab"
+      "bytes": 40104788,
+      "sha256": "41af3e178060342f9ce38ffa1b8e8a91e8e83e81e59c1df282db25aea2d575c1"
     },
     "mecha-overdrive.audio.worklet.js": {
       "bytes": 7298,

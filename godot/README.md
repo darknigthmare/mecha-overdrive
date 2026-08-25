@@ -1,6 +1,6 @@
 # MECHA OVERDRIVE — édition Godot 3D
 
-Cette arborescence contient l’édition principale **2.3.0** de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale.
+Cette arborescence contient l’édition principale **2.4.0** de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale.
 
 ## Ouvrir le projet
 
@@ -26,20 +26,21 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 
 - **10 châssis** regroupés en **5 divisions** : Commandement, Stabilisés, Essaim, Sol et Expérimental ;
 - **4 modes** : Course rapide, Contre-la-montre, Élimination et Grand Prix ;
-- **8 circuits** : Fonderie Néon, Faille Écarlate, Arc Polaire, Cimetière Orbital, Canopée d’Azura, Couronne Tempête, Tranchée Hadale et Caldeira Zéro ;
-- **6 championnats** : cinq coupes dédiées et le Grand Open du Nexus ;
+- **8 circuits homologués de 35 à 42 m** : Fonderie Néon, Faille Écarlate, Arc Polaire, Cimetière Orbital, Canopée d’Azura, Couronne Tempête, Tranchée Hadale et Circuit Zero ;
+- **6 championnats** : cinq coupes dédiées et le Grand Open des Huit Mondes ;
 - **18 modules** répartis entre noyau, mobilité et utilitaire, avec affinités de division, coûts et silhouettes dédiées ;
 - **500 configurations de locomotion** : 50 par châssis, issues de dix technologies et cinq géométries, avec aperçu et statistiques réelles ;
-- garage interactif avec aperçu du vrai modèle 3D, rotation, zoom, peinture, locomotion et modules visibles avant validation ;
+- garage plein écran avec vrai modèle 3D, HUD translucide, rotation, pincement, cadrage persistant et équipe mécano animée ;
 - **8 objets** de combat/mobilité ;
 - grilles dédiées par défaut, mélange interdivision uniquement en Open ;
 - garage, peintures, améliorations, codex, HUD, résultats et progression ;
-- matériaux bitmap OpenAI sur méchas, cockpits, pistes et décors ;
-- ouverture narrative Saison 03, briefing de grille, compte à rebours bloquant, faux départ, arrivée et podium top 3 ;
+- **19 assets bitmap OpenAI** sur méchas, cockpits, pistes, décors, introduction et équipe mécano ;
+- Grand Tour intergalactique, Mara Vex, onglet des dix pilotes, briefing, compte à rebours, arrivée, podium et épilogue ;
 - commandes tactiles multitouch à dix actions et IA profilée avec anticipation, danger, trafic et objets contextuels ;
+- grille de départ 2 × 4, contacts et dépassements IA tenant compte des gabarits ;
 - circuits et silhouettes construits à l’exécution avec les primitives Godot.
 
-Les classes **Série**, **Préparé** et **Prototype** imposent leurs politiques de modules et leurs plafonds d’amélioration. Les cinq coupes dédiées utilisent des rosters stables de huit concurrents ; le Grand Open mélange explicitement les cinq divisions sur huit manches.
+Les classes **Série**, **Préparé** et **Prototype** imposent leurs politiques de modules et leurs plafonds d’amélioration. Les cinq coupes dédiées utilisent des rosters stables de huit concurrents ; le Grand Open mélange explicitement les cinq divisions sur huit manches et se termine exclusivement sur Circuit Zero.
 
 ## Contrôles
 
@@ -93,7 +94,14 @@ Puis le flux de la vraie application :
 godot --headless --path godot --script res://tests/runtime_flow_test.gd
 ```
 
-Le smoke contrôle le contrat 10 châssis / 500 locomotions / 5 divisions / 8 circuits / 18 modules / 6 championnats / 17 textures, le garage 3D, la sauvegarde v5, le mobile, l’IA, le briefing, le podium, les migrations et la simulation déterministe. Le flux runtime vérifie roster dédié, locomotion et modules physiques/visuels, briefing, compte à rebours, faux départ, ancres TPS/cockpit, arrivée, podium, coupes dédiée/Open, DNF, résultats et retour menu, tout en isolant la sauvegarde. Les résultats confirmés sont consignés dans [`../docs/QA_REPORT.md`](../docs/QA_REPORT.md).
+Puis les contrats spécialisés :
+
+```bash
+godot --headless --path godot --script res://tests/gameplay_safety_test.gd
+godot --headless --path godot --script res://tests/garage_preview_test.gd
+```
+
+Le smoke contrôle le contrat 10 châssis / 500 locomotions / 5 divisions / 8 circuits / 18 modules / 6 championnats / 19 assets OpenAI, la sauvegarde v5, le mobile, l’IA, le briefing, le podium, les migrations et la simulation déterministe. Le flux runtime vérifie le parcours réel. Les suites spécialisées couvrent chaussées/gabarits/grille/contacts/difficulté/DNF et le garage plein écran avec mécanos. Les résultats confirmés sont consignés dans [`../docs/QA_REPORT.md`](../docs/QA_REPORT.md).
 
 ## Organisation
 
@@ -101,7 +109,7 @@ Le smoke contrôle le contrat 10 châssis / 500 locomotions / 5 divisions / 8 ci
 godot/
 ├── project.godot
 ├── assets/
-│   └── textures/openai/  dix-sept PNG et manifeste de provenance
+│   └── textures/openai/  dix-neuf PNG et manifeste de provenance
 ├── scenes/
 │   ├── app.tscn
 │   ├── main_menu.tscn
@@ -118,6 +126,8 @@ godot/
 │   ├── audio/      feedback procédural
 │   └── visual/     matériaux OpenAI, modules et profils de circuit
 └── tests/
+    ├── gameplay_safety_test.gd
+    ├── garage_preview_test.gd
     ├── smoke_test.gd
     └── runtime_flow_test.gd
 ```

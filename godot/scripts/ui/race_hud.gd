@@ -10,6 +10,9 @@ signal mobile_action_triggered(action: StringName)
 const ThemeFactory = preload("res://scripts/ui/ui_theme.gd")
 const RaceBroadcast = preload("res://scripts/data/race_broadcast.gd")
 const MobileTouchControlsType = preload("res://scripts/input/mobile_touch_controls.gd")
+const MOBILE_TELEMETRY_COMPACT_HEIGHT := 68.0
+const MOBILE_TELEMETRY_STANDARD_HEIGHT := 96.0
+const MOBILE_TELEMETRY_MIN_WIDTH := 180.0
 
 var _config: Dictionary = {}
 var _paused := false
@@ -53,6 +56,16 @@ var _resume_button: Button
 var _retry_button: Button
 var _menu_button: Button
 var _mobile_controls: MobileTouchControls
+var _race_safe_margin: MarginContainer
+var _top_left_panel: PanelContainer
+var _top_center_panel: PanelContainer
+var _top_right_panel: PanelContainer
+var _bottom_panel: PanelContainer
+var _mobile_status_panel: PanelContainer
+var _mobile_status_label: Label
+var _touch_layout_enabled := false
+var _mobile_status_item_name := "VIDE"
+var _mobile_status_view_name := "TPS"
 
 
 func _ready() -> void:
@@ -61,6 +74,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_interface()
 	theme = ThemeFactory.create_theme(_settings())
+	get_viewport().size_changed.connect(_layout_mobile_status)
 	if not _config.is_empty():
 		configure(_config)
 
@@ -101,20 +115,21 @@ func configure(config: Dictionary) -> void:
 	show_pause(false)
 	if _mobile_controls != null:
 		_mobile_controls.configure(bool(config.get("force_touch_controls", false)))
+	_update_mobile_status("VIDE", "TPS")
 
 
 func show_race_briefing(config: Dictionary, grid_entries: Array = []) -> void:
 	if not is_node_ready() or not _built:
 		return
 	var briefing: Dictionary = RaceBroadcast.briefing(config)
-	_briefing_eyebrow.text = String(briefing.get("eyebrow", "NEXUS RACING NETWORK"))
+	_briefing_eyebrow.text = String(briefing.get("eyebrow", "NEXUS GRAND LEAGUE"))
 	_briefing_track.text = String(briefing.get("track_name", "CIRCUIT ZERO"))
-	_briefing_region.text = String(briefing.get("region", "SECTEUR NEXUS"))
+	_briefing_region.text = String(briefing.get("region", "SECTEUR INTERGALACTIQUE"))
 	_briefing_session.text = String(briefing.get("session", "COURSE RAPIDE"))
 	_briefing_rules.text = String(briefing.get("rules", "RÈGLEMENT STANDARD")) + "\n" + String(briefing.get("rules_detail", ""))
 	_briefing_grid.text = _grid_text(grid_entries)
 	_briefing_announcer.text = "DIRECT // « %s »" % String(briefing.get("announcer", "Grille scellée."))
-	_briefing_lore.text = String(briefing.get("lore", "Circuit homologué par le Nexus."))
+	_briefing_lore.text = String(briefing.get("lore", "Circuit homologué par la Ligue."))
 	_briefing_conditions.text = "%s\n%s" % [String(briefing.get("objective", "OBJECTIF // VICTOIRE")), String(briefing.get("conditions", "CIRCUIT HOMOLOGUÉ"))]
 	_briefing_overlay.visible = true
 	_finish_overlay.visible = false
@@ -167,6 +182,7 @@ func update_race(snapshot: Dictionary) -> void:
 	var charges := int(snapshot.get("item_charges", snapshot.get("charges", 1)))
 	var view_name := "COCKPIT" if String(snapshot.get("camera_view", "tps")) == "fps" else "TPS"
 	_item_label.text = "MODULE  //  %s%s   •   VUE %s  [V]" % [item_name, "  ×%d" % charges if item_name != "VIDE" and charges > 1 else "", view_name]
+	_update_mobile_status(item_name, view_name)
 
 	var warning := String(snapshot.get("warning", ""))
 	if bool(snapshot.get("eliminated", false)):
@@ -230,7 +246,7 @@ func show_finish(result: Dictionary) -> void:
 	_finish_title.text = String(call.get("title", "ARRIVÉE HOMOLOGUÉE"))
 	_finish_position.text = String(call.get("position", "-- / 08"))
 	_finish_callout.text = String(call.get("callout", "Drapeau à damier."))
-	_finish_venue.text = String(call.get("venue", "NEXUS RACING NETWORK"))
+	_finish_venue.text = String(call.get("venue", "NEXUS GRAND LEAGUE"))
 	_finish_overlay.visible = true
 	if _mobile_controls != null:
 		_mobile_controls.set_suppressed(true)
@@ -278,24 +294,25 @@ func _build_interface() -> void:
 		return
 	_built = true
 
-	var safe_margin := MarginContainer.new()
-	_race_layout = safe_margin
-	safe_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	safe_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_race_safe_margin = MarginContainer.new()
+	_race_layout = _race_safe_margin
+	_race_safe_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_race_safe_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for side: StringName in [&"margin_left", &"margin_top", &"margin_right", &"margin_bottom"]:
-		safe_margin.add_theme_constant_override(side, 32)
-	add_child(safe_margin)
+		_race_safe_margin.add_theme_constant_override(side, 32)
+	add_child(_race_safe_margin)
 
 	var layout := VBoxContainer.new()
 	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layout.add_theme_constant_override(&"separation", 16)
-	safe_margin.add_child(layout)
+	_race_safe_margin.add_child(layout)
 
 	var top := HBoxContainer.new()
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_theme_constant_override(&"separation", 14)
 	layout.add_child(top)
 	var left_panel := _panel()
+	_top_left_panel = left_panel
 	left_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(left_panel)
 	var left := VBoxContainer.new()
@@ -306,6 +323,7 @@ func _build_interface() -> void:
 	left.add_child(_track_label)
 
 	var center_panel := _panel()
+	_top_center_panel = center_panel
 	center_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(center_panel)
 	var center := VBoxContainer.new()
@@ -317,6 +335,7 @@ func _build_interface() -> void:
 	center.add_child(_objective_label)
 
 	var right_panel := _panel()
+	_top_right_panel = right_panel
 	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(right_panel)
 	var right := VBoxContainer.new()
@@ -336,11 +355,11 @@ func _build_interface() -> void:
 	_warning_label.visible = false
 	layout.add_child(_warning_label)
 
-	var bottom_panel := _panel()
-	layout.add_child(bottom_panel)
+	_bottom_panel = _panel()
+	layout.add_child(_bottom_panel)
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override(&"separation", 24)
-	bottom_panel.add_child(bottom)
+	_bottom_panel.add_child(bottom)
 	var speed_stack := VBoxContainer.new()
 	speed_stack.custom_minimum_size.x = 150.0
 	bottom.add_child(speed_stack)
@@ -369,6 +388,8 @@ func _build_interface() -> void:
 	_item_label.custom_minimum_size.x = 330.0
 	_item_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	bottom.add_child(_item_label)
+
+	_build_mobile_status()
 
 	_build_briefing_overlay()
 
@@ -426,9 +447,9 @@ func _build_briefing_overlay() -> void:
 	content.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_theme_constant_override(&"separation", 8)
 	panel.add_child(content)
-	_briefing_eyebrow = _label("NEXUS RACING NETWORK // GRILLE OFFICIELLE", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_eyebrow = _label("NEXUS GRAND LEAGUE // GRILLE OFFICIELLE", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_briefing_track = _label("FONDERIE NÉON", &"DisplayLabel", HORIZONTAL_ALIGNMENT_CENTER)
-	_briefing_region = _label("NEXUS INDUSTRIEL 7", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_region = _label("MONDE-FORGE MERIDIAN", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_briefing_session = _label("COURSE RAPIDE // 3 TOURS // 08 PARTANTS", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	content.add_child(_briefing_eyebrow)
 	content.add_child(_briefing_track)
@@ -454,7 +475,7 @@ func _build_briefing_overlay() -> void:
 	grid_panel.add_child(_briefing_grid)
 	_briefing_announcer = _label("DIRECT // GRILLE SCELLÉE", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_briefing_announcer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_briefing_lore = _label("Circuit homologué par le Nexus.", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_briefing_lore = _label("Circuit homologué par la Ligue.", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_briefing_lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_briefing_conditions = _label("OBJECTIF // VICTOIRE", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_briefing_conditions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -488,11 +509,11 @@ func _build_finish_overlay() -> void:
 	stack.alignment = BoxContainer.ALIGNMENT_CENTER
 	stack.add_theme_constant_override(&"separation", 10)
 	panel.add_child(stack)
-	stack.add_child(_label("NEXUS RACING NETWORK // DRAPEAU À DAMIER", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER))
+	stack.add_child(_label("NEXUS GRAND LEAGUE // DRAPEAU À DAMIER", &"EyebrowLabel", HORIZONTAL_ALIGNMENT_CENTER))
 	_finish_title = _label("ARRIVÉE HOMOLOGUÉE", &"TitleLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_finish_position = _label("1RE / 08", &"DisplayLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_finish_callout = _label("Drapeau à damier.", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
-	_finish_venue = _label("CIRCUIT ZERO // NEXUS", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_finish_venue = _label("CIRCUIT ZERO // CALDEIRA IX", &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_finish_callout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stack.add_child(_finish_title)
 	stack.add_child(_finish_position)
@@ -524,8 +545,136 @@ func _build_mobile_controls() -> void:
 	_mobile_controls.action_triggered.connect(func(action: StringName) -> void:
 		mobile_action_triggered.emit(action)
 	)
+	_mobile_controls.touch_mode_changed.connect(_apply_touch_layout)
+	_mobile_controls.layout_changed.connect(_layout_mobile_status)
 	add_child(_mobile_controls)
+	_apply_touch_layout(_mobile_controls.is_touch_mode())
 
+
+func _build_mobile_status() -> void:
+	_mobile_status_panel = PanelContainer.new()
+	_mobile_status_panel.name = "MobileTelemetry"
+	_mobile_status_panel.theme_type_variation = &"CardPanel"
+	_mobile_status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mobile_status_panel.clip_contents = true
+	_mobile_status_panel.custom_minimum_size = Vector2.ZERO
+	_mobile_status_panel.visible = false
+	add_child(_mobile_status_panel)
+	var content := Control.new()
+	content.name = "TelemetryContent"
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.clip_contents = true
+	_mobile_status_panel.add_child(content)
+	_mobile_status_label = _label("000 KM/H  •  TEMP 00%  •  ARM 100%", &"SectionLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_mobile_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_mobile_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	content.add_child(_mobile_status_label)
+	_mobile_status_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_layout_mobile_status()
+
+
+func _apply_touch_layout(enabled: bool) -> void:
+	_touch_layout_enabled = enabled
+	if _bottom_panel != null:
+		_bottom_panel.visible = not enabled
+	if _mobile_status_panel != null:
+		_mobile_status_panel.visible = enabled
+	if _race_safe_margin != null:
+		var margin := 18 if enabled else 32
+		for side: StringName in [&"margin_left", &"margin_top", &"margin_right", &"margin_bottom"]:
+			_race_safe_margin.add_theme_constant_override(side, margin)
+	_layout_mobile_status()
+
+
+func _layout_mobile_status() -> void:
+	if _mobile_status_panel == null:
+		return
+	var viewport_size := get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return
+	var landscape := viewport_size.x >= viewport_size.y
+	if _top_left_panel != null:
+		_top_left_panel.visible = not _touch_layout_enabled or landscape
+	if landscape:
+		var compact_landscape := (
+			viewport_size.x < MobileTouchControlsType.COMPACT_LANDSCAPE_MAX_WIDTH
+			or viewport_size.y < MobileTouchControlsType.COMPACT_LANDSCAPE_MAX_HEIGHT
+		)
+		_refresh_mobile_status_text(compact_landscape)
+		if compact_landscape and _mobile_controls != null:
+			var regions: Dictionary = _mobile_controls.control_regions()
+			var steering: Rect2 = regions.get("steering", Rect2())
+			var actions: Rect2 = regions.get("actions", Rect2())
+			var gutter_left := steering.end.x + MobileTouchControlsType.COMPACT_CLUSTER_GAP
+			var gutter_right := actions.position.x - MobileTouchControlsType.COMPACT_CLUSTER_GAP
+			var gutter_bottom := viewport_size.y - 18.0
+			var telemetry_height := MOBILE_TELEMETRY_COMPACT_HEIGHT
+			if gutter_right - gutter_left >= MOBILE_TELEMETRY_MIN_WIDTH and gutter_bottom - telemetry_height >= 0.0:
+				_mobile_status_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+				_mobile_status_panel.offset_left = gutter_left
+				_mobile_status_panel.offset_right = gutter_right
+				_mobile_status_panel.offset_top = gutter_bottom - telemetry_height
+				_mobile_status_panel.offset_bottom = gutter_bottom
+				return
+		_mobile_status_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+		_mobile_status_panel.offset_left = -270.0
+		_mobile_status_panel.offset_right = 270.0
+		_mobile_status_panel.offset_top = -18.0 - MOBILE_TELEMETRY_STANDARD_HEIGHT
+		_mobile_status_panel.offset_bottom = -18.0
+	else:
+		_refresh_mobile_status_text(false)
+		_mobile_status_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		_mobile_status_panel.offset_left = -minf(260.0, viewport_size.x * 0.44)
+		_mobile_status_panel.offset_right = minf(260.0, viewport_size.x * 0.44)
+		_mobile_status_panel.offset_top = minf(350.0, viewport_size.y * 0.42)
+		_mobile_status_panel.offset_bottom = _mobile_status_panel.offset_top + MOBILE_TELEMETRY_STANDARD_HEIGHT
+
+
+func _update_mobile_status(item_name: String, view_name: String) -> void:
+	if _mobile_status_label == null:
+		return
+	_mobile_status_item_name = item_name
+	_mobile_status_view_name = view_name
+	var viewport_size := get_viewport_rect().size
+	var compact_landscape := (
+		viewport_size.x >= viewport_size.y
+		and (
+			viewport_size.x < MobileTouchControlsType.COMPACT_LANDSCAPE_MAX_WIDTH
+			or viewport_size.y < MobileTouchControlsType.COMPACT_LANDSCAPE_MAX_HEIGHT
+		)
+	)
+	_refresh_mobile_status_text(compact_landscape)
+
+
+func _refresh_mobile_status_text(compact: bool) -> void:
+	if _mobile_status_label == null:
+		return
+	var speed := _speed_value.text if _speed_value != null else "000"
+	var heat := roundi(_heat_bar.value) if _heat_bar != null else 0
+	var armor := roundi(_armor_bar.value) if _armor_bar != null else 100
+	if compact:
+		_mobile_status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		_mobile_status_label.add_theme_font_size_override(&"font_size", 12)
+		_mobile_status_label.clip_text = true
+		_mobile_status_label.text = "%s KM/H  T%02d  A%02d\n%s  %s" % [
+			speed,
+			heat,
+			armor,
+			_mobile_status_item_name.left(9),
+			_mobile_status_view_name,
+		]
+		return
+	_mobile_status_label.remove_theme_font_size_override(&"font_size")
+	_mobile_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_mobile_status_label.clip_text = false
+	_mobile_status_label.text = "%s KM/H  •  TEMP %02d%%  •  ARM %02d%%\nMODULE %s  •  VUE %s" % [
+		speed,
+		heat,
+		armor,
+
+		_mobile_status_item_name,
+		_mobile_status_view_name,
+	]
 
 func mobile_controls_visible() -> bool:
 	return _mobile_controls != null and _mobile_controls.is_touch_mode()

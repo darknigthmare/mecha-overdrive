@@ -10,6 +10,7 @@ const GARAGE_SCENE := preload("res://scenes/garage.tscn")
 const CODEX_SCENE := preload("res://scenes/codex.tscn")
 const RESULTS_SCENE := preload("res://scenes/results.tscn")
 const RaceControllerType := preload("res://scripts/race/race_controller.gd")
+const SEASON_INTRO_SETTING := "season_intro_arc_2_seen"
 
 var _active_screen: Node
 var _race: RaceController
@@ -38,7 +39,9 @@ func _complete_opening(mark_seen: bool = true) -> void:
 	if mark_seen:
 		var save := get_node_or_null("/root/SaveSystem")
 		if save != null and save.has_method(&"update_settings"):
-			save.call(&"update_settings", {"season_intro_seen": true})
+			var intro_setting := {}
+			intro_setting[SEASON_INTRO_SETTING] = true
+			save.call(&"update_settings", intro_setting)
 	_show_main_menu()
 
 
@@ -50,7 +53,7 @@ func _season_intro_seen() -> bool:
 	if profile_value is Dictionary:
 		var settings_value: Variant = Dictionary(profile_value).get("settings", {})
 		if settings_value is Dictionary:
-			return bool(Dictionary(settings_value).get("season_intro_seen", false))
+			return bool(Dictionary(settings_value).get(SEASON_INTRO_SETTING, false))
 	return false
 
 

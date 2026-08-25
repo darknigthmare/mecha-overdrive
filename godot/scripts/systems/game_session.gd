@@ -276,13 +276,17 @@ func _apply_championship_result(result: Dictionary) -> void:
 	var awarded: Dictionary = {}
 	var player_points := 0
 	result["championship_won"] = false
+	var points_rank := 0
 	for rank in range(classification.size()):
 		var entry: Dictionary = classification[rank]
+		if bool(entry.get("dnf", false)) or bool(entry.get("eliminated", false)):
+			continue
 		var racer_id := String(entry.get("racer_id", ""))
 		if racer_id.is_empty() or awarded.has(racer_id):
 			continue
 		awarded[racer_id] = true
-		var points := GameDatabase.CHAMPIONSHIP_POINTS[rank] if rank < GameDatabase.CHAMPIONSHIP_POINTS.size() else 0
+		var points := GameDatabase.CHAMPIONSHIP_POINTS[points_rank] if points_rank < GameDatabase.CHAMPIONSHIP_POINTS.size() else 0
+		points_rank += 1
 		if racer_id == "player":
 			player_points = points
 		for entrant_index in range(entrants.size()):
@@ -542,6 +546,10 @@ func _sanitize_classification(value: Variant) -> Array[Dictionary]:
 			continue
 		seen[racer_id] = true
 		var display_name := String(entry.get("display_name", entry.get("name", entry.get("pilot", racer_id))))
+		var finish_time := maxf(0.0, float(entry.get("finish_time", 0.0)))
+		if finish_time <= 0.0:
+			finish_time = maxf(0.0, float(entry.get("elapsed", 0.0)))
+		var delta_text := String(entry.get("delta", entry.get("gap", "")))
 		output.append({
 			"racer_id": racer_id,
 			"name": display_name,
@@ -549,9 +557,11 @@ func _sanitize_classification(value: Variant) -> Array[Dictionary]:
 			"player": racer_id == "player" or bool(entry.get("player", false)),
 			"chassis_id": String(entry.get("chassis_id", "")),
 			"division_id": String(entry.get("division_id", "")),
-			"delta": String(entry.get("delta", entry.get("gap", ""))),
+			"delta": delta_text,
+			"gap": delta_text,
 			"position": output.size() + 1,
-			"elapsed": maxf(0.0, float(entry.get("elapsed", 0.0))),
+			"elapsed": finish_time,
+			"finish_time": finish_time,
 			"finished": bool(entry.get("finished", false)),
 			"classified": bool(entry.get("classified", entry.get("finished", false))),
 			"dnf": bool(entry.get("dnf", entry.get("did_not_finish", false))),

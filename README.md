@@ -13,11 +13,11 @@ Le visuel de présentation est une création originale générée avec OpenAI po
 | **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 500 locomotions, 8 circuits, 6 championnats, garage 3D, mobile, TPS/cockpit et sauvegarde v5 | Godot **4.7.2** ou navigateur WebGL2 |
 | **Web — compagnon autonome** | racine du dépôt | 8 châssis, Course rapide, Grand Prix et Contre-la-montre, PWA hors ligne | Navigateur moderne, Node.js facultatif |
 
-La version déclarée dans le projet Godot est `2.3.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+La version déclarée dans le projet Godot est `2.4.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
 
 ## Jouer en ligne
 
-- **Godot 3D 2.3.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
+- **Godot 3D 2.4.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
 - **Édition web légère** : [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app)
 
 L’export Godot est mono-thread et WebGL2. Il prend en charge clavier, manette et une surface tactile responsive à dix commandes sur mobile. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste la variante PWA hors ligne.
@@ -50,6 +50,12 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 
 ## Contenu Godot 3D
 
+### Le Grand Tour des Huit Mondes
+
+Les Portes du Nexus transportent la Ligue à travers huit mondes et trois galaxies. Le joueur représente le Hangar 08, dernière écurie indépendante, face à Mara Vex, double championne de Meridian Apex. Une troisième Couronne donnerait à son consortium le contrôle technique de la grille pendant dix cycles : remporter une Coupe, rejoindre le Grand Open et battre Vex sur Circuit Zero protège la Charte libre et ses cinq cents façons de construire une machine.
+
+L’introduction en trois chapitres, les huit archives et l’onglet Codex des dix pilotes rendent cet enjeu visible avant et entre les courses. La finale du Grand Open déclenche un épilogue propre à la Couronne.
+
 ### Dix architectures jouables
 
 | Architecture | Mécha | Identité de pilotage |
@@ -73,7 +79,7 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 - **Sol** : Chenilles et Monoroue ;
 - **Expérimental** : Aéroglisseur et Sphère.
 
-Course rapide et Élimination utilisent une grille de la division active par défaut. Le mélange n’est autorisé que lorsque le joueur choisit explicitement **Open / Interdivision**. Les cinq coupes dédiées disputent quatre manches avec un roster stable ; le **Grand Open du Nexus** réunit les cinq divisions sur les huit circuits.
+Course rapide et Élimination utilisent une grille de la division active par défaut. Le mélange n’est autorisé que lorsque le joueur choisit explicitement **Open / Interdivision**. Les cinq coupes dédiées disputent quatre manches avec un roster stable ; gagner l’une d’elles qualifie le joueur pour le **Grand Open des Huit Mondes**, qui réunit les cinq divisions sur huit circuits et réserve Circuit Zero à sa finale. Une saison Open active est reprise au lieu d’être écrasée.
 
 Les classes **Série**, **Préparé** et **Prototype** imposent réellement leurs politiques de modules et leurs plafonds d’amélioration.
 
@@ -86,20 +92,20 @@ Les classes **Série**, **Préparé** et **Prototype** imposent réellement leur
 
 ### Huit circuits
 
-- **Fonderie Néon** — Nexus Industriel 7 ;
-- **Faille Écarlate** — Désert de Vermillon ;
+- **Fonderie Néon** — monde-forge Meridian ;
+- **Faille Écarlate** — planète Vermillon ;
 - **Arc Polaire** — lune cryo Khepri ;
 - **Cimetière Orbital** — anneau de Morrigan.
 - **Canopée d’Azura** — forêt-monde Elysia ;
-- **Couronne Tempête** — mégalopole Stratos ;
+- **Couronne Tempête** — cité-ciel Stratos ;
 - **Tranchée Hadale** — océan de Néréide ;
-- **Caldeira Zéro** — réacteur tellurique IX.
+- **Circuit Zero** — Caldeira IX, tracé originel et finale de la Couronne.
 
-Les circuits sont assemblés en 3D par `TrackFactory` à partir de huit profils géométriques et de dangers jouables distincts. La 2.3.0 densifie leurs silhouettes avec complexes départ/arrivée, tribunes, signaux, tours, cristaux, racines, monolithes et accessoires propres aux biomes. Les dix silhouettes sont générées par `MechaFactory`, sans modèle 3D externe ; les matériaux bitmap originaux OpenAI sont appliqués aux méchas, cockpits, pistes et décors.
+Les circuits sont assemblés en 3D par `TrackFactory` à partir de huit profils géométriques et de dangers jouables distincts. Leurs chaussées font 35 à 42 m pour homologuer trois méchas de 9,5 m côte à côte ; la grille 2 × 4, les contacts, les limites de voie et les dépassements IA tiennent compte des gabarits. Les profils Canopée et Glacier sont continus après élargissement. Les dix silhouettes sont générées par `MechaFactory`, sans modèle 3D externe ; dix-neuf assets bitmap originaux OpenAI couvrent méchas, cockpits, pistes, décors, introduction et équipe du garage.
 
 ### Combat et progression
 
-La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cellule Overdrive, charge gravitique, drone réparateur, onde cinétique et Railburst. Le garage expose un aperçu 3D manipulable, les peintures, quatre familles d’améliorations, **trois emplacements modulaires** — noyau, mobilité, utilitaire — avec 18 modules visibles, ainsi qu’un sélecteur de **50 locomotions par châssis**. Dix technologies (jambes, roues, chenilles, multi-appuis, sphères, gyro, patins magnétiques, bi-propulseur Aether, rails et turbines) se combinent à cinq géométries et modifient réellement le visuel et les statistiques.
+La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cellule Overdrive, charge gravitique, drone réparateur, onde cinétique et Railburst. Le garage place le vrai mécha en plein écran derrière des panneaux HUD translucides, conserve rotation/zoom entre les changements et expose peintures, améliorations, **trois emplacements modulaires** — noyau, mobilité, utilitaire — avec 18 modules visibles, ainsi qu’un sélecteur de **50 locomotions par châssis**. Deux mécanos humanoïdes, un robot-outilleur et un drone diagnostic travaillent autour de la machine avec la texture OpenAI dédiée. Dix technologies se combinent à cinq géométries et modifient réellement le visuel et les statistiques.
 
 ## Contrôles Godot
 
@@ -205,7 +211,7 @@ MECHA_OVERDRIVE/
 │   ├── project.godot
 │   ├── scenes/                    app, menu, garage, codex, résultats
 │   ├── scripts/                   données, systèmes, course, UI, audio, fabriques visuelles
-│   ├── assets/textures/openai/    dix-sept textures bitmap et manifeste de provenance
+│   ├── assets/textures/openai/    dix-neuf assets bitmap et manifeste de provenance
 │   ├── assets/                    key art original intégré
 │   └── tests/
 │       ├── smoke_test.gd          contrat déterministe headless

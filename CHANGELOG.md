@@ -2,6 +2,51 @@
 
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
+## [2.4.0] — 2026-08-25
+
+### Ajouté
+
+- Grand Tour intergalactique des Huit Mondes, Mara Vex et conflit de la Couronne libre ;
+- introduction en trois chapitres, huit archives réécrites et onglet Codex des dix pilotes ;
+- key art intergalactique OpenAI plein écran avec provenance complète ;
+- garage plein écran derrière le HUD, cadrage persistant et gestes tactiles de rotation/pincement ;
+- équipe animée du Hangar 08 : deux mécaniciens humanoïdes, robot-outilleur, drone diagnostic, outils et étincelles ;
+- texture OpenAI originale de paddock pour les mécaniciens et équipements ;
+- contrat `TrackSafety`, huit cases de grille et suite `gameplay_safety_test.gd` ;
+- tests dédiés du garage plein écran et de la sécurité gameplay dans la CI.
+
+### Corrigé
+
+- chaussées élargies de 12–18 m à 35–42 m pour les plus grands méchas et trois lignes de dépassement ;
+- grille de départ auparavant superposée, désormais organisée en quatre rangées de deux ;
+- contacts, hors-piste et décisions de dépassement IA désormais calculés à partir des gabarits ;
+- profils Canopée et Glacier lissés pour éviter les cassures après élargissement ;
+- multiplicateur de difficulté retiré du joueur afin de rendre les records chrono comparables ;
+- DNF et concurrents éliminés exclus des points de championnat ;
+- résultat chronométré normalisé sur `finish_time`, écarts calculés et libellé `RECORD COURSE` ;
+- réduction des mouvements appliquée aux méchas, caméra et équipe du garage ;
+- commandes tactiles séparées du HUD en paysage et en portrait, avec télémétrie compacte ;
+- ancienne introduction réaffichée via une clé narrative versionnée ;
+- la touche Entrée ne traverse plus la fin de l’introduction pour lancer involontairement une course ;
+- télémétrie mobile 844 × 390 bornée à 68 px et maintenue dans le gutter entre commandes ;
+- classement officiel : DNF/éliminés relégués sans points, podium rival et écarts cohérents ;
+- dépassement IA positionné sur une voie absolue avec écart physique plutôt que par décalage cumulatif.
+
+### Amélioré
+
+- Circuit Zero devient la finale exclusive du Grand Open des Huit Mondes ;
+- le Grand Open exige une Coupe remportée, affiche sa qualification et reprend une saison déjà engagée ;
+- Mara Vex reste présente dans la grille de saison et dispose d’une vraie identité d’écurie ;
+- briefings, menu, résultats, podium et épilogues alignés sur la Nexus Grand League ;
+- épilogues distincts selon une Couronne remportée par le joueur, Mara Vex ou un autre rival ;
+- manifeste OpenAI porté à 19 assets avec dimensions et empreintes SHA-256.
+
+### Validation
+
+- import/parse Godot 4.7.2, smoke, locomotions, runtime, sécurité gameplay, garage plein écran et narration/progression exécutés localement ;
+- test narration/progression ajouté à GitHub Actions ;
+- audit visuel bureau/mobile, export Web, publication GitHub et déploiement Vercel documentés dans `docs/QA_REPORT.md`.
+
 ## [2.3.0] — 2026-08-24
 
 ### Ajouté

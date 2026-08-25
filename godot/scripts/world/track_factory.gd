@@ -5,7 +5,9 @@ extends RefCounted
 ## The generated node stores the Curve3D, gameplay markers and track dimensions
 ## as metadata so the race simulation remains independent from the visuals.
 
-const DEFAULT_WIDTH := 14.0
+const TrackSafetyType := preload("res://scripts/world/track_safety.gd")
+
+const DEFAULT_WIDTH := 35.0
 const SAMPLE_STEP := 4.0
 const POINT_COUNT := 48
 
@@ -16,17 +18,20 @@ static func build(spec: Dictionary) -> Node3D:
 
 	var curve := _build_curve(spec)
 	var length := curve.get_baked_length()
-	var width := float(spec.get("width", DEFAULT_WIDTH))
-	root.set_meta("spec", spec.duplicate(true))
+	var width := maxf(float(spec.get("width", DEFAULT_WIDTH)), TrackSafetyType.minimum_road_width())
+	var effective_spec := spec.duplicate(true)
+	effective_spec["width"] = width
+	root.set_meta("spec", effective_spec)
 	root.set_meta("curve", curve)
 	root.set_meta("length", length)
 	root.set_meta("width", width)
+	root.set_meta("safety_report", TrackSafetyType.track_report(effective_spec))
 
-	_build_environment(root, spec)
-	_build_road(root, curve, length, width, spec)
-	_build_scenery(root, curve, length, width, spec)
-	_build_start_finish_complex(root, curve, length, width, spec)
-	_build_gameplay_markers(root, curve, length, width, spec)
+	_build_environment(root, effective_spec)
+	_build_road(root, curve, length, width, effective_spec)
+	_build_scenery(root, curve, length, width, effective_spec)
+	_build_start_finish_complex(root, curve, length, width, effective_spec)
+	_build_gameplay_markers(root, curve, length, width, effective_spec)
 	return root
 
 
@@ -36,7 +41,7 @@ static func sample_pose(track: Node3D, distance: float, lane: float = 0.0, rever
 	var offset := fposmod(-distance if reverse else distance, length)
 	var pose := curve.sample_baked_with_rotation(offset, true, true)
 	var width: float = float(track.get_meta("width"))
-	pose.origin += pose.basis.x.normalized() * clampf(lane, -1.25, 1.25) * width * 0.42
+	pose.origin += pose.basis.x.normalized() * clampf(lane, -1.12, 1.12) * width * TrackSafetyType.LANE_SCALE
 	if reverse:
 		pose.basis = pose.basis.rotated(pose.basis.y.normalized(), PI)
 	return pose
@@ -219,7 +224,7 @@ static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: f
 		var distance := length * (float(index) + 0.4) / float(count)
 		var pose := curve.sample_baked_with_rotation(distance, true, true)
 		var side := -1.0 if posmod(index + seed, 2) == 0 else 1.0
-		var offset := width * rng.randf_range(1.15, 2.45) * side
+		var offset := (width * 0.5 + rng.randf_range(5.0, 26.0)) * side
 		var prop := MeshInstance3D.new()
 		prop.name = "Prop_%02d" % index
 		var shape_kind := posmod(index + seed, 8)
@@ -254,7 +259,7 @@ static func _build_scenery(root: Node3D, curve: Curve3D, length: float, width: f
 
 static func _build_start_finish_complex(root: Node3D, curve: Curve3D, length: float, width: float, spec: Dictionary) -> void:
 	var complex := Node3D.new()
-	complex.name = "NexusRaceComplex"
+	complex.name = "IntergalacticRaceComplex"
 	complex.transform = curve.sample_baked_with_rotation(fposmod(length * 0.002, length), true, true)
 	root.add_child(complex)
 
@@ -279,7 +284,7 @@ static func _build_start_finish_complex(root: Node3D, curve: Curve3D, length: fl
 		stand_mesh.size = Vector3(8.0, 3.4, 16.0)
 		grandstand.mesh = stand_mesh
 		grandstand.material_override = MaterialLibrary.prop_for(spec, Color.WHITE.lerp(accent, 0.18), 3.4)
-		grandstand.position = Vector3(width * 1.28 * side, 1.4, 10.0)
+		grandstand.position = Vector3((width * 0.5 + 12.0) * side, 1.4, 10.0)
 		grandstand.rotation.z = deg_to_rad(-7.0 * side)
 		complex.add_child(grandstand)
 
@@ -311,6 +316,19 @@ static func _build_start_finish_complex(root: Node3D, curve: Curve3D, length: fl
 		signal_light.material_override = _emissive_material(glow if light_index >= 3 else accent, 3.4)
 		signal_light.position = Vector3((float(light_index) - 2.0) * 1.15, 7.95, -0.75)
 		complex.add_child(signal_light)
+
+	for grid_index in range(8):
+		var slot := MeshInstance3D.new()
+		slot.name = "GridSlot_%02d" % (grid_index + 1)
+		var slot_mesh := BoxMesh.new()
+		slot_mesh.size = Vector3(5.4, 0.025, 7.2)
+		slot.mesh = slot_mesh
+		slot.material_override = _emissive_material(glow if grid_index % 2 == 0 else accent, 0.7)
+		slot.position = Vector3(
+			TrackSafetyType.grid_lane(grid_index) * width * TrackSafetyType.LANE_SCALE, 0.055,
+			float(grid_index / 2) * TrackSafetyType.GRID_ROW_SPACING + 4.5
+		)
+		complex.add_child(slot)
 
 	root.set_meta("start_complex", complex)
 

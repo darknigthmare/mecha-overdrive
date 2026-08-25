@@ -130,6 +130,10 @@ func _start_mode(mode: StringName) -> void:
 	if mode == &"grand_prix":
 		var cup_id := _selected_championship_id()
 		var cup := GameDatabase.get_championship(cup_id)
+		var access := _championship_access(cup_id)
+		if not bool(access.get("available", false)):
+			_show_championship_locked(access)
+			return
 		var cup_division := String(cup.get("division_id", ""))
 		var active_championship := _active_championship()
 		var resume_active := not active_championship.is_empty() and String(active_championship.get("championship_id", "")) == cup_id
@@ -165,6 +169,10 @@ func _request_quit() -> void:
 func _on_race_option_selected(_index: int) -> void:
 	_refresh_rule_summary()
 	_refresh_championship_action()
+	var access := _championship_access()
+	if not bool(access.get("available", false)):
+		_show_championship_locked(access)
+		return
 	status_message.theme_type_variation = &"MutedLabel"
 	status_message.text = "CONFIGURATION // %s" % rule_summary.text
 
@@ -209,6 +217,7 @@ func _refresh_profile() -> void:
 	var stats := _dictionary_value(profile, ["stats"], {})
 	career_summary.text = _career_text(stats)
 	var active_championship := _active_championship()
+	_refresh_championship_items()
 	if active_championship.is_empty():
 		_select_championship_for_division(String(chassis.get("division_id", "command")))
 	else:
@@ -216,7 +225,32 @@ func _refresh_profile() -> void:
 		_select_difficulty_by_id(String(active_championship.get("difficulty", "pilot")))
 	_refresh_rule_summary()
 	_refresh_championship_action()
-	status_message.text = "SYSTÈMES PRÊTS // SAISON 03"
+	status_message.text = _season_status(active_championship)
+
+
+func _season_status(active_championship: Dictionary) -> String:
+	if active_championship.is_empty():
+		for championship: Dictionary in GameDatabase.get_all_championships():
+			var requirement_value: Variant = championship.get("unlock_requirement", {})
+			if not requirement_value is Dictionary:
+				continue
+			var requirement: Dictionary = requirement_value
+			if requirement.is_empty():
+				continue
+			var access := _championship_access(String(championship.get("id", "")))
+			if not bool(access.get("available", false)):
+				return String(access.get("locked_status", "SAISON 03 // CHAMPIONNAT VERROUILLÉ"))
+			return String(access.get("unlocked_status", "SAISON 03 // CHAMPIONNAT DISPONIBLE"))
+		return "SAISON 03 // GAGNEZ UNE COUPE • DÉFIEZ VEX • PRENEZ LA COURONNE"
+	var tracks: Array = active_championship.get("tracks", [])
+	var total := maxi(tracks.size(), 1)
+	var round_number := clampi(int(active_championship.get("round_index", 0)) + 1, 1, total)
+	var championship_id := String(active_championship.get("championship_id", ""))
+	if championship_id == "nexus_open":
+		return "GRAND OPEN // MANCHE %d/%d • CIRCUIT ZERO EN LIGNE DE MIRE" % [round_number, total]
+	return "OBJECTIF SAISON // %s • MANCHE %d/%d" % [
+		String(active_championship.get("name", "COUPE DE DIVISION")).to_upper(), round_number, total,
+	]
 
 
 func _career_text(stats: Dictionary) -> String:
@@ -323,7 +357,7 @@ func _setup_race_options() -> void:
 	grid_policy_select.set_item_metadata(1, "mixed")
 	grid_policy_select.select(0)
 	championship_select.clear()
-	for championship: Dictionary in GameDatabase.CHAMPIONSHIPS:
+	for championship: Dictionary in GameDatabase.get_all_championships():
 		var index := championship_select.item_count
 		var open_badge := "OPEN" if bool(championship.get("mixed_divisions", false)) else String(GameDatabase.get_division(String(championship.get("division_id", ""))).get("short", "DIV"))
 		championship_select.add_item("%s  //  %s" % [String(championship.get("name", "COUPE")).to_upper(), open_badge])
@@ -378,11 +412,67 @@ func _active_championship() -> Dictionary:
 		return Dictionary(value).duplicate(true)
 	return {}
 
+func _championship_access(championship_id: String = "") -> Dictionary:
+	var requested_id := championship_id if not championship_id.is_empty() else _selected_championship_id()
+	var stats := _dictionary_value(_profile(), ["stats"], {})
+	return GameDatabase.championship_access(requested_id, stats, _active_championship())
+
+
+func _championship_badge(cup: Dictionary, access: Dictionary) -> String:
+	if not bool(access.get("available", false)):
+		return String(access.get("locked_badge", "VERROUILLÉ"))
+	if bool(access.get("resume", false)):
+		return String(access.get("resume_badge", "REPRISE"))
+	if bool(cup.get("mixed_divisions", false)):
+		return "OPEN"
+	var division := GameDatabase.get_division(String(cup.get("division_id", "")))
+	return String(division.get("short", "DIV"))
+
+
+func _championship_item_label(cup: Dictionary, access: Dictionary) -> String:
+	var badge := _championship_badge(cup, access)
+	return "%s  //  %s" % [String(cup.get("name", "COUPE")).to_upper(), badge]
+
+
+func _championship_tooltip(cup: Dictionary, access: Dictionary) -> String:
+	if not bool(access.get("available", false)):
+		return String(access.get("locked_tooltip", "Championnat verrouillé."))
+	if bool(access.get("resume", false)):
+		return "Reprendre %s avec sa grille et ses points sauvegardés." % String(cup.get("name", "ce championnat"))
+	var requirement_value: Variant = cup.get("unlock_requirement", {})
+	if requirement_value is Dictionary and not Dictionary(requirement_value).is_empty():
+		return String(access.get("unlocked_tooltip", cup.get("description", "Championnat disponible.")))
+	return String(cup.get("description", "Démarrer la coupe sélectionnée."))
+
+
+func _refresh_championship_items() -> void:
+	var popup := championship_select.get_popup()
+	for index in range(championship_select.item_count):
+		var cup := GameDatabase.get_championship(String(championship_select.get_item_metadata(index)))
+		var access := _championship_access(String(cup.get("id", "")))
+		championship_select.set_item_disabled(index, not bool(access.get("available", false)))
+		championship_select.set_item_text(index, _championship_item_label(cup, access))
+		popup.set_item_tooltip(index, _championship_tooltip(cup, access))
+
+
+func _show_championship_locked(access: Dictionary) -> void:
+	status_message.theme_type_variation = &"WarningLabel"
+	status_message.text = String(access.get("locked_status", "CHAMPIONNAT VERROUILLÉ"))
+
 
 func _refresh_championship_action() -> void:
 	var cup := GameDatabase.get_championship(_selected_championship_id())
 	var cup_name := String(cup.get("name", "CHAMPIONNAT")).to_upper()
 	var active_championship := _active_championship()
+	var access := _championship_access(String(cup.get("id", "")))
+	var selector_tooltip := _championship_tooltip(cup, access)
+	championship_select.tooltip_text = selector_tooltip
+	if not bool(access.get("available", false)):
+		grand_prix_button.disabled = true
+		grand_prix_button.text = "%s   //   %d/%d" % [String(access.get("locked_label", "CHAMPIONNAT VERROUILLÉ")), int(access.get("current", 0)), int(access.get("minimum", 1))]
+		grand_prix_button.tooltip_text = selector_tooltip
+		return
+	grand_prix_button.disabled = false
 	if not active_championship.is_empty() and String(active_championship.get("championship_id", "")) == _selected_championship_id():
 		var tracks: Array = active_championship.get("tracks", [])
 		var total := maxi(tracks.size(), 1)
@@ -391,7 +481,7 @@ func _refresh_championship_action() -> void:
 		grand_prix_button.tooltip_text = "Reprendre le championnat sauvegardé avec sa grille et ses points"
 	else:
 		grand_prix_button.text = "NOUVEAU CHAMPIONNAT   //   %s" % cup_name
-		grand_prix_button.tooltip_text = "Démarrer la coupe sélectionnée avec une grille stable"
+		grand_prix_button.tooltip_text = "Démarrer la coupe sélectionnée avec une grille stable. %s" % selector_tooltip
 
 
 func _refresh_rule_summary() -> void:
@@ -410,7 +500,9 @@ func _refresh_rule_summary() -> void:
 	if not active_championship.is_empty() and String(active_championship.get("championship_id", "")) == _selected_championship_id():
 		var saved_difficulty := GameDatabase.get_difficulty(String(active_championship.get("difficulty", "pilot")))
 		cup_difficulty = String(saved_difficulty.get("name", "PILOTE")).to_upper()
-	rule_summary.text = "COURSE %s / %s  •  %s / %s / %s" % [race_grid_label, race_difficulty, String(cup.get("name", "COUPE")).to_upper(), cup_grid_label, cup_difficulty]
+	var access := _championship_access(String(cup.get("id", "")))
+	var access_label := "  •  ACCÈS VERROUILLÉ" if not bool(access.get("available", false)) else ""
+	rule_summary.text = "COURSE %s / %s  •  %s / %s / %s%s" % [race_grid_label, race_difficulty, String(cup.get("name", "COUPE")).to_upper(), cup_grid_label, cup_difficulty, access_label]
 
 
 func _selected_track_id() -> String:

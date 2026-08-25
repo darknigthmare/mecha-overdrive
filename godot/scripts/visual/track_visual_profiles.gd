@@ -31,13 +31,13 @@ static func curve_point(spec: Dictionary, angle: float, radius: float, verticali
 			radial_wave = cos(angle * 2.0) * radius * 0.2 + sin(angle * 6.0) * radius * 0.025
 			elevation = sin(angle * 2.0) * verticality * 0.3
 		"technical_ridges":
-			radial_wave = sin(angle * 5.0) * radius * 0.13 + cos(angle * 9.0) * radius * 0.035
-			elevation = absf(sin(angle * 3.0)) * verticality - verticality * 0.45
+			radial_wave = sin(angle * 5.0) * radius * 0.13 + cos(angle * 9.0) * radius * 0.015
+			elevation = pow(sin(angle * 3.0), 2.0) * verticality - verticality * 0.45
 		"orbital_wave":
 			radial_wave = sin(angle * 3.0) * radius * 0.11
 			elevation = sin(angle * 2.0) * verticality * 1.7 + cos(angle * 5.0) * verticality * 0.32
 		"jungle_switchback":
-			radial_wave = signf(sin(angle * 3.0)) * radius * 0.12 + sin(angle * 7.0) * radius * 0.045
+			radial_wave = sin(angle * 3.0) * radius * 0.12 + sin(angle * 7.0) * radius * 0.045
 			elevation = sin(angle * 4.0) * verticality * 0.85
 		"urban_chicane":
 			radial_wave = sin(angle * 8.0) * radius * 0.055 + cos(angle * 2.0) * radius * 0.16

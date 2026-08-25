@@ -47,16 +47,16 @@ size_flags_horizontal = 3
 [node name="Eyebrow" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "NEXUS KNOWLEDGE CORE // DONNÉES HOMOLOGUÉES"
+text = "NEXUS GRAND LEAGUE // ARCHIVES INTERGALACTIQUES"
 [node name="Title" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
 layout_mode = 2
 theme_type_variation = &"TitleLabel"
-text = "CODEX CIRCUIT ZERO"
+text = "CODEX DES HUIT MONDES"
 [node name="CountSummary" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "10 ARCHITECTURES   •   5 DIVISIONS   •   8 CIRCUITS   •   18 MODULES"
+text = "10 ARCHITECTURES   •   10 PILOTES   •   8 CIRCUITS   •   8 ARCHIVES"
 
 [node name="BackButton" type="Button" parent="SafeArea/Page/Header"]
 unique_name_in_owner = true
@@ -83,6 +83,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = "CIRCUITS  //  8"
+[node name="PilotsTab" type="Button" parent="SafeArea/Page/Tabs"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "PILOTES  //  10"
 [node name="ItemsTab" type="Button" parent="SafeArea/Page/Tabs"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 54)

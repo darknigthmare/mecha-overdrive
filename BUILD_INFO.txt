@@ -1,29 +1,48 @@
 MECHA OVERDRIVE — CIRCUIT ZERO
-Version : 2.3.0
-Build : 24 août 2026
+Version source : 2.4.0
+Build source local : 25 août 2026
 Propriétaire du projet : Darknigthmare
 
 ÉDITION PRINCIPALE
-- Godot 4.7.2, export Web mono-thread attesté
+- Godot 4.7.2, renderer GL Compatibility
 - 10 architectures de mécha et 50 locomotions modulaires par architecture
 - 500 configurations totales : jambes, roues, chenilles, multi-appuis, sphères,
   gyroscopes, patins hover, bi-propulseur Aether, rails et turbines carénées
 - 18 modules, 5 divisions, 8 circuits et 6 championnats dédiés ou mixtes
-- intro Saison 03, grille, compte à rebours, faux départ, arrivée et podium
+- Nexus Grand League, Saison 03 « La Couronne Libre » : Grand Tour de huit
+  mondes, 10 pilotes, introduction en trois chapitres et 8 archives Codex
+- garage 3D plein écran derrière le HUD, changements visibles immédiatement et
+  équipe de stand animée de quatre mécanos/robots, compatible mouvement réduit
+- circuits homologués à 35 m minimum, trois colonnes de dépassement et grille 2 × 4
 - commandes clavier, manette et mobile multi-touch avec zones sûres
 - IA profilée, trajectoires, anticipation du danger, trafic et objets contextuels
-- 17 textures bitmap OpenAI originales avec provenance et SHA-256
+- 19 textures bitmap OpenAI originales avec provenance et SHA-256
 
 COMPAGNON WEB
 - Édition Canvas/PWA historique conservée à la racine
 - Serveurs Node et Python, progression locale et fonctionnement hors ligne
 
-VALIDATION LOCALE DE RELEASE
-- Validation statique : 115/115
-- Tests moteur du compagnon : 12/12
-- 21/21 contrôles d’intégration réussis
+VALIDATIONS LOCALES CONFIRMÉES
+- Validation statique Godot : PASS — 10 châssis, 500 locomotions, 8 pistes
+  homologuées, 19 assets OpenAI, garage plein écran, mobile et Grand Tour
 - Import/parse Godot 4.7.2 : PASS
-- Smoke Godot, catalogue locomotion et parcours runtime : PASS
-- Export Web : 9/9 artefacts attestés
-- QA Chrome bureau 1280 × 720 et mobile 844 × 390 : PASS, zéro erreur
-- Rapport complet et preuves distantes : docs/QA_REPORT.md
+- Smoke, catalogue locomotion, parcours runtime, sécurité gameplay/mobile et
+  garage plein écran, narration/progression : PASS
+- Tests moteur du compagnon : 12/12 ; intégration : 21/21
+- Validation Web : 115/115 ; agrégat `npm run qa` : PASS
+- Export Web mono-thread : 9/9 artefacts, source synchronisée
+- QA Chrome : PASS en 1258 × 622 et 844 × 390
+
+STATUT DE PUBLICATION 2.4.0
+- Export Web 2.4.0, stamp et QA navigateur bureau/mobile : PASS local
+- Commit/push, GitHub Actions, release GitHub et Vercel 2.4.0 : à vérifier
+- Empreinte source exportée :
+  f22a3ad2673593f7bd8f051faf1f8085bbe5e674de4d168bf2b52efcc537b9f1
+
+P2 RESTANTS
+- vraies collisions 3D et interactions caméra ; hazards sensibles à la voie
+- confirmation avant écrasement d’un championnat ; retry de sauvegarde avec UI
+- remapping complet ; déblocages progressifs de contenu ; coupes personnalisées
+- audit caméra des 500 configurations
+
+Rapport détaillé : docs/QA_REPORT.md

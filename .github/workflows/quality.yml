@@ -49,3 +49,9 @@ jobs:
         run: .godot-bin/godot --headless --path godot --script res://tests/locomotion_catalog_test.gd
       - name: Run Godot runtime flow
         run: .godot-bin/godot --headless --path godot --script res://tests/runtime_flow_test.gd
+      - name: Run narrative progression test
+        run: .godot-bin/godot --headless --path godot --script res://tests/narrative_progression_test.gd
+      - name: Run gameplay safety test
+        run: .godot-bin/godot --headless --path godot --script res://tests/gameplay_safety_test.gd
+      - name: Run full-screen garage preview test
+        run: .godot-bin/godot --headless --path godot --script res://tests/garage_preview_test.gd

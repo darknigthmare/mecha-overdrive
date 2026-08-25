@@ -17,58 +17,58 @@ static var CHASSIS: Array[Dictionary] = [
 
 const TRACKS: Array[Dictionary] = [
 	{
-		"id": "foundry", "name": "Fonderie Néon", "region": "NEXUS INDUSTRIEL 7", "difficulty": 2, "base_grip": 1.0, "layout_profile": "industrial_loop", "texture_set": "industrial", "prop_set": "industrial",
-		"default_laps": 3, "par_time": 77.0, "seed": 1707, "radius": 92.0, "width": 15.0,
-		"verticality": 5.5, "fog_density": 0.014, "description": "Courbes techniques, fours ouverts et transferts magnétiques.",
+		"id": "foundry", "name": "Fonderie Néon", "region": "MONDE-FORGE MERIDIAN", "difficulty": 2, "base_grip": 1.0, "layout_profile": "industrial_loop", "texture_set": "industrial", "prop_set": "industrial",
+		"default_laps": 3, "par_time": 77.0, "seed": 1707, "radius": 112.0, "width": 36.0,
+		"verticality": 5.5, "fog_density": 0.014, "description": "Ouverture du Grand Tour entre fours stellaires, docks-portes et transferts magnétiques.",
 		"tags": ["TECHNIQUE", "CHALEUR", "3,8 KM"], "hazards": ["vent", "debris"],
 		"palette": {"primary": "#FF6A42", "secondary": "#F2C84B", "fog": "#6F3429", "sky": "#130A12", "ground": "#241015", "road": "#201D22", "shoulder": "#752D1F", "glow": "#FF5B31", "accent": "#F2C84B", "key": "#FFB46A"},
 	},
 	{
-		"id": "dunes", "name": "Faille Écarlate", "region": "DÉSERT DE VERMILLON", "difficulty": 3, "base_grip": 0.91, "layout_profile": "speed_bowls", "texture_set": "desert", "prop_set": "desert",
-		"default_laps": 3, "par_time": 86.0, "seed": 3229, "radius": 126.0, "width": 18.0,
-		"verticality": 13.0, "fog_density": 0.021, "description": "Longues lignes, dunes aveuglantes et ravins à haute vitesse.",
+		"id": "dunes", "name": "Faille Écarlate", "region": "PLANÈTE VERMILLON", "difficulty": 3, "base_grip": 0.91, "layout_profile": "speed_bowls", "texture_set": "desert", "prop_set": "desert",
+		"default_laps": 3, "par_time": 86.0, "seed": 3229, "radius": 154.0, "width": 42.0,
+		"verticality": 13.0, "fog_density": 0.021, "description": "Lignes intercontinentales, dunes aveuglantes et berceau clandestin de Mara Vex.",
 		"tags": ["VITESSE", "SABLE", "5,1 KM"], "hazards": ["sand", "debris"],
 		"palette": {"primary": "#F26D3D", "secondary": "#FFD45B", "fog": "#D8693D", "sky": "#3E1518", "ground": "#6E2C1D", "road": "#33221D", "shoulder": "#C6532B", "glow": "#FF7C3D", "accent": "#FFD45B", "key": "#FFE0A3"},
 	},
 	{
 		"id": "glacier", "name": "Arc Polaire", "region": "LUNE CRYO KHEPRI", "difficulty": 4, "base_grip": 0.82, "layout_profile": "technical_ridges", "texture_set": "glacier", "prop_set": "ice",
-		"default_laps": 3, "par_time": 81.0, "seed": 4811, "radius": 101.0, "width": 13.5,
-		"verticality": 8.0, "fog_density": 0.028, "description": "Épingles sur glace, tunnels bleus et vents latéraux.",
+		"default_laps": 3, "par_time": 81.0, "seed": 4811, "radius": 124.0, "width": 35.0,
+		"verticality": 8.0, "fog_density": 0.028, "description": "Épingles lissées autour de la première Porte intergalactique stable et vents latéraux.",
 		"tags": ["GLACE", "ÉPINGLES", "4,2 KM"], "hazards": ["ice", "debris"],
 		"palette": {"primary": "#65E9FF", "secondary": "#A9F3FF", "fog": "#8CC9DA", "sky": "#061A2B", "ground": "#B9DCE4", "road": "#193544", "shoulder": "#6AAEC2", "glow": "#51E9FF", "accent": "#D8FAFF", "key": "#F4FFFF"},
 	},
 	{
 		"id": "orbital", "name": "Cimetière Orbital", "region": "ANNEAU DE MORRIGAN", "difficulty": 5, "base_grip": 0.88, "layout_profile": "orbital_wave", "texture_set": "orbital", "prop_set": "orbital",
-		"default_laps": 3, "par_time": 84.0, "seed": 7709, "radius": 114.0, "width": 12.0,
-		"verticality": 22.0, "fog_density": 0.006, "description": "Épaves en apesanteur et virages suspendus au-dessus du vide.",
+		"default_laps": 3, "par_time": 84.0, "seed": 7709, "radius": 142.0, "width": 36.0,
+		"verticality": 22.0, "fog_density": 0.006, "description": "Mémorial de trois galaxies, épaves en apesanteur et virages suspendus au-dessus du vide.",
 		"tags": ["EXPERT", "VIDE", "4,7 KM"], "hazards": ["gravity", "debris"],
 		"palette": {"primary": "#D85BFF", "secondary": "#40DFFC", "fog": "#191A42", "sky": "#02030D", "ground": "#090B1D", "road": "#15172B", "shoulder": "#3D245C", "glow": "#D85BFF", "accent": "#40DFFC", "key": "#D8EEFF"},
 	},
 	{
 		"id": "canopy", "name": "Canopée d’Azura", "region": "FORÊT-MONDE ELYSIA", "biome": "living_jungle", "difficulty": 3, "base_grip": 0.86, "layout_profile": "jungle_switchback", "texture_set": "jungle", "prop_set": "jungle",
-		"default_laps": 3, "par_time": 88.0, "seed": 9203, "radius": 108.0, "width": 14.5,
-		"verticality": 16.0, "fog_density": 0.032, "description": "Racines mobiles, boue bioluminescente et raccourcis qui s’ouvrent au rythme de la canopée.",
+		"default_laps": 3, "par_time": 88.0, "seed": 9203, "radius": 134.0, "width": 36.0,
+		"verticality": 16.0, "fog_density": 0.032, "description": "Ruban vivant, boue bioluminescente et raccourcis écologiques qui suivent la canopée.",
 		"tags": ["TOUT-TERRAIN", "VIVANT", "4,5 KM"], "hazards": ["mud", "spores"], "mechanic": {"id": "living_shortcuts", "name": "Raccourcis vivants"},
 		"palette": {"primary": "#54F28B", "secondary": "#C8FF6A", "fog": "#235A48", "sky": "#071D19", "ground": "#173C2C", "road": "#1A2E28", "shoulder": "#3A7A46", "glow": "#52FFB2", "accent": "#D7FF72", "key": "#E5FFD0"},
 	},
 	{
 		"id": "tempest", "name": "Couronne Tempête", "region": "MÉGALOPOLE STRATOS", "biome": "storm_city", "difficulty": 4, "base_grip": 0.90, "layout_profile": "urban_chicane", "texture_set": "wet", "prop_set": "urban",
-		"default_laps": 3, "par_time": 83.0, "seed": 11437, "radius": 118.0, "width": 13.0,
-		"verticality": 28.0, "fog_density": 0.019, "description": "Toits détrempés, rails aériens et rafales qui déplacent la trajectoire idéale.",
+		"default_laps": 3, "par_time": 83.0, "seed": 11437, "radius": 146.0, "width": 38.0,
+		"verticality": 28.0, "fog_density": 0.019, "description": "Capitale médiatique du Tour, toits détrempés et rafales qui déplacent la trajectoire idéale.",
 		"tags": ["VERTICAL", "ORAGE", "4,9 KM"], "hazards": ["rain", "crosswind"], "mechanic": {"id": "crosswind_windows", "name": "Fenêtres de vent"},
 		"palette": {"primary": "#55B9FF", "secondary": "#F4E85B", "fog": "#53677C", "sky": "#081321", "ground": "#182332", "road": "#202D3A", "shoulder": "#385D79", "glow": "#64D6FF", "accent": "#FFE95C", "key": "#D9F3FF"},
 	},
 	{
 		"id": "abyss", "name": "Tranchée Hadale", "region": "OCÉAN DE NÉRÉIDE", "biome": "abyssal_ocean", "difficulty": 5, "base_grip": 0.84, "layout_profile": "abyss_spiral", "texture_set": "abyss", "prop_set": "abyss",
-		"default_laps": 3, "par_time": 91.0, "seed": 15061, "radius": 104.0, "width": 12.5,
-		"verticality": 19.0, "fog_density": 0.041, "description": "Tunnels pressurisés, courants latéraux et sas qui alternent adhérence et faible gravité.",
+		"default_laps": 3, "par_time": 91.0, "seed": 15061, "radius": 136.0, "width": 36.0,
+		"verticality": 19.0, "fog_density": 0.041, "description": "Avant-dernière escale, tunnels pressurisés et sas qui alternent adhérence et faible gravité.",
 		"tags": ["PRESSION", "COURANTS", "4,4 KM"], "hazards": ["current", "pressure"], "mechanic": {"id": "pressure_tides", "name": "Marées de pression"},
 		"palette": {"primary": "#2DE2E6", "secondary": "#7B61FF", "fog": "#12384B", "sky": "#010A14", "ground": "#09212D", "road": "#102D3B", "shoulder": "#174E5F", "glow": "#32F6E8", "accent": "#9A7BFF", "key": "#B9FFF7"},
 	},
 	{
-		"id": "caldera", "name": "Caldeira Zéro", "region": "RÉACTEUR TELLURIQUE IX", "biome": "volcanic_reactor", "difficulty": 5, "base_grip": 0.92, "layout_profile": "volcanic_crown", "texture_set": "volcanic", "prop_set": "volcanic",
-		"default_laps": 3, "par_time": 89.0, "seed": 18793, "radius": 121.0, "width": 14.0,
-		"verticality": 24.0, "fog_density": 0.024, "description": "Ponts thermiques, coulées de plasma et éruptions cycliques qui redessinent les zones sûres.",
+		"id": "caldera", "name": "Circuit Zero", "region": "CALDEIRA IX // TRACÉ ORIGINEL", "biome": "volcanic_reactor", "difficulty": 5, "base_grip": 0.92, "layout_profile": "volcanic_crown", "texture_set": "volcanic", "prop_set": "volcanic",
+		"default_laps": 3, "par_time": 89.0, "seed": 18793, "radius": 154.0, "width": 40.0,
+		"verticality": 24.0, "fog_density": 0.024, "description": "Finale de la Couronne autour du réacteur tellurique, entre plasma et éruptions cycliques.",
 		"tags": ["EXTRÊME", "PLASMA", "5,0 KM"], "hazards": ["lava", "eruption"], "mechanic": {"id": "eruption_cycles", "name": "Cycles d’éruption"},
 		"palette": {"primary": "#FF4D32", "secondary": "#FFB12E", "fog": "#713326", "sky": "#160507", "ground": "#35100D", "road": "#241817", "shoulder": "#7C2418", "glow": "#FF3B20", "accent": "#FFC13D", "key": "#FFD7A1"},
 	},
@@ -86,15 +86,15 @@ const ITEMS: Array[Dictionary] = [
 ]
 
 const PILOTS: Array[Dictionary] = [
-	{"id": "vex", "name": "Mara Vex", "callsign": "VEX", "paint": "#FF5E7D", "trait": "aggressive"},
-	{"id": "k17", "name": "K-17 Sol", "callsign": "K17", "paint": "#62DBFF", "trait": "technical"},
-	{"id": "rook", "name": "Rook Calder", "callsign": "ROOK", "paint": "#FFC45C", "trait": "defensive"},
-	{"id": "nyx", "name": "Nyx Amani", "callsign": "NYX", "paint": "#B891FF", "trait": "opportunist"},
-	{"id": "tao", "name": "Tao Mercer", "callsign": "TAO", "paint": "#6EFFA7", "trait": "clean_line"},
-	{"id": "sable", "name": "Sable-9", "callsign": "SABLE", "paint": "#F0F3F7", "trait": "adaptive"},
-	{"id": "brakk", "name": "Brakk Orlov", "callsign": "BRAKK", "paint": "#FF8D4F", "trait": "rammer"},
-	{"id": "iris", "name": "Iris Quell", "callsign": "IRIS", "paint": "#FF72D2", "trait": "strategist"},
-	{"id": "echo", "name": "Echo Vale", "callsign": "ECHO", "paint": "#5B8CFF", "trait": "drifter"},
+	{"id": "vex", "name": "Mara Vex", "callsign": "VEX", "paint": "#FF5E7D", "trait": "aggressive", "team": "Meridian Apex", "origin": "Vermillon", "bio": "Double championne, défense tardive et précision brutale. Elle veut imposer un standard unique à la Ligue."},
+	{"id": "k17", "name": "K-17 Sol", "callsign": "K17", "paint": "#62DBFF", "trait": "technical", "team": "Free Relay", "origin": "Khepri", "bio": "Synthétique de navigation devenu pilote, expert des trajectoires cryogéniques."},
+	{"id": "rook", "name": "Rook Calder", "callsign": "ROOK", "paint": "#FFC45C", "trait": "defensive", "team": "Free Relay", "origin": "Meridian", "bio": "Vétéran des châssis lourds, il transforme la défense en pression constante."},
+	{"id": "nyx", "name": "Nyx Amani", "callsign": "NYX", "paint": "#B891FF", "trait": "opportunist", "team": "Umbra Lab", "origin": "Néréide", "bio": "Ingénieure des champs de phase, toujours prête à exploiter la moindre ouverture."},
+	{"id": "tao", "name": "Tao Mercer", "callsign": "TAO", "paint": "#6EFFA7", "trait": "clean_line", "team": "Argon Vector", "origin": "Elysia", "bio": "Spécialiste de la ligne propre et ambassadeur du protocole écologique d’Elysia."},
+	{"id": "sable", "name": "Sable-9", "callsign": "SABLE", "paint": "#F0F3F7", "trait": "adaptive", "team": "Umbra Lab", "origin": "Inconnu", "bio": "Pilote masqué dont le style change à chaque monde et défie toute télémétrie."},
+	{"id": "brakk", "name": "Brakk Orlov", "callsign": "BRAKK", "paint": "#FF8D4F", "trait": "rammer", "team": "Meridian Apex", "origin": "Caldeira IX", "bio": "Équipier de Vex et spécialiste du contact sur les pistes thermiques."},
+	{"id": "iris", "name": "Iris Quell", "callsign": "IRIS", "paint": "#FF72D2", "trait": "strategist", "team": "Argon Vector", "origin": "Stratos", "bio": "Stratège médiatique qui conserve ses systèmes pour les derniers secteurs."},
+	{"id": "echo", "name": "Echo Vale", "callsign": "ECHO", "paint": "#5B8CFF", "trait": "drifter", "team": "Indépendant", "origin": "Morrigan", "bio": "Indépendant orbital, il fait de chaque dérive un hommage aux convois disparus."},
 ]
 
 const DIFFICULTIES: Array[Dictionary] = [
@@ -113,11 +113,11 @@ const UPGRADES: Dictionary = {
 const CHAMPIONSHIP_POINTS: Array[int] = [15, 12, 10, 8, 6, 5, 4, 3, 2, 1]
 const DEFAULT_PAINTS: Array[String] = ["#5EE7FF", "#FF765E", "#68F29C", "#FFE15B", "#A58CFF", "#F253AD", "#F4F6FB", "#242A35"]
 const DIVISIONS: Array[Dictionary] = [
-	{"id": "command", "name": "Commandement", "short": "CMD", "description": "Unités polyvalentes capables d’adapter leur plan de course.", "color": "#5EE7FF", "chassis_ids": ["biped", "centurion"]},
-	{"id": "stabilized", "name": "Stabilisés", "short": "STB", "description": "Plateformes d’appui qui privilégient cap, relance et contrôle.", "color": "#9B8CFF", "chassis_ids": ["tripod", "quadruped"]},
-	{"id": "swarm", "name": "Essaim", "short": "ESM", "description": "Architectures multi-appuis précises sur terrains complexes.", "color": "#68F29C", "chassis_ids": ["hexapod", "octopod"]},
-	{"id": "ground", "name": "Sol", "short": "SOL", "description": "Machines mécaniques spécialisées dans le couple et la dérive.", "color": "#F4B84A", "chassis_ids": ["tracked", "monowheel"]},
-	{"id": "experimental", "name": "Expérimental", "short": "EXP", "description": "Prototypes à sustentation ou inertie non conventionnelle.", "color": "#4FA9FF", "chassis_ids": ["hover", "orb"]},
+	{"id": "command", "name": "Commandement", "short": "CMD", "description": "Cadres polyvalents; la locomotion choisie ne change pas leur division.", "color": "#5EE7FF", "chassis_ids": ["biped", "centurion"]},
+	{"id": "stabilized", "name": "Stabilisés", "short": "STB", "description": "Cadres d’appui qui privilégient cap, relance et contrôle.", "color": "#9B8CFF", "chassis_ids": ["tripod", "quadruped"]},
+	{"id": "swarm", "name": "Essaim", "short": "ESM", "description": "Cadres multi-appuis précis sur terrains complexes.", "color": "#68F29C", "chassis_ids": ["hexapod", "octopod"]},
+	{"id": "ground", "name": "Sol", "short": "SOL", "description": "Cadres mécaniques spécialisés dans le couple et la dérive.", "color": "#F4B84A", "chassis_ids": ["tracked", "monowheel"]},
+	{"id": "experimental", "name": "Expérimental", "short": "EXP", "description": "Cadres prototypes à sustentation ou inertie non conventionnelle.", "color": "#4FA9FF", "chassis_ids": ["hover", "orb"]},
 ]
 
 const MODULE_SLOTS: Array[Dictionary] = [
@@ -297,10 +297,30 @@ const RACE_RULESETS: Array[Dictionary] = [
 const CHAMPIONSHIPS: Array[Dictionary] = [
 	{"id": "command_cup", "name": "Coupe Commandement", "description": "Série tactique réservée aux unités Commandement.", "division_id": "command", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["foundry", "tempest", "glacier", "orbital"], "mixed_divisions": false},
 	{"id": "stabilized_cup", "name": "Coupe Stabilisée", "description": "Quatre manches de précision pour les plateformes Stabilisé.", "division_id": "stabilized", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "canopy", "foundry", "abyss"], "mixed_divisions": false},
-	{"id": "swarm_cup", "name": "Coupe Essaim", "description": "Terrains complexes réservés aux architectures Essaim.", "division_id": "swarm", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["canopy", "glacier", "abyss", "caldera"], "mixed_divisions": false},
-	{"id": "ground_cup", "name": "Coupe Sol", "description": "Couple, impact et dérive pour les spécialistes mécaniques.", "division_id": "ground", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "foundry", "caldera", "tempest"], "mixed_divisions": false},
-	{"id": "experimental_cup", "name": "Coupe Expérimentale", "description": "Une série à haute énergie pour les prototypes.", "division_id": "experimental", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["orbital", "tempest", "abyss", "caldera"], "mixed_divisions": false},
-	{"id": "nexus_open", "name": "Grand Open du Nexus", "description": "Championnat majeur explicitement mixte réunissant les cinq divisions.", "division_id": "", "ruleset_id": "elite_open", "performance_class_id": "unlimited", "track_ids": ["foundry", "dunes", "glacier", "orbital", "canopy", "tempest", "abyss", "caldera"], "mixed_divisions": true},
+	{"id": "swarm_cup", "name": "Coupe Essaim", "description": "Terrains complexes réservés aux architectures Essaim.", "division_id": "swarm", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["canopy", "glacier", "abyss", "orbital"], "mixed_divisions": false},
+	{"id": "ground_cup", "name": "Coupe Sol", "description": "Couple, impact et dérive pour les spécialistes mécaniques.", "division_id": "ground", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "foundry", "tempest", "abyss"], "mixed_divisions": false},
+	{"id": "experimental_cup", "name": "Coupe Expérimentale", "description": "Une série à haute énergie pour les prototypes.", "division_id": "experimental", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["orbital", "tempest", "abyss", "glacier"], "mixed_divisions": false},
+	{
+		"id": "nexus_open",
+		"name": "Grand Open des Huit Mondes",
+		"description": "Tournée intergalactique mixte; Circuit Zero conclut les huit manches.",
+		"division_id": "",
+		"ruleset_id": "elite_open",
+		"performance_class_id": "unlimited",
+		"track_ids": ["foundry", "dunes", "glacier", "orbital", "canopy", "tempest", "abyss", "caldera"],
+		"mixed_divisions": true,
+		"unlock_requirement": {
+			"stat": "championships",
+			"minimum": 1,
+			"locked_badge": "VERROUILLÉ",
+			"resume_badge": "REPRISE",
+			"locked_label": "GRAND OPEN VERROUILLÉ",
+			"locked_tooltip": "Remportez au moins une Coupe de division pour obtenir l’invitation au Grand Open.",
+			"locked_status": "SAISON 03 // GRAND OPEN VERROUILLÉ • REMPORTEZ UNE COUPE DE DIVISION",
+			"unlocked_tooltip": "Invitation obtenue : démarrez le Grand Open mixte sur huit mondes.",
+			"unlocked_status": "SAISON 03 // INVITATION ACQUISE • LE GRAND OPEN VOUS ATTEND",
+		},
+	},
 ]
 
 
@@ -330,6 +350,40 @@ static func get_ruleset(ruleset_id: String) -> Dictionary:
 
 static func get_championship(championship_id: String) -> Dictionary:
 	return _find_by_id(CHAMPIONSHIPS, championship_id)
+
+static func championship_access(championship_id: String, stats: Dictionary = {}, active_championship: Dictionary = {}) -> Dictionary:
+	var definition := get_championship(championship_id)
+	if definition.is_empty():
+		return {
+			"available": false,
+			"unlocked": false,
+			"resume": false,
+			"current": 0,
+			"minimum": 0,
+		}
+	var requirement_value: Variant = definition.get("unlock_requirement", {})
+	var requirement: Dictionary = Dictionary(requirement_value).duplicate(true) if requirement_value is Dictionary else {}
+	var stat_id := String(requirement.get("stat", ""))
+	var minimum := maxi(0, int(requirement.get("minimum", 0)))
+	var current := minimum if stat_id.is_empty() else maxi(0, int(stats.get(stat_id, 0)))
+	var active_id := String(active_championship.get("championship_id", active_championship.get("cup_id", "")))
+	var resume_active := bool(active_championship.get("active", false)) and active_id == championship_id
+	var naturally_unlocked := requirement.is_empty() or stat_id.is_empty() or current >= minimum
+	return {
+		"available": naturally_unlocked or resume_active,
+		"unlocked": naturally_unlocked,
+		"resume": resume_active,
+		"current": current,
+		"minimum": minimum,
+		"locked_badge": String(requirement.get("locked_badge", "VERROUILLÉ")),
+		"resume_badge": String(requirement.get("resume_badge", "REPRISE")),
+		"locked_label": String(requirement.get("locked_label", "CHAMPIONNAT VERROUILLÉ")),
+		"locked_tooltip": String(requirement.get("locked_tooltip", "Remportez une Coupe de division pour déverrouiller ce championnat.")),
+		"locked_status": String(requirement.get("locked_status", "CHAMPIONNAT VERROUILLÉ")),
+		"unlocked_tooltip": String(requirement.get("unlocked_tooltip", definition.get("description", "Championnat disponible."))),
+		"unlocked_status": String(requirement.get("unlocked_status", "CHAMPIONNAT DISPONIBLE")),
+	}
+
 
 
 static func get_all_divisions() -> Array[Dictionary]:
@@ -515,7 +569,7 @@ static func _lore(chassis_id: String) -> String:
 		"monowheel": return "Cyclops enferme son pilote dans un gyroscope actif et fait de chaque dérive une réserve d’énergie."
 		"orb": return "Orb S7 recompose son inertie autour d’un cœur mobile, absorbant les chocs latéraux pour les restituer en accélération."
 		"centurion": return "Les douze appuis synchronisés du Centurion furent créés pour franchir les épaves mouvantes de l’Anneau de Morrigan."
-		_: return "Architecture de compétition homologuée par la Nexus Racing Authority."
+		_: return "Architecture de compétition homologuée par la Nexus Grand League."
 
 
 static func _default_loadout_for(chassis_id: String) -> Dictionary:

@@ -10,6 +10,7 @@ extends Control
 signal control_changed(action: StringName, strength: float)
 signal action_triggered(action: StringName)
 signal touch_mode_changed(enabled: bool)
+signal layout_changed
 
 const HOLD_ACTIONS: Array[StringName] = [
 	&"race_left", &"race_right", &"race_accelerate",
@@ -20,6 +21,9 @@ const PULSE_ACTIONS: Array[StringName] = [
 ]
 const MIN_TOUCH_TARGET := 88.0
 const LANDSCAPE_TOUCH_TARGET := 104.0
+const COMPACT_LANDSCAPE_MAX_WIDTH := 1080.0
+const COMPACT_LANDSCAPE_MAX_HEIGHT := 600.0
+const COMPACT_CLUSTER_GAP := 10.0
 
 var _forced_visible := false
 var _touch_detected := false
@@ -230,14 +234,55 @@ func _layout_controls() -> void:
 	_steering_cluster.reset_size()
 	_action_cluster.reset_size()
 	_utility_cluster.reset_size()
+	var steering_size := _steering_cluster.get_combined_minimum_size()
+	var action_size := _action_cluster.get_combined_minimum_size()
+	var utility_size := _utility_cluster.get_combined_minimum_size()
 	if landscape:
-		_steering_cluster.position = Vector2(left_margin, viewport_size.y - bottom_margin - target)
-		_action_cluster.position = Vector2(viewport_size.x - right_margin - target * 3.30, viewport_size.y - bottom_margin - target * 2.10)
-		_utility_cluster.position = Vector2(viewport_size.x - right_margin - target * 3.20, top_margin)
+		var compact_landscape := (
+			viewport_size.x < COMPACT_LANDSCAPE_MAX_WIDTH
+			or viewport_size.y < COMPACT_LANDSCAPE_MAX_HEIGHT
+		)
+		if compact_landscape:
+			# Short 19.5:9 phones need three explicit, non-intersecting zones.
+			# Use measured container sizes because the wide GAZ target makes the
+			# action grid wider than a simple three-target estimate.
+			var bottom_edge := viewport_size.y - bottom_margin
+			_steering_cluster.position = Vector2(left_margin, bottom_edge - steering_size.y)
+			_action_cluster.position = Vector2(viewport_size.x - right_margin - action_size.x, bottom_edge - action_size.y)
+			_utility_cluster.position = Vector2(
+				left_margin,
+				maxf(top_margin, _steering_cluster.position.y - COMPACT_CLUSTER_GAP - utility_size.y)
+			)
+		else:
+			_steering_cluster.position = Vector2(left_margin, viewport_size.y - bottom_margin - steering_size.y)
+			_action_cluster.position = Vector2(viewport_size.x - right_margin - action_size.x, viewport_size.y - bottom_margin - action_size.y)
+			# Utility actions sit below the race header instead of covering position
+			# and timing. Their centred vertical band also remains reachable by thumb.
+			_utility_cluster.position = Vector2(
+				viewport_size.x - right_margin - utility_size.x,
+				maxf(top_margin + target * 1.20, viewport_size.y * 0.27)
+			)
 	else:
-		_steering_cluster.position = Vector2(left_margin, viewport_size.y - bottom_margin - target * 2.15)
-		_action_cluster.position = Vector2(viewport_size.x - right_margin - target * 3.30, viewport_size.y - bottom_margin - target * 2.15)
-		_utility_cluster.position = Vector2(viewport_size.x - right_margin - target * 3.20, top_margin)
+		# Portrait previously stacked steering and the 3x2 action grid on the
+		# same pixels. Give each cluster a dedicated horizontal band.
+		_steering_cluster.position = Vector2(left_margin, viewport_size.y - bottom_margin - steering_size.y)
+		_action_cluster.position = Vector2(
+			maxf(left_margin, viewport_size.x - right_margin - action_size.x),
+			viewport_size.y - bottom_margin - target * 3.25
+		)
+		_utility_cluster.position = Vector2(
+			clampf((viewport_size.x - utility_size.x) * 0.5, left_margin, viewport_size.x - right_margin - utility_size.x),
+			maxf(top_margin + target * 1.40, viewport_size.y * 0.19)
+		)
+	layout_changed.emit()
+
+
+func control_regions() -> Dictionary:
+	return {
+		"steering": Rect2(_steering_cluster.position, _steering_cluster.size) if _steering_cluster != null else Rect2(),
+		"actions": Rect2(_action_cluster.position, _action_cluster.size) if _action_cluster != null else Rect2(),
+		"utilities": Rect2(_utility_cluster.position, _utility_cluster.size) if _utility_cluster != null else Rect2(),
+	}
 
 
 ## Insets are converted from physical-window pixels to the logical viewport.

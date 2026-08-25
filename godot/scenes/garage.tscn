@@ -22,6 +22,25 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.014, 0.025, 0.045, 1)
 
+[node name="GaragePreview" parent="." instance=ExtResource("2_preview")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StageTint" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.025, 0.045, 0.08)
+
 [node name="SafeArea" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -29,6 +48,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 34
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 34
@@ -36,10 +56,12 @@ theme_override_constants/margin_bottom = 22
 
 [node name="Page" type="VBoxContainer" parent="SafeArea"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 12
 
 [node name="Header" type="HBoxContainer" parent="SafeArea/Page"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 18
 
 [node name="TitleBlock" type="VBoxContainer" parent="SafeArea/Page/Header"]
@@ -49,7 +71,7 @@ size_flags_horizontal = 3
 [node name="Eyebrow" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "NEXUS TECHNICAL BAY // CONFIGURATEUR VISUEL"
+text = "HANGAR 08 // CONFIGURATEUR PLEIN ÉCRAN"
 
 [node name="Title" type="Label" parent="SafeArea/Page/Header/TitleBlock"]
 layout_mode = 2
@@ -82,12 +104,13 @@ text = "<  RETOUR"
 [node name="Content" type="HBoxContainer" parent="SafeArea/Page"]
 layout_mode = 2
 size_flags_vertical = 3
+mouse_filter = 2
 theme_override_constants/separation = 16
 
 [node name="RosterPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
 custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
-theme_type_variation = &"CardPanel"
+theme_type_variation = &"GarageHudPanel"
 
 [node name="Roster" type="VBoxContainer" parent="SafeArea/Page/Content/RosterPanel"]
 layout_mode = 2
@@ -123,10 +146,12 @@ fixed_icon_size = Vector2i(0, 0)
 custom_minimum_size = Vector2(700, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_type_variation = &"HeroPanel"
+mouse_filter = 2
+theme_type_variation = &"GarageStagePanel"
 
 [node name="Detail" type="VBoxContainer" parent="SafeArea/Page/Content/DetailPanel"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 7
 
 [node name="IdentityTop" type="HBoxContainer" parent="SafeArea/Page/Content/DetailPanel/Detail"]
@@ -158,11 +183,11 @@ layout_mode = 2
 theme_type_variation = &"SectionLabel"
 text = "Polyvalence tactique"
 
-[node name="GaragePreview" parent="SafeArea/Page/Content/DetailPanel/Detail" instance=ExtResource("2_preview")]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 338)
+[node name="StageSpacer" type="Control" parent="SafeArea/Page/Content/DetailPanel/Detail"]
+custom_minimum_size = Vector2(0, 430)
 layout_mode = 2
 size_flags_vertical = 3
+mouse_filter = 2
 
 [node name="StatsTitle" type="Label" parent="SafeArea/Page/Content/DetailPanel/Detail"]
 layout_mode = 2
@@ -282,7 +307,7 @@ text = "CHÂSSIS ACTIF"
 [node name="WorkshopPanel" type="PanelContainer" parent="SafeArea/Page/Content"]
 custom_minimum_size = Vector2(510, 0)
 layout_mode = 2
-theme_type_variation = &"CardPanel"
+theme_type_variation = &"GarageHudPanel"
 
 [node name="Workshop" type="VBoxContainer" parent="SafeArea/Page/Content/WorkshopPanel"]
 layout_mode = 2

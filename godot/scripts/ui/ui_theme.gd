@@ -124,6 +124,14 @@ static func _add_panel_variations(theme: Theme, palette: Dictionary) -> void:
 	_set_variation(theme, &"CardPanel", &"PanelContainer")
 	theme.set_stylebox(&"panel", &"CardPanel", _panel_box(Color(palette.raised, 0.94), Color(palette.line, 0.72), 8, 18))
 
+	_set_variation(theme, &"GarageHudPanel", &"PanelContainer")
+	var garage_hud_alpha := 0.96 if palette.background == Color.BLACK else 0.80
+	theme.set_stylebox(&"panel", &"GarageHudPanel", _panel_box(Color(palette.raised, garage_hud_alpha), Color(CYAN, 0.48), 8, 18))
+
+	_set_variation(theme, &"GarageStagePanel", &"PanelContainer")
+	var stage_alpha := 0.62 if palette.background == Color.BLACK else 0.22
+	theme.set_stylebox(&"panel", &"GarageStagePanel", _panel_box(Color(palette.surface, stage_alpha), Color(CYAN, 0.18), 10, 18))
+
 	_set_variation(theme, &"DangerPanel", &"PanelContainer")
 	theme.set_stylebox(&"panel", &"DangerPanel", _panel_box(Color(RED, 0.08), Color(RED, 0.55), 8, 18))
 

@@ -1,8 +1,16 @@
 # Game Design Document — MECHA OVERDRIVE: Circuit Zero
 
-## Contrat de jeu actuel — Godot 2.3.0
+## Contrat de jeu actuel — Godot 2.4.0
 
 Cette section est la spécification autoritative de l’édition Godot. Elle remplace, pour cette édition, les quantités et limites de la baseline Canvas/PWA 1.0 archivée plus bas.
+
+### Promesse narrative
+
+Les Portes du Nexus relient huit mondes dans trois galaxies. Le Hangar 08, dernière écurie indépendante, engage le joueur dans le Grand Tour des Huit Mondes. Mara Vex, double championne de Meridian Apex, vise une troisième Couronne qui donnerait à son consortium le contrôle technique de la Ligue pendant dix cycles.
+
+Le conflit traduit directement la personnalisation : Vex défend une architecture propriétaire unique, tandis que le Hangar 08 doit prouver que cinq cents configurations ouvertes peuvent gagner. Une victoire de Coupe vaut invitation sportive au Grand Open ; la huitième manche, exclusivement disputée sur Circuit Zero, décide de la Charte libre.
+
+La saison compte exactement dix pilotes : le joueur et neuf rivaux persistants. Le Codex expose leurs équipes, origines, biographies et profils tactiques.
 
 ### Catalogue jouable
 
@@ -26,10 +34,10 @@ Les Grands Prix utilisent huit concurrents, un plateau stable entre les manches 
 |---|---|---|---|
 | Coupe Commandement | Commandement, `division_locked` | `tuned` | Fonderie Néon, Couronne Tempête, Arc Polaire, Cimetière Orbital |
 | Coupe Stabilisée | Stabilisés, `division_locked` | `tuned` | Faille Écarlate, Canopée d’Azura, Fonderie Néon, Tranchée Hadale |
-| Coupe Essaim | Essaim, `division_locked` | `tuned` | Canopée d’Azura, Arc Polaire, Tranchée Hadale, Caldeira Zéro |
-| Coupe Sol | Sol, `division_locked` | `tuned` | Faille Écarlate, Fonderie Néon, Caldeira Zéro, Couronne Tempête |
-| Coupe Expérimentale | Expérimental, `division_locked` | `tuned` | Cimetière Orbital, Couronne Tempête, Tranchée Hadale, Caldeira Zéro |
-| Grand Open du Nexus (`nexus_open`) | cinq divisions, `elite_open` | `unlimited` | les huit circuits |
+| Coupe Essaim | Essaim, `division_locked` | `tuned` | Canopée d’Azura, Arc Polaire, Tranchée Hadale, Cimetière Orbital |
+| Coupe Sol | Sol, `division_locked` | `tuned` | Faille Écarlate, Fonderie Néon, Couronne Tempête, Tranchée Hadale |
+| Coupe Expérimentale | Expérimental, `division_locked` | `tuned` | Cimetière Orbital, Couronne Tempête, Tranchée Hadale, Arc Polaire |
+| Grand Open des Huit Mondes (`nexus_open`) | cinq divisions, `elite_open` | `unlimited` | les huit circuits, Circuit Zero en finale |
 
 Les trois règlements sont `division_locked`, `open_mixed` et `elite_open`. Le premier verrouille la grille à une division ; les deux autres autorisent explicitement le mélange, `elite_open` imposant aussi la classe Prototype.
 
@@ -45,34 +53,36 @@ Trois classes de performance encadrent l’écart de puissance :
 
 Chaque châssis possède un chargement enregistré dans **3 emplacements** — Noyau, Mobilité, Utilitaire — avec **18 modules** au total, soit six options par emplacement. Les neuf pièces historiques restent universelles et acquises ; neuf pièces spécialisées ajoutent affinités de division, tier, consommation, fabricant, rôle et lore. Le garage affiche le vrai modèle 3D de course et compare la base à la configuration finale avant tout achat.
 
-La locomotion constitue un quatrième axe de préparation. Chaque châssis reçoit **50 configurations** : dix technologies (jambes mécaniques, roues vectorielles, chenilles segmentées, appuis distribués, sphères omnidirectionnelles, gyro-roue, patins magnétiques, bi-propulseur Aether, rails articulés et turbines carénées) combinées à cinq montages (compact, équilibré, voie large, endurance et pointe). Le garage filtre ces choix à l’architecture active, reconstruit immédiatement le modèle 3D et additionne leurs compromis aux statistiques de course.
+La locomotion constitue un quatrième axe de préparation. Chaque châssis reçoit **50 configurations** : dix technologies (jambes mécaniques, roues vectorielles, chenilles segmentées, appuis distribués, sphères omnidirectionnelles, gyro-roue, patins magnétiques, bi-propulseur Aether, rails articulés et turbines carénées) combinées à cinq montages (compact, équilibré, voie large, endurance et pointe). Le garage plein écran filtre ces choix à l’architecture active, reconstruit immédiatement le modèle 3D sans perdre le cadrage et additionne leurs compromis aux statistiques de course. Deux mécaniciens humanoïdes, un robot-outilleur et un drone de diagnostic animent le paddock ; le mouvement réduit neutralise leurs animations secondaires.
 
 Le bi-propulseur Aether est une conception originale à deux nacelles antigravité et cockpit central. Il exploite le principe général de poussée différentielle sans reprendre nom, silhouette, symbole ou asset d’une franchise tierce.
 
 ### Huit circuits
 
-Les quatre pistes historiques restent Fonderie Néon (`foundry`), Faille Écarlate (`dunes`), Arc Polaire (`glacier`) et Cimetière Orbital (`orbital`). La 2.1.0 ajoute :
+Les quatre pistes historiques restent Fonderie Néon (`foundry`), Faille Écarlate (`dunes`), Arc Polaire (`glacier`) et Cimetière Orbital (`orbital`). Le catalogue comprend aussi :
 
 - **Canopée d’Azura** (`canopy`) : boue, spores et raccourcis vivants ;
 - **Couronne Tempête** (`tempest`) : pluie, vents latéraux et tracé urbain vertical ;
 - **Tranchée Hadale** (`abyss`) : courants, pression et spirale abyssale ;
-- **Caldeira Zéro** (`caldera`) : lave, éruptions et couronne volcanique.
+- **Circuit Zero** (`caldera`) : lave, éruptions et couronne volcanique de la Caldeira IX.
 
-Chaque circuit définit son grip, son profil de tracé, ses matériaux, ses accessoires et ses dangers. Ces dangers modifient physiquement l’adhérence, la trajectoire ou la vitesse ; ils ne sont pas de simples étiquettes visuelles.
+Chaque circuit définit son grip, son profil de tracé, ses matériaux, ses accessoires et ses dangers. Les chaussées mesurent désormais **35 à 42 mètres** et respectent un contrat d’homologation de trois méchas de 9,5 m de large, avec espaces de dépassement. La grille utilise quatre rangées de deux, espacées selon les longueurs maximales ; les contacts, limites de voie et décisions de dépassement IA emploient l’empreinte de la configuration active.
+
+Canopée et Glacier utilisent des courbes continues sans cassure de ruban. Les décors restent proches des accotements après élargissement et huit cases de grille sont visibles dans le complexe de départ.
 
 ### Caméras, direction visuelle et persistance
 
 Tous les châssis fournissent une vue TPS et une vue cockpit/FPS avec ancres dédiées. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé par châssis. La vue interne active le composite cockpit et masque les pièces extérieures obstructives.
 
-La bibliothèque de matériaux couvre l’armure légère et lourde, les trois familles de modules, les surfaces standard, thermiques et cryogéniques, le cockpit, les panneaux d’environnement et la baie du garage avec dix-sept textures raster originales générées avec OpenAI. La vague 2.3.0 ajoute surfaces industrielles, biomes, ville humide, cérémonial de course et propulsion antigravité. Les fichiers, identifiants de génération, prompts, dimensions, empreintes SHA-256 et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
+La bibliothèque de matériaux couvre l’armure légère et lourde, les trois familles de modules, les surfaces standard, thermiques et cryogéniques, le cockpit, les panneaux d’environnement et la baie du garage. Dix-neuf assets raster originaux OpenAI incluent désormais le key art intergalactique et la texture de l’équipe mécano. Les fichiers, identifiants de génération, prompts, dimensions, empreintes SHA-256 et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
 
 ### Sauvegarde et continuité
 
-Le profil Godot utilise `SAVE_VERSION = 5`. Il conserve les chargements, locomotions, inventaire de modules et caméra par châssis, la lecture de l’ouverture Saison 03, ainsi que l’identité, la manche, la grille stable, la division, le règlement et la classe du championnat actif. Les profils v4 reçoivent le montage locomoteur constructeur. Le seuil de migration des anciens Grands Prix reste explicitement fixé au schéma championnat v3 : la montée en v5 ne rend jamais les circuits sauvegardés autoritatifs.
+Le profil Godot utilise `SAVE_VERSION = 5`. Il conserve les chargements, locomotions, inventaire de modules et caméra par châssis, la clé versionnée `season_intro_arc_2_seen`, ainsi que l’identité, la manche, la grille stable, la division, le règlement et la classe du championnat actif. Les profils v4 reçoivent le montage locomoteur constructeur. Le seuil de migration des anciens Grands Prix reste explicitement fixé au schéma championnat v3 : la montée en v5 ne rend jamais les circuits sauvegardés autoritatifs.
 
 ## Annexe — Spécification historique du compagnon web 1.0
 
-Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.3.0 ci-dessus.
+Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.4.0 ci-dessus.
 
 ## 1. Vision
 

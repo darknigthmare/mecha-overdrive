@@ -47,14 +47,14 @@ theme_override_constants/separation = 16
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "COURSE RAPIDE // CIRCUIT ZERO"
+text = "NEXUS GRAND LEAGUE // HUIT MONDES"
 horizontal_alignment = 1
 
 [node name="ResultTitle" type="Label" parent="SafeArea/ContentPanel/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"DisplayLabel"
-text = "ARRIVÉE HOMOLOGUÉE"
+text = "RÉSULTAT HOMOLOGUÉ"
 horizontal_alignment = 1
 
 [node name="Metrics" type="HBoxContainer" parent="SafeArea/ContentPanel/Content"]
@@ -137,7 +137,7 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "Course validée. Analysez les écarts puis ajustez votre architecture au garage."
+text = "Chaque résultat rapproche le Hangar 08 de la Couronne des Huit Mondes."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -159,7 +159,7 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "PODIUM // TROPHÉE NEXUS"
+text = "PODIUM // COURONNE DES HUIT MONDES"
 horizontal_alignment = 1
 
 [node name="PodiumPresenter" parent="SafeArea/ContentPanel/Content/Classification/PodiumPanel/PodiumContent" instance=ExtResource("2_podium")]

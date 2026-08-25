@@ -353,7 +353,7 @@ func get_upgrade_cost(upgrade_id: String, chassis_id: String = "") -> int:
 
 func update_settings(changes: Dictionary) -> bool:
 	var settings: Dictionary = profile.get("settings", {})
-	for key: String in ["high_contrast", "reduced_motion", "large_text", "camera_shake", "metric_units", "season_intro_seen"]:
+	for key: String in ["high_contrast", "reduced_motion", "large_text", "camera_shake", "metric_units", "season_intro_arc_2_seen"]:
 		if changes.has(key) and changes[key] is bool:
 			settings[key] = changes[key]
 	for key: String in ["master_volume", "music_volume", "effects_volume"]:
@@ -479,7 +479,7 @@ func _default_profile() -> Dictionary:
 		"settings": {
 			"high_contrast": false, "reduced_motion": false, "large_text": false,
 			"camera_shake": true, "metric_units": true,
-			"season_intro_seen": false,
+			"season_intro_arc_2_seen": false,
 			"master_volume": 0.85, "music_volume": 0.65, "effects_volume": 0.85,
 			"camera_view": "tps",
 		},

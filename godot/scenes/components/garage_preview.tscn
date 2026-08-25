@@ -54,8 +54,7 @@ bottom_radius = 3.55
 height = 0.24
 radial_segments = 48
 
-[node name="GaragePreview" type="PanelContainer"]
-custom_minimum_size = Vector2(520, 360)
+[node name="GaragePreview" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -63,11 +62,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 clip_contents = true
-theme_type_variation = &"HeroPanel"
 script = ExtResource("1_preview")
 
 [node name="Stack" type="Control" parent="."]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="ViewportContainer" type="SubViewportContainer" parent="Stack"]
 unique_name_in_owner = true
@@ -78,13 +81,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 2
-tooltip_text = "Glissez pour tourner le mécha, utilisez la molette pour zoomer"
+tooltip_text = "Glissez pour tourner, utilisez la molette ou pincez pour zoomer. Double-cliquez ou double-tapez pour recentrer."
 stretch = true
 
 [node name="PreviewViewport" type="SubViewport" parent="Stack/ViewportContainer"]
 unique_name_in_owner = true
 handle_input_locally = false
-size = Vector2i(640, 480)
+size = Vector2i(1280, 720)
 own_world_3d = true
 render_target_update_mode = 2
 
@@ -179,16 +182,14 @@ far = 80.0
 
 [node name="Overlay" type="MarginContainer" parent="Stack"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_left = 0.205
+anchor_top = 0.2
+anchor_right = 0.705
+anchor_bottom = 0.64
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+z_index = 4
 
 [node name="OverlayLayout" type="VBoxContainer" parent="Stack/Overlay"]
 layout_mode = 2
@@ -196,8 +197,9 @@ theme_override_constants/separation = 10
 
 [node name="TopBar" type="PanelContainer" parent="Stack/Overlay/OverlayLayout"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
 mouse_filter = 2
-theme_type_variation = &"CardPanel"
+theme_type_variation = &"GarageHudPanel"
 
 [node name="TopRow" type="HBoxContainer" parent="Stack/Overlay/OverlayLayout/TopBar"]
 layout_mode = 2
@@ -229,7 +231,7 @@ mouse_filter = 2
 [node name="ControlsPanel" type="PanelContainer" parent="Stack/Overlay/OverlayLayout/ControlsCenter"]
 layout_mode = 2
 mouse_filter = 1
-theme_type_variation = &"CardPanel"
+theme_type_variation = &"GarageHudPanel"
 
 [node name="Controls" type="HBoxContainer" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel"]
 layout_mode = 2
@@ -237,35 +239,35 @@ theme_override_constants/separation = 8
 
 [node name="RotateLeftButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 44)
+custom_minimum_size = Vector2(58, 56)
 layout_mode = 2
 tooltip_text = "Tourner le mécha vers la gauche"
-text = "GAUCHE"
+text = "◀"
 
 [node name="RotateRightButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 44)
+custom_minimum_size = Vector2(58, 56)
 layout_mode = 2
 tooltip_text = "Tourner le mécha vers la droite"
-text = "DROITE"
+text = "▶"
 
 [node name="ZoomOutButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 44)
+custom_minimum_size = Vector2(58, 56)
 layout_mode = 2
 tooltip_text = "Éloigner la caméra"
 text = "−"
 
 [node name="ZoomInButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(48, 44)
+custom_minimum_size = Vector2(58, 56)
 layout_mode = 2
 tooltip_text = "Rapprocher la caméra"
 text = "+"
 
 [node name="ResetButton" type="Button" parent="Stack/Overlay/OverlayLayout/ControlsCenter/ControlsPanel/Controls"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(110, 44)
+custom_minimum_size = Vector2(112, 56)
 layout_mode = 2
 tooltip_text = "Rétablir l’angle et le zoom par défaut"
 text = "RECENTRER"

@@ -48,11 +48,11 @@ Huit images supplémentaires ont été créées le 22 août 2026 avec le génér
 | `module_energy.png` | `exec-eea59f4d-b101-4cfc-9993-4dcae020385b` | six silhouettes de noyau |
 | `module_mobility.png` | `exec-9aafcc4a-cefa-4c81-b67a-8b58229f05f9` | six silhouettes de mobilité |
 | `module_utility.png` | `exec-b66cb30c-f20f-48a0-adc9-ace8ea63cfd0` | six silhouettes utilitaires |
-| `track_thermal.png` | `exec-c3543a32-c68c-4a26-b3f7-747ab5d7eeb5` | Fonderie Néon et Caldeira Zéro |
+| `track_thermal.png` | `exec-c3543a32-c68c-4a26-b3f7-747ab5d7eeb5` | Fonderie Néon et Circuit Zero |
 | `track_cryo.png` | `exec-1f760e08-e083-444a-a6bf-4316d996e711` | Arc Polaire et Tranchée Hadale |
 | `garage_bay.png` | `exec-6bdc26bf-1421-4369-859e-34366af46e50` | sol et panneaux de la prévisualisation 3D |
 
-Le manifeste schema 2 archive pour les dix-sept textures le rôle, les dimensions, les empreintes SHA-256, les prompts complets et l’identifiant de génération. Les originaux restent dans le dossier de générations Codex ; les copies runtime sont celles versionnées dans le projet.
+À l’issue de cette vague, le manifeste schema 2 archivait douze textures avec rôle, dimensions, empreinte SHA-256, prompt complet et identifiant de génération. Les originaux restent dans le dossier de générations Codex ; les copies runtime sont celles versionnées dans le projet.
 
 ### Statut
 
@@ -70,4 +70,21 @@ Cinq images supplémentaires ont été créées le 22 août 2026 avec le génér
 | `race_ceremonial.png` | `exec-0f574bb4-6b07-4846-8e62-05ad41336015` | départ/arrivée, introduction et podium |
 | `locomotion_antigrav.png` | `exec-02f2e6d7-08b7-4f68-8c17-2577569c00e6` | bi-propulseur Aether, couplages et éléments antigravité |
 
-Les dix-sept PNG mesurent 1254 × 1254. Le manifeste schema 2 contient dimensions et SHA-256 vérifié pour chaque fichier. Les prompts imposent une conception originale sans texte, logo, marque, watermark ni langage visuel reconnaissable de franchise. Les cinq originaux de cette vague sont conservés dans le dossier de générations Codex et les copies runtime sont versionnées sous `godot/assets/textures/openai/`.
+Les cinq PNG de cette vague mesurent 1254 × 1254 et portaient alors le total runtime à dix-sept. Le manifeste schema 2 contient dimensions et SHA-256 vérifié pour chaque fichier. Les prompts imposent une conception originale sans texte, logo, marque, watermark ni langage visuel reconnaissable de franchise. Les originaux sont conservés dans le dossier de générations Codex et les copies runtime sont versionnées sous `godot/assets/textures/openai/`.
+
+## Grand Tour et équipe du Hangar 08 — édition Godot 2.4.0
+
+Deux images originales supplémentaires ont été créées le 25 août 2026 avec le générateur d’images OpenAI intégré, sans image de référence :
+
+| Fichier | Identifiant de génération | Dimensions | Usage runtime |
+|---|---|---:|---|
+| `intergalactic_crown_race.png` | `exec-54ffb898-d371-4a31-a9c6-b3e03604a01b` | 1672 × 941 | illustration plein écran de l’introduction du Grand Tour des Huit Mondes |
+| `garage_crew.png` | `exec-ea509e00-8ff5-4c76-872f-05926e8257ae` | 1254 × 1254 | combinaisons des mécaniciens, coques des robots de maintenance et outils du garage |
+
+Le key art réserve volontairement une zone sombre à gauche pour le récit et place la rivalité Vex/Hangar 08 dans la moitié droite. La texture d’équipe combine textile technique, plaques de service et signaux cyan/ambre afin de rester lisible sur les personnages procéduraux légers du hangar.
+
+Les deux prompts complets, empreintes SHA-256, dimensions et usages sont archivés dans le manifeste schema 2, qui décrit désormais dix-neuf assets. Les contraintes de génération interdisent texte, logo, UI, watermark et reprise de design de franchise. Les personnages et véhicules sont des créations originales de MECHA OVERDRIVE ; l’inspiration générale du paddock spatial n’emploie aucun personnage, costume ou accessoire tiers.
+
+### Statut
+
+Les copies runtime sont versionnées sous `godot/assets/textures/openai/`. Les originaux restent dans le dossier de générations Codex. Une vérification juridique séparée des noms commerciaux reste recommandée avant une diffusion mondiale.

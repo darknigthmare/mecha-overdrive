@@ -6,9 +6,9 @@ Projet préparé pour **Darknigthmare** en 2026.
 
 ## Assets
 
-MECHA OVERDRIVE — Circuit Zero ne charge aucun asset artistique tiers. Le projet contient un key art et douze matériaux bitmap originaux produits avec l’outil de génération d’images OpenAI :
+MECHA OVERDRIVE — Circuit Zero ne charge aucun asset artistique tiers. Le projet contient un key art historique et dix-neuf assets bitmap originaux produits avec l’outil de génération d’images OpenAI :
 
-- générations commandées spécifiquement pour ce jeu les 21 et 22 août 2026 ;
+- générations commandées spécifiquement pour ce jeu les 21, 22 et 25 août 2026 ;
 - aucune image de référence sous licence ni aucun asset officiel n’a été fourni au modèle ;
 - prompt complet et contraintes d’originalité archivés dans `docs/ASSET_PROVENANCE.md`.
 - `godot/assets/textures/openai/mecha_armor.png` — armures et modules ;
@@ -23,6 +23,13 @@ MECHA OVERDRIVE — Circuit Zero ne charge aucun asset artistique tiers. Le proj
 - `godot/assets/textures/openai/track_thermal.png` — surfaces thermiques ;
 - `godot/assets/textures/openai/track_cryo.png` — surfaces cryogéniques ;
 - `godot/assets/textures/openai/garage_bay.png` — baie d’atelier du garage 3D ;
+- `godot/assets/textures/openai/prop_industrial.png` — props industriels de circuit ;
+- `godot/assets/textures/openai/prop_biome.png` — props de biomes extraterrestres ;
+- `godot/assets/textures/openai/prop_urban_wet.png` — infrastructures urbaines humides ;
+- `godot/assets/textures/openai/race_ceremonial.png` — podiums et structures de championnat ;
+- `godot/assets/textures/openai/locomotion_antigrav.png` — bi-propulseurs Aether originaux ;
+- `godot/assets/textures/openai/intergalactic_crown_race.png` — illustration d’introduction du Grand Tour ;
+- `godot/assets/textures/openai/garage_crew.png` — tenues, robots et outils de l’équipe de stand ;
 - prompts complets et identifiants archivés dans `godot/assets/textures/openai/manifest.json`.
 
 La géométrie, le son et les autres surfaces de l’expérience sont générés localement :

@@ -61,7 +61,7 @@ size_flags_horizontal = 3
 [node name="Series" type="Label" parent="SafeArea/Page/TopBar/Identity"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "NEXUS RACING AUTHORITY  //  SAISON 03"
+text = "NEXUS GRAND LEAGUE  //  SAISON 03"
 
 [node name="GameTitle" type="Label" parent="SafeArea/Page/TopBar/Identity"]
 layout_mode = 2
@@ -71,7 +71,7 @@ text = "MECHA OVERDRIVE"
 [node name="Subtitle" type="Label" parent="SafeArea/Page/TopBar/Identity"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "CIRCUIT ZERO  •  GODOT 3D EDITION"
+text = "GRAND TOUR DES HUIT MONDES  •  CIRCUIT ZERO"
 
 [node name="ProfilePanel" type="PanelContainer" parent="SafeArea/Page/TopBar"]
 custom_minimum_size = Vector2(390, 0)
@@ -130,7 +130,7 @@ theme_override_constants/separation = 7
 [node name="Prompt" type="Label" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 layout_mode = 2
 theme_type_variation = &"EyebrowLabel"
-text = "CHOISISSEZ UN PROTOCOLE"
+text = "CHOISISSEZ VOTRE ÉPREUVE"
 
 [node name="RaceOptions" type="HBoxContainer" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 layout_mode = 2
@@ -230,7 +230,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 tooltip_text = "Choisir une coupe de division ou le Grand Open sur huit circuits"
-text = "CHAMPIONNATS   //   COUPES & OPEN"
+text = "CHAMPIONNATS   //   COUPES & GRAND OPEN"
 alignment = 0
 
 [node name="TimeTrialButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
@@ -271,8 +271,8 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Consulter les architectures, circuits et objets"
-text = "CODEX"
+tooltip_text = "Consulter architectures, pilotes, circuits, objets et archives des huit mondes"
+text = "CODEX DES HUIT MONDES"
 
 [node name="QuitButton" type="Button" parent="SafeArea/Page/Content/ActionsPanel/Actions"]
 unique_name_in_owner = true
@@ -363,5 +363,5 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "SYSTÈMES PRÊTS // SAISON 03"
+text = "SAISON 03 // GAGNEZ UNE COUPE • DÉFIEZ VEX • PRENEZ LA COURONNE"
 horizontal_alignment = 1

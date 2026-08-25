@@ -6,21 +6,21 @@ extends RefCounted
 ## simulation contracts or save migrations.
 
 const TRACK_LORE := {
-	"foundry": "La Fonderie 7 a forgé les premières armatures civiles du Nexus. Aujourd’hui, ses fours servent de juges de paix aux pilotes.",
-	"dunes": "La Faille Écarlate suit une ancienne route d’extraction. Les balises rouges marquent encore les convois disparus sous Vermillon.",
-	"glacier": "Sur Khepri, chaque virage est taillé dans une glace plus ancienne que les colonies humaines du secteur.",
-	"orbital": "L’anneau de Morrigan est un mémorial autant qu’un circuit : dépasser une épave, c’est saluer son équipage.",
-	"canopy": "La Canopée d’Azura tolère la course tant que les réacteurs respectent le rythme lumineux de la forêt-monde.",
-	"tempest": "Stratos a bâti sa couronne sportive au-dessus des nuages, là où les rafales départagent les pilotes des calculateurs.",
-	"abyss": "La Tranchée Hadale fut ouverte par les cartographes de Néréide. Ses sas de pression sont devenus la frontière ultime du contrôle.",
-	"caldera": "Le Réacteur IX alimente trois colonies. La course n’y est autorisée qu’entre deux cycles d’éruption surveillés par le Nexus.",
+	"foundry": "Le Grand Tour s’ouvre dans les docks-portes de Meridian, là où chaque mécha reçoit son sceau intergalactique.",
+	"dunes": "Vermillon a révélé Mara Vex dans ses ligues clandestines. La Faille réclame toujours le même courage à pleine vitesse.",
+	"glacier": "L’Arc Polaire entoure la première Porte stable entre trois galaxies; K-17 y lit la glace comme une carte stellaire.",
+	"orbital": "Morrigan est un mémorial autant qu’un circuit. Echo Vale dérive entre les épaves pour saluer les convois disparus.",
+	"canopy": "Elysia n’autorise la course que si les réacteurs respectent le rythme lumineux de sa forêt-monde vivante.",
+	"tempest": "Stratos diffuse la Ligue à travers trois galaxies; ses rafales départagent les pilotes des simples calculateurs.",
+	"abyss": "Néréide accueille l’avant-dernière escale. Ses sas de pression font céder les configurations que la saison a déjà fragilisées.",
+	"caldera": "Circuit Zero est le tracé originel et la finale. Une seule fenêtre de plasma sépare la grille de la Couronne.",
 }
 
 const ANNOUNCER_OPENERS := {
 	"quick": "Contrôle course à toutes les unités : grille scellée, télémétrie en direct.",
 	"time_trial": "Canal chrono ouvert. Une machine, une trajectoire, aucune excuse.",
 	"elimination": "Alerte élimination : à chaque seuil, la dernière signature quittera la grille.",
-	"grand_prix": "Transmission championnat : chaque position comptera jusqu’au dernier tour.",
+	"grand_prix": "Transmission Grand Tour : chaque position comptera jusqu’à Circuit Zero.",
 }
 
 
@@ -44,15 +44,15 @@ static func briefing(config: Dictionary) -> Dictionary:
 	if not homologation_notice.is_empty():
 		conditions += "\n%s" % homologation_notice
 	return {
-		"eyebrow": "NEXUS RACING NETWORK // GRILLE OFFICIELLE",
+		"eyebrow": "NEXUS GRAND LEAGUE // GRILLE OFFICIELLE",
 		"track_name": String(track.get("name", track_id)).to_upper(),
-		"region": String(track.get("region", "SECTEUR NEXUS")).to_upper(),
+		"region": String(track.get("region", "SECTEUR INTERGALACTIQUE")).to_upper(),
 		"session": "%s  //  %d TOURS  //  %02d PARTANTS" % [_mode_name(mode), laps, entrants],
 		"rules": "%s  //  CLASSE %s" % [String(ruleset.get("name", ruleset_id)).to_upper(), String(performance.get("name", "TUNED")).to_upper()],
-		"rules_detail": String(ruleset.get("description", "Règlement standard du Nexus.")),
+		"rules_detail": String(ruleset.get("description", "Règlement standard de la Ligue.")),
 		"objective": _objective(mode),
 		"announcer": String(ANNOUNCER_OPENERS.get(mode, ANNOUNCER_OPENERS["quick"])),
-		"lore": String(TRACK_LORE.get(track_id, track.get("description", "Circuit homologué par le Nexus."))),
+		"lore": String(TRACK_LORE.get(track_id, track.get("description", "Circuit homologué par la Ligue."))),
 		"conditions": conditions,
 	}
 
@@ -69,15 +69,15 @@ static func finish_call(result: Dictionary) -> Dictionary:
 	if not dnf:
 		if mode == "time_trial":
 			title = "NOUVEAU RECORD" if new_record else "CHRONO HOMOLOGUÉ"
-			callout = "Le Nexus valide une nouvelle référence chronométrique !" if new_record else "Chrono validé : la télémétrie rejoint les archives officielles."
+			callout = "La Ligue valide une nouvelle référence intergalactique !" if new_record else "Chrono validé : la télémétrie rejoint les archives officielles."
 		else:
-			title = "VICTOIRE AU NEXUS" if position == 1 else "ARRIVÉE HOMOLOGUÉE"
+			title = "VICTOIRE INTERGALACTIQUE" if position == 1 else "ARRIVÉE HOMOLOGUÉE"
 			callout = "Le drapeau tombe : victoire et nouvelle référence de grille !" if position == 1 else "Drapeau à damier : %s place validée par le contrôle course." % _ordinal(position)
 	return {
 		"title": title,
 		"position": "DNF" if dnf else ("RECORD" if mode == "time_trial" and new_record else ("CHRONO VALIDÉ" if mode == "time_trial" else "%s / %02d" % [_ordinal(position), maxi(1, int(result.get("total_racers", result.get("racer_count", 8))))])),
 		"callout": callout,
-		"venue": "%s // %s" % [String(track.get("name", track_id)).to_upper(), String(track.get("region", "NEXUS")).to_upper()],
+		"venue": "%s // %s" % [String(track.get("name", track_id)).to_upper(), String(track.get("region", "NEXUS GRAND LEAGUE")).to_upper()],
 	}
 
 

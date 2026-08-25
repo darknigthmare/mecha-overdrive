@@ -207,11 +207,11 @@ func _test_asset_manifest_contract() -> void:
 		"mecha_armor_light.png", "mecha_armor_heavy.png", "module_energy.png", "module_mobility.png",
 		"module_utility.png", "track_thermal.png", "track_cryo.png", "garage_bay.png",
 		"prop_industrial.png", "prop_biome.png", "prop_urban_wet.png", "race_ceremonial.png",
-		"locomotion_antigrav.png",
+		"locomotion_antigrav.png", "intergalactic_crown_race.png", "garage_crew.png",
 	]
 	var assets: Array = manifest.get("assets", [])
 	var seen: Dictionary = {}
-	_expect(assets.size() == 17, "le manifest OpenAI doit décrire 17 textures")
+	_expect(assets.size() == 19, "le manifest OpenAI doit décrire 19 assets")
 	for asset_value: Variant in assets:
 		if not asset_value is Dictionary:
 			_expect(false, "entrée du manifest OpenAI invalide")
@@ -222,7 +222,9 @@ func _test_asset_manifest_contract() -> void:
 		_expect(String(Dictionary(asset_value).get("generation_id", "")).begins_with("exec-"), "identifiant de génération absent : %s" % file_name)
 		_expect(String(Dictionary(asset_value).get("sha256", "")).length() == 64, "empreinte SHA-256 absente : %s" % file_name)
 		var dimensions: Array = Dictionary(asset_value).get("dimensions", [])
-		_expect(dimensions.size() == 2 and int(dimensions[0]) == 1254 and int(dimensions[1]) == 1254, "dimensions de provenance invalides : %s" % file_name)
+		var expected_dimensions := Vector2i(1672, 941) if file_name == "intergalactic_crown_race.png" else Vector2i(1254, 1254)
+		_expect(dimensions.size() == 2 and int(dimensions[0]) == expected_dimensions.x and int(dimensions[1]) == expected_dimensions.y, "dimensions de provenance invalides : %s" % file_name)
+		_expect(FileAccess.file_exists("res://assets/textures/openai/%s" % file_name), "asset OpenAI absent : %s" % file_name)
 		seen[file_name] = true
 	for file_name: String in expected_files:
 		_expect(seen.has(file_name), "texture absente du manifest : %s" % file_name)

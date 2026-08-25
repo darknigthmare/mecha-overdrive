@@ -324,8 +324,10 @@ func _run() -> void:
 	var podium: Node = results.get_node_or_null("%PodiumPresenter")
 	var podium_headline: Label = results.get_node_or_null("%PodiumHeadline") as Label
 	var podium_panel: Control = results.find_child("PodiumPanel", true, false) as Control
-	_expect(podium != null and podium.has_method(&"top_three") and Array(podium.call(&"top_three")).is_empty(), "un abandon précoce ne doit fabriquer aucun rival de podium")
-	_expect(podium_panel != null and not podium_panel.visible, "un podium sans classé valide doit être entièrement masqué")
+	var official_podium: Array = Array(podium.call(&"top_three")) if podium != null and podium.has_method(&"top_three") else []
+	_expect(not official_podium.is_empty() and String(Dictionary(official_podium[0]).get("racer_id", "")) != "player" and int(Dictionary(official_podium[0]).get("position", 0)) == 1, "un abandon joueur doit couronner le premier rival éligible")
+	_expect(podium_panel != null and podium_panel.visible, "le podium rival officiel doit rester visible après un DNF joueur")
+	_expect(not official_podium.any(func(entry: Dictionary) -> bool: return String(entry.get("racer_id", "")) == "player"), "le joueur DNF doit être exclu du podium officiel")
 	_expect(podium_headline != null and not podium_headline.text.contains("TROPHÉE"), "un joueur DNF ne doit jamais recevoir un trophée")
 	var podium_text := ""
 	if podium != null:

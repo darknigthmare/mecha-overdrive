@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "project": "MECHA OVERDRIVE",
-  "generated_at": "2026-08-22",
+  "generated_at": "2026-08-25",
   "generator": "OpenAI built-in image generation",
   "mode": "new raster asset generation",
   "license_note": "Original project assets generated for MECHA OVERDRIVE; no franchise logos, text, trademarks, or copied key art.",
@@ -158,6 +158,24 @@
       "tileable": true,
       "usage": ["original twin-engine antigravity locomotion family", "remote thrusters and magnetic couplers"],
       "prompt": "Use case: stylized-concept. Asset type: seamless tileable game texture for original antigravity twin-engine racing propulsion modules. Primary request: high-detail original aerospace heat-shield material with ceramic turbine segments, dark iridescent alloy, concentric energy-channel patterns, subtle electric teal and hot coral plasma traces, suitable for paired remote engines and magnetic couplers on a futuristic mech racer. Style/medium: polished stylized realism, PBR-inspired albedo texture, commercial game asset. Composition/framing: perfectly orthographic top-down material surface, uniform repeatable mechanical pattern, seamless edges, no perspective, no central engine silhouette. Lighting/mood: neutral even material-capture lighting with restrained energy glow. Color palette: dark iridescent metal, graphite ceramic, teal and coral energy accents. Constraints: genuinely seamless tile, entirely original industrial design, no vehicle or cockpit baked into texture, no text, no letters, no numbers, no logos, no trademarks, no watermark, no recognizable Star Wars or other franchise design language, no border, no UI."
+    },
+    {
+      "file": "intergalactic_crown_race.png",
+      "generation_id": "exec-54ffb898-d371-4a31-a9c6-b3e03604a01b",
+      "sha256": "72a520ee1e73819463b41b30da0c055b0b80b201d893d6e20a8e9f6a5eba2ca8",
+      "dimensions": [1672, 941],
+      "tileable": false,
+      "usage": ["full-screen Season 03 introduction", "Grand Tour of Eight Worlds narrative artwork"],
+      "prompt": "Use case: stylized-concept. Asset type: full-screen 16:9 opening artwork for a premium original 3D sci-fi racing game. Primary request: an intense intergalactic championship race between modular mecha vehicles crossing the luminous Nexus gate network, establishing the Grand Tour of Eight Worlds and the rivalry for the Crown. Scene/backdrop: a colossal orbital racing circuit threading through one radiant circular portal, with glimpses of multiple distinct planets and galaxies beyond; grandstands, holographic timing pylons, track rails and distant racing infrastructure. Subject: on the right half, a crimson and black precise champion mecha racer leads by half a length; a cyan and brushed-metal independent modular racer from Hangar 08 attacks alongside; several varied silhouettes follow, including biped legs, wheels, treads, hover pods and a twin-engine pod-like configuration, all clearly original. Style/medium: cinematic high-end game key art, realistic 3D concept render, sharp mechanical materials, believable scale, commercial racing energy, original universe. Composition/framing: ultra-wide landscape; strongest racers and portal concentrated on the right and center-right; preserve calm dark negative space across the left 38 percent for game UI; low trackside camera, readable direction of travel, no cropped lead vehicles. Lighting/mood: electric cyan portal light versus crimson engine glow, energetic, prestigious, dangerous but hopeful. Color palette: deep navy space, cyan/teal highlights, restrained crimson rival accent, warm distant planets. Materials/textures: worn titanium, carbon composite, ceramic armor, emissive power conduits, sparks, tire and thruster dust. Constraints: entirely original designs; coherent racing scene; no text, no letters, no numbers, no logos, no UI, no watermark, no collage, no recognizable third-party franchise imagery. Avoid: Star Wars, Mario Kart, Transformers, official franchise vehicles, humanoid faces, weapons pointed at viewer, clutter in the left UI-safe area."
+    },
+    {
+      "file": "garage_crew.png",
+      "generation_id": "exec-ea509e00-8ff5-4c76-872f-05926e8257ae",
+      "sha256": "fb0c13c0e931b00a236649a41eb6c149215ad327319d4e45a30378b54f1ae1a0",
+      "dimensions": [1254, 1254],
+      "tileable": true,
+      "usage": ["animated Hangar 08 mechanic suits", "maintenance robot shells", "garage tool housings"],
+      "prompt": "Use case: stylized-concept. Asset type: seamless square game texture for animated garage mechanic NPCs in MECHA OVERDRIVE. Primary request: original premium intergalactic racing-paddock service material usable on humanoid mechanic suits, small maintenance robots and tool housings. Scene/backdrop: orthographic flat material capture only. Subject: charcoal technical fabric panels alternating with compact brushed titanium service plates, flexible ribbing, cyan diagnostic light strips, restrained amber tool accents, realistic grease smudges and workshop wear. Style/medium: high-detail realistic stylized PBR-like game material, readable on low-poly procedural characters. Composition/framing: square 1:1, evenly distributed small and medium detail, genuinely seamless on all four edges, no focal object. Lighting/mood: neutral even studio material lighting, no baked directional shadow. Color palette: charcoal, dark navy, brushed steel, cyan and restrained amber. Constraints: original universe; texture only; no people or robot silhouette baked into image; no readable text, letters, numbers, insignia, logo, UI, watermark or franchise marks. Avoid: Star Wars costume language, recognizable droids, spacesuit helmets from existing films, hazard stripes, weapons, large emblems."
     }
   ]
 }

@@ -1,33 +1,40 @@
-# Roadmap après Godot 2.3.0
+# Roadmap après Godot 2.4.0
 
-La release Godot 2.3.0 est la branche principale. Cette roadmap distingue ce qui est déjà livré, les suites encore envisagées et l’ancien plan du compagnon web conservé à titre historique.
+Godot 2.4.0 est le candidat principal qualifié localement. L’export Web mono-thread est synchronisé, l’agrégat QA est vert et les parcours Chrome bureau/mobile sont attestés ; la publication distante reste à vérifier au moment de la release.
 
-## Livré dans Godot 2.3.0
+## Livré dans la source Godot 2.4.0
 
 - 10 châssis originaux répartis dans 5 divisions : Commandement, Stabilisés, Essaim, Sol et Expérimental ;
-- courses dédiées à une division par défaut et mélange uniquement via une option Open explicite ;
-- 6 championnats : 5 coupes dédiées de quatre manches et le Grand Open du Nexus sur les 8 circuits ;
-- règlements `division_locked`, `open_mixed`, `elite_open` et grilles de Grand Prix stables à huit concurrents ;
-- classes `stock`, `tuned`, `unlimited`, avec plafonds d’amélioration et politique de modules effectivement appliqués ;
-- personnalisation par 3 emplacements et 18 modules, avec affinités, inventaire, économie, statistiques et silhouettes visibles ;
-- 500 configurations locomotrices, soit 50 par châssis, avec aperçu, statistiques et sauvegarde ;
-- garage 3D interactif avec rotation, zoom, peinture immédiate, comparaison base/configuration, brouillon et validation atomique ;
-- 8 circuits, dont Canopée d’Azura, Couronne Tempête, Tranchée Hadale et Caldeira Zéro ;
-- dangers physiques, profils de tracé, grip, accessoires et matériaux propres aux pistes ;
-- vues TPS et cockpit/FPS pour les 10 châssis, avec ancres dédiées et préférence persistante ;
-- dix-sept textures OpenAI originales pour armures, modules, pistes, cockpits, décors, cérémonie et antigravité ;
-- intro Saison 03, lore Codex, briefing, 3-2-1-GO, faux départ, arrivée et podium ;
-- commandes mobiles complètes et IA à profils, trajectoires et objets contextuels ;
-- sauvegarde v5, migration des profils v2/v3/v4, conservation des modules historiques et canonicalisation des championnats.
+- 500 configurations locomotrices, soit 50 par châssis, et 18 modules visibles répartis sur 3 emplacements ;
+- courses dédiées à une division par défaut, mélange uniquement via un règlement Open explicite et 6 championnats ;
+- 8 circuits du Grand Tour, tous homologués à au moins 35 m, avec trois colonnes de dépassement et une grille 2 × 4 ;
+- gabarits de véhicules exprimés en mètres, limites de voie adaptées au châssis et contacts proches tenant compte de la largeur réelle ;
+- garage 3D plein écran derrière le HUD, rotation/zoom, peinture, locomotion, modules et statistiques mis à jour immédiatement ;
+- équipe de stand légère animée : deux mécanos humanoïdes et deux robots originaux, avec arrêt complet en mouvement réduit ;
+- histoire intergalactique originale de la Nexus Grand League, Saison 03 « La Couronne Libre », sur huit mondes et trois galaxies ;
+- introduction en trois chapitres, 8 archives Univers, onglet Pilotes et grille canonique de 10 pilotes (joueur + 9 IA) ;
+- vues TPS et cockpit/FPS, préférence persistante, commandes clavier/manette et surface mobile multi-touch responsive ;
+- briefing de grille, compte à rebours bloquant, faux départ, arrivée cinématique, podium, résultats et épilogues de championnat ;
+- 19 assets bitmap OpenAI originaux et manifestés, dont l’illustration du Grand Tour et la texture de l’équipe mécano ;
+- sauvegarde v5 avec migrations et clé versionnée `season_intro_arc_2_seen`.
 
-## Priorités après 2.3.0
+## P2 restants — priorité release
 
-- affiner l’équilibrage inter-châssis à partir de télémétrie locale et de tests utilisateurs ;
-- affiner le budget énergétique et les tiers des 18 modules dans les trois classes de performance ;
-- ajouter des championnats personnalisés qui valident explicitement division, règlement, classe et rotation de pistes ;
-- créer de nouveaux circuits avec une mécanique centrale testable, des profils visuels originaux et des dangers simulés ;
-- ajouter le remapping complet des commandes et des profils tactiles ;
-- poursuivre l’optimisation de l’export WebGL et des temps de chargement.
+1. Remplacer les enveloppes de proximité par de vraies collisions 3D et valider leurs interactions avec les caméras TPS/FPS.
+2. Rendre chaque hazard sensible à la voie occupée au lieu d’appliquer seulement un contexte global de secteur.
+3. Demander confirmation avant d’écraser un championnat actif par une nouvelle coupe.
+4. Ajouter un retry de sauvegarde avec état d’erreur et feedback UI explicite.
+5. Fournir un remapping complet clavier, manette et profils tactiles.
+6. Étendre les déblocages progressifs aux châssis, modules, peintures et difficultés ; le Grand Open est déjà qualifié après une Coupe remportée.
+7. Auditer les caméras TPS/FPS sur les 500 configurations locomotrices, y compris les gabarits extrêmes.
+8. Ajouter des coupes personnalisées avec validation de division, règlement, classe et rotation de pistes.
+
+## Suites après P2
+
+- équilibrage inter-châssis et budget énergétique à partir de télémétrie et de tests utilisateurs ;
+- nouveaux circuits avec mécanique centrale testable et hazards lane-aware ;
+- optimisation WebGL et réduction des temps de chargement ;
+- CI, release GitHub et promotion Vercel vérifiées pour chaque nouveau build.
 
 ## Extensions structurelles envisagées
 
@@ -41,7 +48,7 @@ La release Godot 2.3.0 est la branche principale. Cette roadmap distingue ce qui
 
 ## Archive — roadmap du compagnon web 1.0
 
-Les sections ci-dessous reproduisent l’ancien plan établi pour la baseline Canvas/PWA 1.0. Certaines intentions — passage en 3D, modules, circuits supplémentaires et championnats — ont depuis été livrées différemment dans Godot 2.3.0 ; elles ne constituent donc plus des travaux ouverts pour la branche principale.
+Les sections ci-dessous reproduisent l’ancien plan établi pour la baseline Canvas/PWA 1.0. Certaines intentions — passage en 3D, modules, circuits supplémentaires et championnats — ont depuis été livrées différemment dans Godot 2.4.0 ; elles ne constituent donc plus des travaux ouverts pour la branche principale.
 
 ## Mise à jour 1.1 — Saison des Arènes
 

@@ -102,10 +102,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key_event := event as InputEventKey
 		if not key_event.pressed or key_event.echo:
 			return
-		if key_event.keycode == KEY_Q:
-			_preview_call(&"rotate_left")
-		elif key_event.keycode == KEY_E:
-			_preview_call(&"rotate_right")
+		var handled := true
+		match key_event.keycode:
+			KEY_Q:
+				_preview_call(&"rotate_left")
+			KEY_E:
+				_preview_call(&"rotate_right")
+			KEY_MINUS, KEY_KP_SUBTRACT:
+				_preview_call(&"zoom_out")
+			KEY_EQUAL, KEY_PLUS, KEY_KP_ADD:
+				_preview_call(&"zoom_in")
+			KEY_R:
+				_preview_call(&"reset_view")
+			_:
+				handled = false
+		if handled:
+			get_viewport().set_input_as_handled()
 
 
 func refresh() -> void:
@@ -719,12 +731,20 @@ func _first_unlocked_index() -> int:
 
 
 func _configure_focus() -> void:
-	ThemeFactory.connect_focus_chain([
-		division_filter, chassis_list, select_button, paint_option,
+	var focus_chain: Array[Control] = [division_filter, chassis_list]
+	if garage_preview != null and garage_preview.has_method(&"focus_controls"):
+		var preview_controls: Variant = garage_preview.call(&"focus_controls")
+		if preview_controls is Array:
+			for value: Variant in preview_controls:
+				if value is Control:
+					focus_chain.append(value)
+	focus_chain.append_array([
+		select_button, paint_option,
 		preset_balanced, preset_speed, preset_control, preset_armor,
 		locomotion_option, core_option, mobility_option, utility_option, apply_button, cancel_button,
 		engine_button, servos_button, reactor_button, armor_button, back_button,
 	])
+	ThemeFactory.connect_focus_chain(focus_chain)
 	chassis_list.grab_focus()
 
 

@@ -13,6 +13,7 @@ const files = {
   mechaFactory: 'godot/scripts/mecha/mecha_factory.gd',
   visualModules: 'godot/scripts/visual/mecha_visual_modules.gd',
   materialLibrary: 'godot/scripts/visual/material_library.gd',
+  trackSafety: 'godot/scripts/world/track_safety.gd',
   mainMenu: 'godot/scripts/ui/main_menu.gd',
   garage: 'godot/scripts/ui/garage.gd',
   garagePreview: 'godot/scripts/ui/garage_preview.gd',
@@ -29,6 +30,9 @@ const files = {
   lore: 'godot/scripts/data/lore_database.gd',
   manifest: 'godot/assets/textures/openai/manifest.json',
   smoke: 'godot/tests/smoke_test.gd',
+  garagePreviewTest: 'godot/tests/garage_preview_test.gd',
+  gameplaySafetyTest: 'godot/tests/gameplay_safety_test.gd',
+  narrativeProgressionTest: 'godot/tests/narrative_progression_test.gd',
 };
 
 const failures = [];
@@ -64,6 +68,9 @@ const verticalities = [...source.database.matchAll(/"verticality":\s*([0-9.]+)/g
 check(verticalities.length === 8, 'circuits: huit valeurs verticality requises');
 check(verticalities.every((value) => value >= 4 && value <= 30), 'circuits: verticality doit être exprimée en mètres réalistes');
 check(new Set(verticalities).size === 8, 'circuits: huit reliefs distincts requis');
+const trackWidths = [...source.database.matchAll(/"width":\s*([0-9.]+)/g)].map((match) => Number(match[1]));
+check(trackWidths.length === 8 && trackWidths.every((value) => value >= 35), 'circuits: les huit chaussées Open doivent mesurer au moins 35 m');
+check(source.trackSafety.includes('REQUIRED_SIDE_BY_SIDE := 3') && source.trackSafety.includes('vehicle_footprint'), 'circuits: homologation des gabarits absente');
 
 check(source.database.includes('static var CHASSIS:'), 'catalogue: initialisation CHASSIS doit être parse-safe');
 check(source.save.includes('const SAVE_VERSION := 5'), 'sauvegarde: version 5 absente');
@@ -124,7 +131,8 @@ for (const action of ['race_accelerate', 'race_brake', 'race_left', 'race_right'
 }
 check(source.raceHud.includes('show_race_briefing') && source.raceHud.includes('show_false_start'), 'course: briefing/faux départ absents');
 check(source.podium.includes('class_name PodiumPresenter') && source.resultsScene.includes('podium_presenter.tscn'), 'résultats: podium top 3 absent');
-check(source.intro.includes('CHAPTERS') && source.introScene.includes('race_ceremonial.png'), 'intro: ouverture Saison 03 absente');
+check(source.intro.includes('HUIT MONDES') && source.intro.includes('MARA VEX') && source.intro.toUpperCase().includes('HANGAR 08'), 'intro: arc intergalactique incomplet');
+check(source.introScene.includes('intergalactic_crown_race.png'), 'intro: key art intergalactique OpenAI absent');
 check((source.lore.match(/"id":/g) ?? []).length === 8, 'lore: huit archives originales requises');
 
 const textures = [
@@ -132,7 +140,7 @@ const textures = [
   'mecha_armor_light.png', 'mecha_armor_heavy.png', 'module_energy.png', 'module_mobility.png',
   'module_utility.png', 'track_thermal.png', 'track_cryo.png', 'garage_bay.png',
   'prop_industrial.png', 'prop_biome.png', 'prop_urban_wet.png', 'race_ceremonial.png',
-  'locomotion_antigrav.png',
+  'locomotion_antigrav.png', 'intergalactic_crown_race.png', 'garage_crew.png',
 ];
 const textureDir = resolve(root, 'godot/assets/textures/openai');
 for (const texture of textures) {
@@ -141,7 +149,7 @@ for (const texture of textures) {
 const deliveredPngs = existsSync(textureDir)
   ? readdirSync(textureDir).filter((name) => name.toLowerCase().endsWith('.png')).sort()
   : [];
-check(deliveredPngs.length === 17 && textures.every((name) => deliveredPngs.includes(name)), 'textures OpenAI: exactement les 17 PNG v2.3 sont requis');
+check(deliveredPngs.length === 19 && textures.every((name) => deliveredPngs.includes(name)), 'textures OpenAI: exactement les 19 PNG v2.4 sont requis');
 let manifest = {};
 try {
   manifest = JSON.parse(source.manifest);
@@ -151,14 +159,16 @@ try {
 check(Number(manifest.schema_version) === 2, 'textures OpenAI: manifest schema 2 requis');
 const manifestAssets = Array.isArray(manifest.assets) ? manifest.assets : [];
 const manifestFiles = manifestAssets.map((asset) => asset?.file).filter(Boolean);
-check(manifestAssets.length === 17, 'textures OpenAI: 17 entrées de manifeste requises');
-check(new Set(manifestFiles).size === 17 && textures.every((name) => manifestFiles.includes(name)), 'textures OpenAI: manifeste incomplet ou dupliqué');
+check(manifestAssets.length === 19, 'textures OpenAI: 19 entrées de manifeste requises');
+check(new Set(manifestFiles).size === 19 && textures.every((name) => manifestFiles.includes(name)), 'textures OpenAI: manifeste incomplet ou dupliqué');
+const specialDimensions = { 'intergalactic_crown_race.png': [1672, 941] };
 for (const asset of manifestAssets) {
   const file = String(asset?.file ?? '');
   const dimensions = Array.isArray(asset?.dimensions) ? asset.dimensions : [];
+  const expectedDimensions = specialDimensions[file] ?? [1254, 1254];
   check(/^exec-[a-z0-9-]+$/i.test(String(asset?.generation_id ?? '')), `textures OpenAI: génération absente pour ${file}`);
   check(/^[a-f0-9]{64}$/i.test(String(asset?.sha256 ?? '')), `textures OpenAI: SHA-256 absent pour ${file}`);
-  check(dimensions.length === 2 && dimensions[0] === 1254 && dimensions[1] === 1254, `textures OpenAI: dimensions invalides pour ${file}`);
+  check(dimensions.length === 2 && dimensions[0] === expectedDimensions[0] && dimensions[1] === expectedDimensions[1], `textures OpenAI: dimensions invalides pour ${file}`);
   const assetPath = resolve(textureDir, file);
   if (existsSync(assetPath) && /^[a-f0-9]{64}$/i.test(String(asset?.sha256 ?? ''))) {
     const actualHash = createHash('sha256').update(readFileSync(assetPath)).digest('hex');
@@ -180,8 +190,16 @@ check(source.smoke.includes('_test_deterministic_racer'), 'smoke: test détermin
 check(source.smoke.includes('_test_module_purchase_contract'), 'smoke: achat atomique des nouveaux modules absent');
 check(source.smoke.includes('_test_asset_manifest_contract'), 'smoke: contrat manifeste schema 2 absent');
 check(source.smoke.includes('_test_garage_preview_contract'), 'smoke: contrat scène garage preview absent');
+check(source.gameplaySafetyTest.includes('MECHA GAMEPLAY SAFETY: PASS'), 'sécurité gameplay: test dédié absent');
+check(source.gameplaySafetyTest.includes('_test_runtime_homologation'), 'sécurité gameplay: homologation runtime non couverte');
+check(source.gameplaySafetyTest.includes('_test_classification_contract'), 'sécurité gameplay: classement officiel non couvert');
+check(source.gameplaySafetyTest.includes('_test_championship_dnf_contract'), 'sécurité gameplay: DNF championnat non couvert');
+check(source.gameplaySafetyTest.includes('_test_mobile_control_geometry') && source.gameplaySafetyTest.includes('_assert_regions_do_not_overlap') && source.gameplaySafetyTest.includes('control_regions'), 'sécurité gameplay: géométrie mobile paysage/portrait non couverte');
+check(source.narrativeProgressionTest.includes('MECHA NARRATIVE PROGRESSION: PASS'), 'narration: test de progression dédié absent');
+check(source.narrativeProgressionTest.includes('Grand Open lock/unlock/resume') && source.narrativeProgressionTest.includes('player/Vex/rival epilogues'), 'narration: verrouillage Open ou fins de saison non couverts');
 check(!existsSync(resolve(root, 'godot/scripts/systems/save_system.gd.stub')), 'nettoyage: save_system.gd.stub présent');
 check(!existsSync(resolve(root, 'godot/scripts/data/game_database.gd.precanonical')), 'nettoyage: game_database.gd.precanonical présent');
+check(source.garagePreviewTest.includes('GARAGE PREVIEW: PASS'), 'garage: test plein écran dédié absent');
 check(source.project.includes('SaveSystem="*res://scripts/systems/save_system.gd"'), 'project: autoload SaveSystem absent');
 check(source.project.includes('GameSession="*res://scripts/systems/game_session.gd"'), 'project: autoload GameSession absent');
 
@@ -191,5 +209,5 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log('Godot static validation: PASS');
-  console.log('10 chassis · 500 locomotions · 5 divisions · 8 tracks · 18 modules · 6 championships · 17 textures · mobile · podium · intro/lore · save v5');
+  console.log('10 chassis · 500 locomotions · 5 divisions · 8 tracks homologués · 18 modules · 6 championships · 19 assets OpenAI · garage plein écran · mobile · Grand Tour · save v5');
 }
