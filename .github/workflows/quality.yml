@@ -55,3 +55,9 @@ jobs:
         run: .godot-bin/godot --headless --path godot --script res://tests/gameplay_safety_test.gd
       - name: Run full-screen garage preview test
         run: .godot-bin/godot --headless --path godot --script res://tests/garage_preview_test.gd
+      - name: Run mecha production detail test
+        run: .godot-bin/godot --headless --path godot --script res://tests/mecha_detail_test.gd
+      - name: Run mecha animation and polygon-budget test
+        run: .godot-bin/godot --headless --path godot --script res://tests/mecha_animation_test.gd
+      - name: Run track scenery production test
+        run: .godot-bin/godot --headless --path godot --script res://tests/track_scenery_production_test.gd

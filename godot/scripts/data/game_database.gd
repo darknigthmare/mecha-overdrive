@@ -61,7 +61,7 @@ const TRACKS: Array[Dictionary] = [
 	{
 		"id": "abyss", "name": "Tranchée Hadale", "region": "OCÉAN DE NÉRÉIDE", "biome": "abyssal_ocean", "difficulty": 5, "base_grip": 0.84, "layout_profile": "abyss_spiral", "texture_set": "abyss", "prop_set": "abyss",
 		"default_laps": 3, "par_time": 91.0, "seed": 15061, "radius": 136.0, "width": 36.0,
-		"verticality": 19.0, "fog_density": 0.041, "description": "Avant-dernière escale, tunnels pressurisés et sas qui alternent adhérence et faible gravité.",
+		"verticality": 19.0, "fog_density": 0.041, "description": "Tunnels pressurisés et sas de Néréide alternent adhérence, courants latéraux et faible gravité.",
 		"tags": ["PRESSION", "COURANTS", "4,4 KM"], "hazards": ["current", "pressure"], "mechanic": {"id": "pressure_tides", "name": "Marées de pression"},
 		"palette": {"primary": "#2DE2E6", "secondary": "#7B61FF", "fog": "#12384B", "sky": "#010A14", "ground": "#09212D", "road": "#102D3B", "shoulder": "#174E5F", "glow": "#32F6E8", "accent": "#9A7BFF", "key": "#B9FFF7"},
 	},
@@ -559,7 +559,7 @@ static func _manufacturer(chassis_id: String) -> String:
 
 static func _lore(chassis_id: String) -> String:
 	match chassis_id:
-		"biped": return "Premier châssis homologué du Circuit Zéro, le Raptor reste la référence des pilotes qui changent de ligne au dernier instant."
+		"biped": return "Premier châssis homologué du Circuit Zero, le Raptor reste la référence des pilotes qui changent de ligne au dernier instant."
 		"tripod": return "Le Triarch fut conçu pour les plateformes minières orbitales; ses trois appuis lisent les vibrations avant que la piste ne cède."
 		"quadruped": return "Fenrir convertit chaque freinage en tension mécanique, puis libère cette énergie dans une relance prédatrice."
 		"hexapod": return "Les six jambes du Mantis négocient indépendamment boue, glace et débris, comme un seul calculateur distribué."

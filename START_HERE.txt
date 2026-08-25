@@ -1,25 +1,31 @@
-MECHA OVERDRIVE — CIRCUIT ZERO 2.4.0
+MECHA OVERDRIVE — CIRCUIT ZERO 2.5.0
 ====================================
 
 ÉTAT DE CETTE COPIE
-- Les sources Godot locales sont en 2.4.0 et ont passé le parse moteur ainsi que
-  les six tests smoke, locomotion, runtime, sécurité/mobile, garage et narration.
-- L’export Web présent dans godot3d/ est le build 2.4.0 mono-thread synchronisé.
-- `npm run qa` est vert : 115/115, 12/12, 21/21 et validation Godot statique.
-- La QA Chrome a couvert le bureau 1258 × 622 et le mobile 844 × 390.
-- GitHub Actions, la release publique v2.4.0 et l’alias Vercel ont été vérifiés.
+- Les sources Godot locales sont en 2.5.0 et ont passé le parse moteur ainsi que
+  neuf suites : smoke, locomotion, runtime, narration, sécurité/mobile, garage,
+  détails mécha, animations mécaniques et décors multi-LOD ; les tests de
+  sauvegarde couvrent rollback complet, aucun faux titre/couronne, retry avec
+  feedback UI, aucune double récompense et masquage des cartes de podium
+  homologué pendant `save_failed`.
+- L’export Web présent dans godot3d/ est le build 2.5.0 mono-thread synchronisé.
+- `npm run qa` est vert : 68 fichiers JavaScript, 115/115, 12/12, 21/21 et
+  validation Godot statique.
+- Empreinte source exportée : 73435a0e59657b3f9f718b3112833b2ecc006e67296386df5bb61eb88c4bad15.
+- La QA Chrome finale bureau/mobile est verte sur cette empreinte ; GitHub Actions,
+  la release v2.5.0 et Vercel restent en attente.
 
-LANCER LES SOURCES 2.4.0 AVEC GODOT
+LANCER LES SOURCES 2.5.0 AVEC GODOT
 1. Ouvrir Godot 4.7.2.
 2. Importer le projet situé dans le dossier godot/.
 3. Lancer res://scenes/app.tscn.
 
-WINDOWS — BUILD WEB 2.4.0
+WINDOWS — JOUER AU BUILD WEB 2.5.0
 1. Double-cliquer sur LANCER_JEU.bat.
 2. Le navigateur s’ouvre sur un port local disponible à partir de 8080.
 3. Laisser la fenêtre du serveur ouverte pendant la partie.
 
-MACOS / LINUX — BUILD WEB 2.4.0
+MACOS / LINUX — JOUER AU BUILD WEB 2.5.0
 1. Ouvrir un terminal dans ce dossier.
 2. Exécuter : chmod +x LANCER_JEU.sh
 3. Exécuter : ./LANCER_JEU.sh
@@ -29,12 +35,15 @@ NODE.JS
 - Puis ouvrir l’adresse affichée.
 - Accès direct au build Web actuel : /godot3d/mecha-overdrive.html
 
-POINTS FORTS 2.4.0
+POINTS FORTS 2.5.0
 - Saison 03 « La Couronne Libre » de la Nexus Grand League : huit mondes,
   trois galaxies, dix pilotes, intro en trois chapitres et huit archives Codex.
 - Garage 3D plein écran derrière le HUD avec aperçu immédiat et quatre membres
   d’équipe animés, désactivables par le réglage de mouvement réduit.
-- 19 assets bitmap OpenAI originaux et manifestés.
+- Dix silhouettes mécha enrichies et 18 modules dotés de micro-détails visibles.
+- Marche, roues, chenilles, rotors, propulseurs, inertie, freinage et impacts animés.
+- Huit décors multi-LOD avec portiques, tribunes, tours et bâtiments de service.
+- 21 assets bitmap OpenAI originaux et manifestés.
 - Huit pistes homologuées à 35 m minimum et grille professionnelle 2 × 4.
 - Commandes clavier, manette et mobile multi-touch.
 
@@ -47,7 +56,7 @@ TESTS
 
 P2 ENCORE OUVERTS
 - vraies collisions 3D/caméra, hazards lane-aware, confirmation d’écrasement
-  championnat, retry save/UI, remapping complet, déblocages progressifs de
+  championnat, remapping complet, déblocages progressifs de
   châssis/modules/peintures/difficultés, coupes personnalisées et audit caméra.
 
 Le guide complet se trouve dans README.md.

@@ -1,8 +1,8 @@
 {
   "name": "mecha-overdrive-circuit-zero",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
-  "description": "MECHA OVERDRIVE 2.4.0 : Grand Tour intergalactique de méchas 3D sous Godot, avec compagnon web autonome.",
+  "description": "MECHA OVERDRIVE 2.5.0 : Grand Tour intergalactique, méchas procéduraux détaillés et décors multi-LOD sous Godot.",
   "type": "module",
   "scripts": {
     "start": "node tools/server.mjs",

@@ -4,6 +4,12 @@ extends RefCounted
 ## Adds three readable, original module silhouettes to any procedural chassis
 ## and provides per-architecture camera anchors for TPS/cockpit driving.
 
+const MODULE_DETAIL_PART_LIMIT := 9
+const MODULE_DETAIL_TRIANGLE_BUDGET := 2200
+const MODULE_RADIAL_SEGMENTS := 16
+const MODULE_SPHERE_RINGS := 8
+const MODULE_TORUS_RINGS := 20
+const MODULE_TORUS_SEGMENTS := 8
 
 static func install(root: RacerVisual, chassis: Dictionary, customization: Dictionary, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
 	var authored: Dictionary = chassis.get("default_loadout", {}) if chassis.get("default_loadout", {}) is Dictionary else {}
@@ -16,11 +22,19 @@ static func install(root: RacerVisual, chassis: Dictionary, customization: Dicti
 	_mobility(root, mobility_id, dark, joint, glow)
 	_utility(root, utility_id, joint, glow)
 	_camera_anchors(root, chassis)
+	var detail_mesh_count := _count_group_meshes(root, "mecha_module_detail_part")
+	var detail_triangle_count := _count_group_triangles(root, "mecha_module_detail_part")
+	root.set_meta("module_detail_mesh_count", detail_mesh_count)
+	root.set_meta("module_detail_mesh_budget", MODULE_DETAIL_PART_LIMIT * 3)
+	root.set_meta("module_detail_triangle_count", detail_triangle_count)
+	root.set_meta("module_detail_triangle_budget", MODULE_DETAIL_TRIANGLE_BUDGET * 3)
+	root.set_meta("module_detail_triangle_budget_ok", detail_triangle_count <= MODULE_DETAIL_TRIANGLE_BUDGET * 3)
 
 
 static func _core(root: Node3D, module_id: String, primary: Material, joint: Material, glow: Material) -> void:
 	var holder := _holder(root, "ModuleCore_%s" % module_id, "mecha_module_core")
 	var slot_surface := MaterialLibrary.module_for("core", _material_tint(primary, Color("9bc6d8")))
+	var micro_surface := MaterialLibrary.mecha_detail(_material_tint(slot_surface, Color("9bc6d8")), 4.6)
 	match module_id:
 		"core_balanced":
 			for x: float in [-0.62, 0.62]:
@@ -56,11 +70,13 @@ static func _core(root: Node3D, module_id: String, primary: Material, joint: Mat
 		_:
 			_box(holder, Vector3(1.4, 0.3, 1.0), Vector3(0, 2.95, 0.55), slot_surface)
 			_sphere(holder, 0.18, Vector3(0, 3.18, 1.08), glow)
+	_finish_module(holder, "core", module_id, micro_surface, joint, glow)
 
 
 static func _mobility(root: Node3D, module_id: String, dark: Material, joint: Material, glow: Material) -> void:
 	var holder := _holder(root, "ModuleMobility_%s" % module_id, "mecha_module_mobility")
 	var slot_surface := MaterialLibrary.module_for("mobility", _material_tint(dark, Color("344557")))
+	var micro_surface := MaterialLibrary.mecha_detail(_material_tint(slot_surface, Color("344557")), 4.8)
 	match module_id:
 		"mobility_vector":
 			for x: float in [-1.45, 1.45]:
@@ -94,11 +110,13 @@ static func _mobility(root: Node3D, module_id: String, dark: Material, joint: Ma
 		_:
 			for x: float in [-1.45, 1.45]:
 				_box(holder, Vector3(0.42, 0.28, 1.35), Vector3(x, 1.1, 1.0), slot_surface)
+	_finish_module(holder, "mobility", module_id, micro_surface, joint, glow)
 
 
 static func _utility(root: Node3D, module_id: String, joint: Material, glow: Material) -> void:
 	var holder := _holder(root, "ModuleUtility_%s" % module_id, "mecha_module_utility")
 	var slot_surface := MaterialLibrary.module_for("utility", _material_tint(joint, Color("526675")))
+	var micro_surface := MaterialLibrary.mecha_detail(_material_tint(slot_surface, Color("526675")), 5.0)
 	match module_id:
 		"utility_coolant":
 			for index in range(4):
@@ -133,6 +151,195 @@ static func _utility(root: Node3D, module_id: String, joint: Material, glow: Mat
 		_:
 			_box(holder, Vector3(1.2, 0.28, 0.82), Vector3(0, 3.0, 0.5), slot_surface)
 			_sphere(holder, 0.14, Vector3(0, 3.25, 0.92), glow)
+	_finish_module(holder, "utility", module_id, micro_surface, joint, glow)
+
+
+static func _finish_module(
+	holder: Node3D,
+	slot: String,
+	module_id: String,
+	panel: Material,
+	joint: Material,
+	glow: Material
+) -> void:
+	var detail := _holder(holder, "ManufacturingDetail", "mecha_module_detail")
+	detail.set_meta("module_slot", slot)
+	detail.set_meta("module_id", module_id)
+	detail.set_meta("detail_part_limit", MODULE_DETAIL_PART_LIMIT)
+	detail.set_meta("triangle_budget", MODULE_DETAIL_TRIANGLE_BUDGET)
+	match slot:
+		"core":
+			_core_manufacturing_detail(detail, module_id, panel, joint, glow)
+		"mobility":
+			_mobility_manufacturing_detail(detail, module_id, panel, joint, glow)
+		_:
+			_utility_manufacturing_detail(detail, module_id, panel, joint, glow)
+	var mesh_count := _count_group_meshes(detail, "mecha_module_detail_part")
+	var triangle_count := _count_group_triangles(detail, "mecha_module_detail_part")
+	detail.set_meta("detail_mesh_count", mesh_count)
+	detail.set_meta("triangle_count", triangle_count)
+	detail.set_meta("triangle_budget_ok", triangle_count <= MODULE_DETAIL_TRIANGLE_BUDGET)
+	holder.set_meta("detail_mesh_count", mesh_count)
+	holder.set_meta("detail_mesh_budget", MODULE_DETAIL_PART_LIMIT)
+	holder.set_meta("detail_triangle_count", triangle_count)
+	holder.set_meta("detail_triangle_budget", MODULE_DETAIL_TRIANGLE_BUDGET)
+
+
+static func _core_manufacturing_detail(root: Node3D, module_id: String, panel: Material, joint: Material, glow: Material) -> void:
+	_module_box(root, Vector3(2.18, 0.12, 0.44), Vector3(0, 2.7, 0.26), panel, Vector3.ZERO, "CoreMountRail")
+	for side: float in [-1.0, 1.0]:
+		_module_box(root, Vector3(0.28, 0.34, 0.72), Vector3(side * 1.02, 2.84, 0.42), panel, Vector3(0, 0, side * 0.08), "CoreClamp")
+		_module_sphere(root, 0.09, Vector3(side * 0.86, 2.74, 0.04), joint, Vector3(1.0, 0.54, 1.0), "CoreFastener")
+	match module_id:
+		"core_overdrive", "core_phase_lattice":
+			for side: float in [-1.0, 1.0]:
+				_module_torus(root, 0.18, 0.28, Vector3(side * 0.38, 3.18, 0.24), glow, Vector3(PI / 2.0, 0, 0), "FluxCoupler")
+		"core_bastion":
+			for side: float in [-1.0, 1.0]:
+				_module_box(root, Vector3(0.62, 0.16, 0.88), Vector3(side * 1.32, 2.92, -0.12), panel, Vector3(0.08, 0, side * 0.08), "BastionBrace")
+		"core_hive_capacitor":
+			for side: float in [-1.0, 0.0, 1.0]:
+				_module_cylinder(root, 0.07, 0.58, Vector3(side * 0.42, 3.0, 0.32), joint, Vector3(PI / 2.0, 0, 0), "CapacitorFeed")
+		"core_tactical_relay":
+			_module_box(root, Vector3(1.08, 0.1, 0.28), Vector3(0, 3.42, 0.22), panel, Vector3.ZERO, "RelayBus")
+			for side: float in [-1.0, 1.0]:
+				_module_sphere(root, 0.08, Vector3(side * 0.44, 3.44, 0.04), glow, Vector3.ONE, "RelayStatus")
+		_:
+			_module_vent_pair(root, Vector3(0, 3.06, 0.16), panel)
+
+
+static func _mobility_manufacturing_detail(root: Node3D, module_id: String, panel: Material, joint: Material, glow: Material) -> void:
+	_module_box(root, Vector3(3.16, 0.12, 0.38), Vector3(0, 1.18, 1.22), panel, Vector3.ZERO, "MobilityCrossRail")
+	for side: float in [-1.0, 1.0]:
+		_module_box(root, Vector3(0.34, 0.42, 0.82), Vector3(side * 1.46, 1.34, 1.18), panel, Vector3(0, 0, side * 0.07), "MobilityShroud")
+		_module_sphere(root, 0.13, Vector3(side * 1.45, 1.12, 1.48), joint, Vector3(1.2, 0.72, 1.0), "MobilityGimbal")
+	match module_id:
+		"mobility_vector":
+			for side: float in [-1.0, 1.0]:
+				_module_torus(root, 0.2, 0.3, Vector3(side * 1.46, 1.54, 2.04), glow, Vector3(PI / 2.0, 0, 0), "VectorTrimRing")
+		"mobility_sprint", "mobility_phase_skates":
+			for side: float in [-1.0, 1.0]:
+				_module_box(root, Vector3(0.22, 0.1, 1.18), Vector3(side * 1.76, 1.38, 1.5), panel, Vector3(0, 0, side * 0.16), "SprintVane")
+		"mobility_adaptive", "mobility_multileg":
+			for side: float in [-1.0, 1.0]:
+				_module_cylinder(root, 0.08, 0.82, Vector3(side * 1.66, 0.92, 1.1), joint, Vector3(0, 0, side * 0.3), "AdaptiveActuator")
+		"mobility_gyro_rail":
+			for side: float in [-1.0, 1.0]:
+				_module_torus(root, 0.22, 0.34, Vector3(side * 1.68, 1.28, 0.82), panel, Vector3(0, 0, PI / 2.0), "GyroBearing")
+		_:
+			_module_vent_pair(root, Vector3(0, 1.42, 1.08), panel)
+
+
+static func _utility_manufacturing_detail(root: Node3D, module_id: String, panel: Material, joint: Material, glow: Material) -> void:
+	_module_box(root, Vector3(1.86, 0.12, 0.52), Vector3(0, 2.72, 0.28), panel, Vector3.ZERO, "UtilityBackplane")
+	for side: float in [-1.0, 1.0]:
+		_module_box(root, Vector3(0.26, 0.38, 0.64), Vector3(side * 0.92, 2.86, 0.42), panel, Vector3(0, 0, side * 0.07), "UtilityLatch")
+		_module_sphere(root, 0.08, Vector3(side * 0.72, 2.7, 0.02), joint, Vector3(1.0, 0.54, 1.0), "UtilityFastener")
+	match module_id:
+		"utility_scanner", "utility_command_uplink":
+			for side: float in [-1.0, 1.0]:
+				_module_sphere(root, 0.1, Vector3(side * 0.44, 3.18, 0.08), glow, Vector3(1.28, 0.68, 1.0), "SignalLens")
+		"utility_aegis", "utility_phase_sink":
+			for side: float in [-1.0, 1.0]:
+				_module_torus(root, 0.18, 0.28, Vector3(side * 0.5, 3.12, 0.28), glow, Vector3(PI / 2.0, 0, 0), "FieldCoupler")
+		"utility_impact_ram":
+			for side: float in [-1.0, 1.0]:
+				_module_box(root, Vector3(0.18, 0.34, 1.24), Vector3(side * 0.54, 1.74, -2.28), panel, Vector3(0.08, 0, side * 0.08), "RamBrace")
+		"utility_coolant":
+			for side: float in [-1.0, 1.0]:
+				_module_cylinder(root, 0.08, 0.68, Vector3(side * 0.66, 2.96, 1.08), joint, Vector3(PI / 2.0, 0, 0), "CoolantManifold")
+		_:
+			_module_vent_pair(root, Vector3(0, 3.08, 0.14), panel)
+
+
+static func _module_vent_pair(root: Node3D, center: Vector3, material: Material) -> void:
+	for side: float in [-1.0, 1.0]:
+		_module_box(root, Vector3(0.3, 0.09, 0.44), center + Vector3(side * 0.26, 0, 0), material, Vector3(-0.12, 0, 0), "ModuleVent")
+
+
+static func _module_slot_available(root: Node3D) -> bool:
+	return root.get_child_count() < int(root.get_meta("detail_part_limit", MODULE_DETAIL_PART_LIMIT))
+
+
+static func _tag_module_detail(root: Node3D, node: MeshInstance3D, kind: String) -> MeshInstance3D:
+	node.name = "%s_%02d" % [kind, root.get_child_count()]
+	node.add_to_group("mecha_module_detail_part")
+	node.set_meta("detail_kind", kind)
+	node.set_meta("module_slot", root.get_meta("module_slot", "unknown"))
+	return node
+
+
+static func _module_box(
+	root: Node3D,
+	size: Vector3,
+	position: Vector3,
+	material: Material,
+	rotation: Vector3 = Vector3.ZERO,
+	kind: String = "ModulePanel"
+) -> MeshInstance3D:
+	if not _module_slot_available(root):
+		return null
+	var node := _box(root, size, position, material)
+	node.rotation = rotation
+	return _tag_module_detail(root, node, kind)
+
+
+static func _module_sphere(
+	root: Node3D,
+	radius: float,
+	position: Vector3,
+	material: Material,
+	scale_value: Vector3 = Vector3.ONE,
+	kind: String = "ModuleBearing"
+) -> MeshInstance3D:
+	if not _module_slot_available(root):
+		return null
+	return _tag_module_detail(root, _sphere(root, radius, position, material, scale_value), kind)
+
+
+static func _module_cylinder(
+	root: Node3D,
+	radius: float,
+	height: float,
+	position: Vector3,
+	material: Material,
+	rotation: Vector3 = Vector3.ZERO,
+	kind: String = "ModuleConduit"
+) -> MeshInstance3D:
+	if not _module_slot_available(root):
+		return null
+	return _tag_module_detail(root, _cylinder(root, radius, height, position, material, rotation), kind)
+
+
+static func _module_torus(
+	root: Node3D,
+	inner_radius: float,
+	outer_radius: float,
+	position: Vector3,
+	material: Material,
+	rotation: Vector3 = Vector3.ZERO,
+	kind: String = "ModuleCoupler"
+) -> MeshInstance3D:
+	if not _module_slot_available(root):
+		return null
+	return _tag_module_detail(root, _torus(root, inner_radius, outer_radius, position, material, rotation), kind)
+
+
+static func _count_group_meshes(node: Node, group: String) -> int:
+	var count := 1 if node is MeshInstance3D and node.is_in_group(group) else 0
+	for child: Node in node.get_children():
+		count += _count_group_meshes(child, group)
+	return count
+
+static func _count_group_triangles(node: Node, group: String) -> int:
+	var count := 0
+	if node is MeshInstance3D and node.is_in_group(group):
+		var mesh := (node as MeshInstance3D).mesh
+		if mesh != null:
+			count += mesh.get_faces().size() / 3
+	for child: Node in node.get_children():
+		count += _count_group_triangles(child, group)
+	return count
 
 
 static func _camera_anchors(root: RacerVisual, chassis: Dictionary) -> void:
@@ -186,6 +393,8 @@ static func _sphere(root: Node3D, radius: float, position: Vector3, material: Ma
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = radius * 2.0
+	mesh.radial_segments = MODULE_RADIAL_SEGMENTS
+	mesh.rings = MODULE_SPHERE_RINGS
 	var node := _mesh(root, mesh, position, material)
 	node.scale = scale_value
 	return node
@@ -196,6 +405,7 @@ static func _cylinder(root: Node3D, radius: float, height: float, position: Vect
 	mesh.top_radius = radius
 	mesh.bottom_radius = radius
 	mesh.height = height
+	mesh.radial_segments = MODULE_RADIAL_SEGMENTS
 	var node := _mesh(root, mesh, position, material)
 	node.rotation = rotation
 	return node
@@ -205,6 +415,8 @@ static func _torus(root: Node3D, inner_radius: float, outer_radius: float, posit
 	var mesh := TorusMesh.new()
 	mesh.inner_radius = inner_radius
 	mesh.outer_radius = outer_radius
+	mesh.rings = MODULE_TORUS_RINGS
+	mesh.ring_segments = MODULE_TORUS_SEGMENTS
 	var node := _mesh(root, mesh, position, material)
 	node.rotation = rotation
 	return node

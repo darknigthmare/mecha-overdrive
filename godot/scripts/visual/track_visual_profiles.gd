@@ -4,6 +4,102 @@ extends RefCounted
 ## Data-driven geometry language for the eight circuits. Explicit spec fields
 ## win; legacy ids keep deterministic defaults for backward compatibility.
 
+const SCENERY_PROFILES := {
+	"industrial": {
+		"signature": "forge_crane", "trackside_props": 32, "hero_props": 6, "infrastructure": 10,
+		"background_silhouettes": 48, "dynamic_lights": 6, "clearance": 8.5,
+		"far_min": 54.0, "far_max": 116.0, "hero_scale": 1.18, "vertical_scale": 1.12,
+	},
+	"desert": {
+		"signature": "wind_condenser", "trackside_props": 28, "hero_props": 6, "infrastructure": 8,
+		"background_silhouettes": 42, "dynamic_lights": 4, "clearance": 10.0,
+		"far_min": 64.0, "far_max": 142.0, "hero_scale": 1.32, "vertical_scale": 0.92,
+	},
+	"ice": {
+		"signature": "crystal_observatory", "trackside_props": 30, "hero_props": 7, "infrastructure": 9,
+		"background_silhouettes": 46, "dynamic_lights": 5, "clearance": 9.0,
+		"far_min": 56.0, "far_max": 124.0, "hero_scale": 1.24, "vertical_scale": 1.16,
+	},
+	"orbital": {
+		"signature": "salvage_array", "trackside_props": 26, "hero_props": 8, "infrastructure": 10,
+		"background_silhouettes": 54, "dynamic_lights": 6, "clearance": 9.5,
+		"far_min": 62.0, "far_max": 138.0, "hero_scale": 1.28, "vertical_scale": 1.28,
+	},
+	"jungle": {
+		"signature": "bio_canopy", "trackside_props": 34, "hero_props": 8, "infrastructure": 8,
+		"background_silhouettes": 56, "dynamic_lights": 4, "clearance": 10.5,
+		"far_min": 48.0, "far_max": 108.0, "hero_scale": 1.34, "vertical_scale": 1.22,
+	},
+	"urban": {
+		"signature": "storm_arcology", "trackside_props": 30, "hero_props": 8, "infrastructure": 12,
+		"background_silhouettes": 58, "dynamic_lights": 8, "clearance": 8.0,
+		"far_min": 52.0, "far_max": 122.0, "hero_scale": 1.18, "vertical_scale": 1.34,
+	},
+	"abyss": {
+		"signature": "pressure_vent", "trackside_props": 32, "hero_props": 7, "infrastructure": 10,
+		"background_silhouettes": 52, "dynamic_lights": 6, "clearance": 9.5,
+		"far_min": 50.0, "far_max": 116.0, "hero_scale": 1.26, "vertical_scale": 1.18,
+	},
+	"volcanic": {
+		"signature": "reactor_spire", "trackside_props": 30, "hero_props": 8, "infrastructure": 10,
+		"background_silhouettes": 48, "dynamic_lights": 6, "clearance": 10.0,
+		"far_min": 58.0, "far_max": 132.0, "hero_scale": 1.30, "vertical_scale": 1.26,
+	},
+}
+
+const SCENERY_LIMITS := {
+	"foreground_lod": 230.0,
+	"midfield_lod": 390.0,
+	"background_lod": 920.0,
+	"node_budget": 210,
+	"background_groups": 3,
+	"animated_props": 0,
+}
+
+const SCENERY_OVERRIDABLE_FIELDS := {
+	"trackside_props": true,
+	"hero_props": true,
+	"infrastructure": true,
+	"background_silhouettes": true,
+	"dynamic_lights": true,
+	"clearance": true,
+	"far_min": true,
+	"far_max": true,
+	"hero_scale": true,
+	"vertical_scale": true,
+}
+
+
+static func scenery_profile(spec: Dictionary) -> Dictionary:
+	var profile_id := _resolved_prop_set(spec)
+	var source_value: Variant = SCENERY_PROFILES.get(profile_id, SCENERY_PROFILES["industrial"])
+	var selected: Dictionary = Dictionary(source_value).duplicate(true)
+	selected["id"] = profile_id
+	for key: String in SCENERY_LIMITS.keys():
+		selected[key] = SCENERY_LIMITS[key]
+	var overrides_value: Variant = spec.get("scenery_budget", {})
+	if overrides_value is Dictionary:
+		var overrides := Dictionary(overrides_value)
+		for key: Variant in overrides.keys():
+			var field := String(key)
+			if SCENERY_OVERRIDABLE_FIELDS.has(field) and selected.has(field):
+				selected[field] = overrides[key]
+	# Protect the racing envelope and Web/mobile budgets even when a custom spec
+	# supplies enthusiastic values.
+	selected["clearance"] = clampf(float(selected.get("clearance", 8.5)), 7.5, 30.0)
+	# 35 props keeps the true worst-case descendant count at 210 when every
+	# other category also reaches its permitted maximum.
+	selected["trackside_props"] = clampi(int(selected.get("trackside_props", 30)), 18, 35)
+	selected["hero_props"] = clampi(int(selected.get("hero_props", 6)), 4, 9)
+	selected["infrastructure"] = clampi(int(selected.get("infrastructure", 9)), 6, 12)
+	selected["background_silhouettes"] = clampi(int(selected.get("background_silhouettes", 48)), 30, 60)
+	selected["dynamic_lights"] = clampi(int(selected.get("dynamic_lights", 5)), 0, 8)
+	selected["far_min"] = clampf(float(selected.get("far_min", 54.0)), 42.0, 120.0)
+	selected["far_max"] = clampf(float(selected.get("far_max", 120.0)), float(selected["far_min"]) + 16.0, 160.0)
+	selected["hero_scale"] = clampf(float(selected.get("hero_scale", 1.2)), 0.85, 1.6)
+	selected["vertical_scale"] = clampf(float(selected.get("vertical_scale", 1.0)), 0.75, 1.6)
+	return selected
+
 
 static func layout(spec: Dictionary) -> String:
 	var selected := String(spec.get("layout_profile", "")).to_lower()
@@ -146,6 +242,27 @@ static func prop_mesh(spec: Dictionary, shape_kind: int, rng: RandomNumberGenera
 	return box
 
 
+static func prop_mesh_for_tier(spec: Dictionary, shape_kind: int, rng: RandomNumberGenerator, detail_tier: String) -> PrimitiveMesh:
+	var mesh := prop_mesh(spec, shape_kind, rng)
+	var radial_segments := 18 if detail_tier == "foreground" else (12 if detail_tier == "midfield" else 8)
+	var rings := 6 if detail_tier == "foreground" else (4 if detail_tier == "midfield" else 2)
+	if mesh is CylinderMesh:
+		var cylinder := mesh as CylinderMesh
+		cylinder.radial_segments = radial_segments
+		cylinder.rings = rings
+	elif mesh is SphereMesh:
+		var sphere := mesh as SphereMesh
+		sphere.radial_segments = radial_segments
+		sphere.rings = rings
+	elif mesh is BoxMesh:
+		var box := mesh as BoxMesh
+		var subdivisions := 2 if detail_tier == "foreground" else 1
+		box.subdivide_width = subdivisions
+		box.subdivide_height = subdivisions
+		box.subdivide_depth = subdivisions
+	return mesh
+
+
 static func texture_tuning(spec: Dictionary) -> Dictionary:
 	var texture_set := String(spec.get("texture_set", "industrial")).to_lower()
 	match texture_set:
@@ -167,3 +284,24 @@ static func _default_prop_set(track_id: String) -> String:
 		"abyss": return "abyss"
 		"caldera", "volcano", "reactor": return "volcanic"
 		_: return "industrial"
+
+
+static func _resolved_prop_set(spec: Dictionary) -> String:
+	var prop_set := String(spec.get("prop_set", "")).to_lower()
+	if prop_set.is_empty():
+		prop_set = _default_prop_set(String(spec.get("id", "foundry")))
+	if prop_set.contains("canopy"):
+		return "jungle"
+	if prop_set.contains("crystal"):
+		return "ice"
+	if prop_set.contains("city") or prop_set.contains("wet"):
+		return "urban"
+	if prop_set.contains("coral"):
+		return "abyss"
+	if prop_set.contains("lava"):
+		return "volcanic"
+	if prop_set.contains("antenna"):
+		return "orbital"
+	if prop_set.contains("dune"):
+		return "desert"
+	return prop_set if SCENERY_PROFILES.has(prop_set) else "industrial"

@@ -12,7 +12,7 @@ const ENTRIES: Array[Dictionary] = [
 		"subtitle": "La même grille, trois galaxies, huit mondes",
 		"description": "Les Portes du Nexus transportent paddocks et méchas d’un monde à l’autre en quelques heures. Cinq Coupes révèlent les spécialistes; le Grand Open réunit toutes les architectures sur la tournée complète.",
 		"protocol": "CHAMPIONNAT INTERGALACTIQUE",
-		"protocol_description": "Chaque position rapporte des points. La Couronne récompense la constance sur une saison entière, pas seulement la vitesse sur un tour.",
+		"protocol_description": "Chaque position homologuée à l’arrivée rapporte des points. La Couronne récompense la constance sur une saison entière, pas seulement la vitesse sur un tour.",
 		"telemetry": "MONDES    8\nGALAXIES  3\nFINALE    CIRCUIT ZERO",
 	},
 	{

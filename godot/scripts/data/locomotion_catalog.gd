@@ -67,7 +67,7 @@ const DRIVE_OPTIONS: Array[Dictionary] = [
 		"id": "twin_antigrav", "name": "Bi-propulseur Aether", "short": "BI-PROPULSEUR",
 		"manufacturer": "Aether Independent Racing", "tier": 2, "power_draw": 3,
 		"description": "Deux nacelles antigravité distantes reliées par des bras de contrôle.",
-		"lore": "Aether a séparé la poussée du cockpit afin que chaque nacelle puisse chercher sa propre ligne. Cette architecture originale est née sur le Circuit Zéro.",
+		"lore": "Aether a séparé la poussée du cockpit afin que chaque nacelle puisse chercher sa propre ligne. Cette architecture originale est née sur le Circuit Zero.",
 		"stats": {"speed": 9, "acceleration": 5, "handling": -2, "armor": -5, "stability": -4, "reactor": -4},
 	},
 	{

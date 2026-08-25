@@ -1,4 +1,4 @@
-const CACHE = 'mecha-overdrive-cz-v1.3.1';
+const CACHE = 'mecha-overdrive-cz-v1.3.2';
 const CORE = [
   './', './index.html', './styles.css', './manifest.webmanifest', './media/icon.svg',
   './media/openai/mecha-overdrive-hero.png', './js/core.js', './js/data.js', './js/storage.js',

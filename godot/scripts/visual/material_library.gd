@@ -7,11 +7,13 @@ extends RefCounted
 const MECHA_ARMOR := "res://assets/textures/openai/mecha_armor.png"
 const MECHA_ARMOR_LIGHT := "res://assets/textures/openai/mecha_armor_light.png"
 const MECHA_ARMOR_HEAVY := "res://assets/textures/openai/mecha_armor_heavy.png"
+const MECHA_DETAIL_PANELS := "res://assets/textures/openai/mecha_detail_panels.png"
 const TRACK_SURFACE := "res://assets/textures/openai/track_surface.png"
 const TRACK_CRYO := "res://assets/textures/openai/track_cryo.png"
 const TRACK_THERMAL := "res://assets/textures/openai/track_thermal.png"
 const COCKPIT_COMPOSITE := "res://assets/textures/openai/cockpit_composite.png"
 const ENVIRONMENT_PANELS := "res://assets/textures/openai/environment_panels.png"
+const TRACK_INFRASTRUCTURE_DETAIL := "res://assets/textures/openai/track_infrastructure_detail.png"
 const MODULE_ENERGY := "res://assets/textures/openai/module_energy.png"
 const MODULE_MOBILITY := "res://assets/textures/openai/module_mobility.png"
 const MODULE_UTILITY := "res://assets/textures/openai/module_utility.png"
@@ -27,6 +29,16 @@ static var _textures: Dictionary = {}
 
 static func mecha(color: Color, metallic: float = 0.82, roughness: float = 0.26, repeat: float = 2.0) -> StandardMaterial3D:
 	return textured(color, metallic, roughness, MECHA_ARMOR, Vector3(repeat, repeat, 1.0))
+
+
+static func mecha_detail(color: Color, repeat: float = 3.4) -> StandardMaterial3D:
+	return textured(
+		color,
+		0.9,
+		0.3,
+		_available_path(MECHA_DETAIL_PANELS, MECHA_ARMOR),
+		Vector3(repeat, repeat, 1.0)
+	)
 
 
 static func mecha_for(chassis: Dictionary, color: Color, layer: String = "primary") -> StandardMaterial3D:
@@ -94,6 +106,16 @@ static func road_for(track: Dictionary, color: Color, vertex_color: bool = true)
 static func environment(color: Color, metallic: float = 0.56, roughness: float = 0.52, repeat: float = 2.0) -> StandardMaterial3D:
 	return textured(color, metallic, roughness, ENVIRONMENT_PANELS, Vector3(repeat, repeat, 1.0))
 
+
+
+static func infrastructure(color: Color, repeat: float = 3.0) -> StandardMaterial3D:
+	return textured(
+		color,
+		0.65,
+		0.42,
+		_available_path(TRACK_INFRASTRUCTURE_DETAIL, ENVIRONMENT_PANELS),
+		Vector3(repeat, repeat, 1.0)
+	)
 
 static func prop_for(track: Dictionary, color: Color = Color.WHITE, repeat: float = 2.4) -> StandardMaterial3D:
 	var prop_set := String(track.get("prop_set", "industrial")).to_lower()

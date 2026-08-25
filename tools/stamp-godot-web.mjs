@@ -12,7 +12,7 @@ writeFileSync(htmlOutput, normalizedHtml, 'utf8');
 
 const manifest = {
   schema: 1,
-  gameVersion: '2.4.0',
+  gameVersion: '2.5.0',
   godotVersion: '4.7.2',
   preset: 'Web',
   threads: false,

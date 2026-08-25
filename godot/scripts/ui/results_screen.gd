@@ -2,6 +2,7 @@ extends Control
 class_name ResultsScreen
 
 signal retry_requested
+signal persistence_retry_requested
 signal menu_requested
 signal next_requested
 
@@ -32,7 +33,7 @@ var _present_when_ready := false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = ThemeFactory.create_theme(_settings())
-	retry_button.pressed.connect(func() -> void: retry_requested.emit())
+	retry_button.pressed.connect(_on_retry_pressed)
 	next_button.pressed.connect(func() -> void: next_requested.emit())
 	menu_button.pressed.connect(func() -> void: menu_requested.emit())
 	if _present_when_ready:
@@ -47,6 +48,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):
 		get_viewport().set_input_as_handled()
 		menu_requested.emit()
+
+
+func _on_retry_pressed() -> void:
+	if bool(_result.get("save_failed", false)) and bool(_result.get("persistence_retry_available", false)):
+		persistence_retry_requested.emit()
+		return
+	retry_requested.emit()
 
 
 func present(result: Dictionary) -> void:
@@ -65,8 +73,9 @@ func _apply_result() -> void:
 	var mode := String(_value(["mode"], "quick"))
 	var track_name := String(_value(["track_name", "track"], "CIRCUIT ZERO"))
 	var is_record := bool(_value(["new_record", "record"], false))
+	var save_failed := bool(_value(["save_failed"], false))
 	var championship := _championship_data()
-	var championship_complete := bool(_value(["championship_complete", "series_complete"], championship.get("complete", false)))
+	var championship_complete := not save_failed and bool(_value(["championship_complete", "series_complete"], championship.get("complete", false)))
 	var championship_won := bool(_value(["championship_won", "series_won"], false))
 	var championship_id := String(championship.get("championship_id", championship.get("cup_id", "")))
 	var champion_id := String(championship.get("champion_id", ""))
@@ -90,7 +99,12 @@ func _apply_result() -> void:
 		result_title.text = "ARRIVÉE HOMOLOGUÉE"
 		position_value.text = "%s / %d" % [_ordinal(position), total]
 		result_summary.text = "Course validée. Analysez les écarts puis ajustez votre architecture au garage."
-	if championship_complete:
+	if save_failed:
+		result_eyebrow.text = "SAUVEGARDE // ACTION REQUISE"
+		result_title.text = "PROGRESSION NON ENREGISTRÉE"
+		position_value.text = "À REVALIDER"
+		result_summary.text = String(_value(["save_error_message"], "La course reste provisoire tant que la sauvegarde n’a pas abouti."))
+	elif championship_complete:
 		_apply_championship_epilogue(championship_id, champion_id)
 
 	var elapsed := float(_value(["time", "elapsed", "race_time"], 0.0))
@@ -107,10 +121,12 @@ func _apply_result() -> void:
 	podium.present(classification, position, dnf, mode)
 	var winner := podium.winner_name().to_upper()
 	podium_headline.text = "PODIUM // CLASSEMENT HOMOLOGUÉ"
-	podium_panel.visible = mode != "time_trial" and not podium.top_three().is_empty()
-	if podium_panel.visible and not dnf and not winner.is_empty():
+	podium_panel.visible = not save_failed and mode != "time_trial" and not podium.top_three().is_empty()
+	if save_failed:
+		podium_headline.text = "CLASSEMENT PROVISOIRE // SAUVEGARDE REQUISE"
+	elif podium_panel.visible and not dnf and not winner.is_empty():
 		podium_headline.text = "PODIUM // %s PREND LE TROPHÉE" % winner
-	if championship_complete and championship_id == "nexus_open":
+	if not save_failed and championship_complete and championship_id == "nexus_open":
 		match champion_id:
 			"player":
 				podium_headline.text = "PODIUM // LA GRILLE LIBRE PREND LA COURONNE"
@@ -121,14 +137,26 @@ func _apply_result() -> void:
 					podium_headline.text = "PODIUM // LA COURONNE ÉCHAPPE À VEX"
 	_populate_standings(position, total)
 	_populate_championship(mode)
-	var can_continue := bool(_value(["can_continue", "has_next_race"], mode == "grand_prix" and not championship_complete))
+	var can_continue := not save_failed and bool(_value(["can_continue", "has_next_race"], mode == "grand_prix" and not championship_complete))
+	var persistence_retry_available := bool(_value(["persistence_retry_available"], false))
 	next_button.visible = can_continue
 	next_button.disabled = not can_continue
 	retry_button.visible = not can_continue
-	retry_button.text = "REJOUER LA SAISON" if championship_complete else "RECOMMENCER"
-	menu_button.text = "RETOUR AU PADDOCK" if championship_complete else "MENU PRINCIPAL"
-	ThemeFactory.connect_focus_chain([next_button if can_continue else retry_button, menu_button])
-	(next_button if can_continue else retry_button).call_deferred("grab_focus")
+	retry_button.disabled = save_failed and not persistence_retry_available
+	if save_failed:
+		retry_button.text = "RÉESSAYER LA SAUVEGARDE"
+		menu_button.text = "QUITTER SANS SAUVEGARDER"
+	else:
+		retry_button.text = "REJOUER LA SAISON" if championship_complete else "RECOMMENCER"
+		menu_button.text = "RETOUR AU PADDOCK" if championship_complete else "MENU PRINCIPAL"
+	var focus_button: Button = next_button if can_continue else retry_button
+	if focus_button.disabled:
+		focus_button = menu_button
+	var focus_chain: Array[Control] = [focus_button]
+	if focus_button != menu_button:
+		focus_chain.append(menu_button)
+	ThemeFactory.connect_focus_chain(focus_chain)
+	focus_button.call_deferred("grab_focus")
 	_play_entrance()
 
 

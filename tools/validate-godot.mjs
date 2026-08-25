@@ -33,6 +33,9 @@ const files = {
   garagePreviewTest: 'godot/tests/garage_preview_test.gd',
   gameplaySafetyTest: 'godot/tests/gameplay_safety_test.gd',
   narrativeProgressionTest: 'godot/tests/narrative_progression_test.gd',
+  mechaDetailTest: 'godot/tests/mecha_detail_test.gd',
+  mechaAnimationTest: 'godot/tests/mecha_animation_test.gd',
+  trackSceneryProductionTest: 'godot/tests/track_scenery_production_test.gd',
 };
 
 const failures = [];
@@ -110,6 +113,9 @@ for (const [slotId, expectedIds] of Object.entries(modulesBySlot)) {
 check(source.session.includes('return "mixed" if value == "mixed" else "division"'), 'session: grille fail-closed absente');
 check(source.raceController.includes('switch_camera_view'), 'course: bascule TPS/FPS absente');
 check(source.mechaFactory.includes('MaterialLibrary.mecha_for'), 'méchas: matériau OpenAI v2.2 non branché');
+check(source.materialLibrary.includes('MECHA_DETAIL_PANELS') && source.materialLibrary.includes('TRACK_INFRASTRUCTURE_DETAIL'), 'production: chemins des nouvelles textures absents de MaterialLibrary');
+check(source.materialLibrary.includes('static func mecha_detail(') && source.materialLibrary.includes('static func infrastructure('), 'production: matériaux de détail v2.5 absents');
+check(source.mechaFactory.includes('MaterialLibrary.mecha_detail(') && source.visualModules.includes('MaterialLibrary.mecha_detail('), 'production: micro-panneaux mécha non branchés');
 check(source.visualModules.includes('"CameraTPS"') && source.visualModules.includes('"CameraFPS"'), 'méchas: ancres caméra absentes');
 check(!source.visualModules.includes('.contains('), 'méchas: dispatch module par sous-chaîne encore présent');
 check((source.visualModules.match(/MaterialLibrary\.module_for\(/g) ?? []).length >= 3, 'méchas: matériaux de slot v2.2 non branchés');
@@ -141,6 +147,7 @@ const textures = [
   'module_utility.png', 'track_thermal.png', 'track_cryo.png', 'garage_bay.png',
   'prop_industrial.png', 'prop_biome.png', 'prop_urban_wet.png', 'race_ceremonial.png',
   'locomotion_antigrav.png', 'intergalactic_crown_race.png', 'garage_crew.png',
+  'mecha_detail_panels.png', 'track_infrastructure_detail.png',
 ];
 const textureDir = resolve(root, 'godot/assets/textures/openai');
 for (const texture of textures) {
@@ -149,7 +156,7 @@ for (const texture of textures) {
 const deliveredPngs = existsSync(textureDir)
   ? readdirSync(textureDir).filter((name) => name.toLowerCase().endsWith('.png')).sort()
   : [];
-check(deliveredPngs.length === 19 && textures.every((name) => deliveredPngs.includes(name)), 'textures OpenAI: exactement les 19 PNG v2.4 sont requis');
+check(deliveredPngs.length === 21 && textures.every((name) => deliveredPngs.includes(name)), 'textures OpenAI: exactement les 21 PNG v2.5 sont requis');
 let manifest = {};
 try {
   manifest = JSON.parse(source.manifest);
@@ -159,8 +166,8 @@ try {
 check(Number(manifest.schema_version) === 2, 'textures OpenAI: manifest schema 2 requis');
 const manifestAssets = Array.isArray(manifest.assets) ? manifest.assets : [];
 const manifestFiles = manifestAssets.map((asset) => asset?.file).filter(Boolean);
-check(manifestAssets.length === 19, 'textures OpenAI: 19 entrées de manifeste requises');
-check(new Set(manifestFiles).size === 19 && textures.every((name) => manifestFiles.includes(name)), 'textures OpenAI: manifeste incomplet ou dupliqué');
+check(manifestAssets.length === 21, 'textures OpenAI: 21 entrées de manifeste requises');
+check(new Set(manifestFiles).size === 21 && textures.every((name) => manifestFiles.includes(name)), 'textures OpenAI: manifeste incomplet ou dupliqué');
 const specialDimensions = { 'intergalactic_crown_race.png': [1672, 941] };
 for (const asset of manifestAssets) {
   const file = String(asset?.file ?? '');
@@ -200,6 +207,10 @@ check(source.narrativeProgressionTest.includes('Grand Open lock/unlock/resume') 
 check(!existsSync(resolve(root, 'godot/scripts/systems/save_system.gd.stub')), 'nettoyage: save_system.gd.stub présent');
 check(!existsSync(resolve(root, 'godot/scripts/data/game_database.gd.precanonical')), 'nettoyage: game_database.gd.precanonical présent');
 check(source.garagePreviewTest.includes('GARAGE PREVIEW: PASS'), 'garage: test plein écran dédié absent');
+check(source.mechaDetailTest.includes('MECHA DETAIL PRODUCTION: PASS') && source.mechaDetailTest.includes('visual_triangle_count'), 'production: test de densité mécha absent');
+check(source.mechaAnimationTest.includes('MECHA ANIMATION: PASS') && source.mechaAnimationTest.includes('_test_polygon_budget'), 'production: test animation/polygones absent');
+check(source.trackSceneryProductionTest.includes('MECHA TRACK SCENERY PRODUCTION: PASS') && source.trackSceneryProductionTest.includes('track_infrastructure_detail.png'), 'production: test décors/infrastructure absent');
+check(source.trackSceneryProductionTest.includes('_assert_trackside_clearance') && source.trackSceneryProductionTest.includes('_test_budget_guardrails'), 'production: garde-fous clearance/budget décors absents');
 check(source.project.includes('SaveSystem="*res://scripts/systems/save_system.gd"'), 'project: autoload SaveSystem absent');
 check(source.project.includes('GameSession="*res://scripts/systems/game_session.gd"'), 'project: autoload GameSession absent');
 
@@ -209,5 +220,5 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log('Godot static validation: PASS');
-  console.log('10 chassis · 500 locomotions · 5 divisions · 8 tracks homologués · 18 modules · 6 championships · 19 assets OpenAI · garage plein écran · mobile · Grand Tour · save v5');
+  console.log('10 chassis · 500 locomotions · 5 divisions · 8 tracks homologués · 18 modules · 6 championships · 21 assets OpenAI · détails production · garage plein écran · mobile · Grand Tour · save v5');
 }

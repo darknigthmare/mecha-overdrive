@@ -1,5 +1,10 @@
 .git
 .github
+.audit
+.audit-*
+.tools
+.tmp-*.patch
+*.rej
 .tmp
 .vercel
 godot/

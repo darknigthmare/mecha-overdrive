@@ -1,8 +1,8 @@
-# Roadmap après Godot 2.4.0
+# Roadmap après Godot 2.5.0
 
-Godot 2.4.0 est la branche principale qualifiée et publiée. L’export Web mono-thread est synchronisé, l’agrégat QA est vert, les parcours Chrome bureau/mobile sont attestés, GitHub Actions réussit et la release ainsi que l’alias Vercel sont publics.
+Godot 2.5.0 est la branche principale de production visuelle. Le statut de son export Web mono-thread, de ses parcours Chrome bureau/mobile, de GitHub Actions, de sa release et de son alias Vercel est suivi avec des preuves datées dans `docs/QA_REPORT.md`.
 
-## Livré dans la source Godot 2.4.0
+## Livré dans la source Godot 2.5.0
 
 - 10 châssis originaux répartis dans 5 divisions : Commandement, Stabilisés, Essaim, Sol et Expérimental ;
 - 500 configurations locomotrices, soit 50 par châssis, et 18 modules visibles répartis sur 3 emplacements ;
@@ -15,19 +15,19 @@ Godot 2.4.0 est la branche principale qualifiée et publiée. L’export Web mon
 - introduction en trois chapitres, 8 archives Univers, onglet Pilotes et grille canonique de 10 pilotes (joueur + 9 IA) ;
 - vues TPS et cockpit/FPS, préférence persistante, commandes clavier/manette et surface mobile multi-touch responsive ;
 - briefing de grille, compte à rebours bloquant, faux départ, arrivée cinématique, podium, résultats et épilogues de championnat ;
-- 19 assets bitmap OpenAI originaux et manifestés, dont l’illustration du Grand Tour et la texture de l’équipe mécano ;
-- sauvegarde v5 avec migrations et clé versionnée `season_intro_arc_2_seen`.
+- 21 assets bitmap OpenAI originaux et manifestés, dont l’illustration du Grand Tour, l’équipe mécano et les surfaces détaillées méchas/infrastructures ;
+- sauvegarde v5 avec migrations et clé versionnée `season_intro_arc_2_seen` ;
+- résultat homologué uniquement après écriture réussie, rollback complet, feedback explicite et relance de sauvegarde sans double récompense.
 
 ## P2 restants — priorité release
 
 1. Remplacer les enveloppes de proximité par de vraies collisions 3D et valider leurs interactions avec les caméras TPS/FPS.
 2. Rendre chaque hazard sensible à la voie occupée au lieu d’appliquer seulement un contexte global de secteur.
 3. Demander confirmation avant d’écraser un championnat actif par une nouvelle coupe.
-4. Ajouter un retry de sauvegarde avec état d’erreur et feedback UI explicite.
-5. Fournir un remapping complet clavier, manette et profils tactiles.
-6. Étendre les déblocages progressifs aux châssis, modules, peintures et difficultés ; le Grand Open est déjà qualifié après une Coupe remportée.
-7. Auditer les caméras TPS/FPS sur les 500 configurations locomotrices, y compris les gabarits extrêmes.
-8. Ajouter des coupes personnalisées avec validation de division, règlement, classe et rotation de pistes.
+4. Fournir un remapping complet clavier, manette et profils tactiles.
+5. Étendre les déblocages progressifs aux châssis, modules, peintures et difficultés ; le Grand Open est déjà qualifié après une Coupe remportée.
+6. Auditer les caméras TPS/FPS sur les 500 configurations locomotrices, y compris les gabarits extrêmes.
+7. Ajouter des coupes personnalisées avec validation de division, règlement, classe et rotation de pistes.
 
 ## Suites après P2
 
@@ -48,7 +48,7 @@ Godot 2.4.0 est la branche principale qualifiée et publiée. L’export Web mon
 
 ## Archive — roadmap du compagnon web 1.0
 
-Les sections ci-dessous reproduisent l’ancien plan établi pour la baseline Canvas/PWA 1.0. Certaines intentions — passage en 3D, modules, circuits supplémentaires et championnats — ont depuis été livrées différemment dans Godot 2.4.0 ; elles ne constituent donc plus des travaux ouverts pour la branche principale.
+Les sections ci-dessous reproduisent l’ancien plan établi pour la baseline Canvas/PWA 1.0. Certaines intentions — passage en 3D, modules, circuits supplémentaires et championnats — ont depuis été livrées différemment dans Godot 2.5.0 ; elles ne constituent donc plus des travaux ouverts pour la branche principale.
 
 ## Mise à jour 1.1 — Saison des Arènes
 

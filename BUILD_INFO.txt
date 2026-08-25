@@ -1,5 +1,5 @@
 MECHA OVERDRIVE — CIRCUIT ZERO
-Version source : 2.4.0
+Version source : 2.5.0
 Build source local : 25 août 2026
 Propriétaire du projet : Darknigthmare
 
@@ -13,10 +13,12 @@ Propriétaire du projet : Darknigthmare
   mondes, 10 pilotes, introduction en trois chapitres et 8 archives Codex
 - garage 3D plein écran derrière le HUD, changements visibles immédiatement et
   équipe de stand animée de quatre mécanos/robots, compatible mouvement réduit
+- dix modèles procéduraux enrichis, 18 modules détaillés et locomotions animées
+- huit décors multi-LOD avec infrastructures et budgets Web/mobile contrôlés
 - circuits homologués à 35 m minimum, trois colonnes de dépassement et grille 2 × 4
 - commandes clavier, manette et mobile multi-touch avec zones sûres
 - IA profilée, trajectoires, anticipation du danger, trafic et objets contextuels
-- 19 textures bitmap OpenAI originales avec provenance et SHA-256
+- 21 textures bitmap OpenAI originales avec provenance et SHA-256
 
 COMPAGNON WEB
 - Édition Canvas/PWA historique conservée à la racine
@@ -24,24 +26,30 @@ COMPAGNON WEB
 
 VALIDATIONS LOCALES CONFIRMÉES
 - Validation statique Godot : PASS — 10 châssis, 500 locomotions, 8 pistes
-  homologuées, 19 assets OpenAI, garage plein écran, mobile et Grand Tour
+  homologuées, 21 assets OpenAI, détails de production, mobile et Grand Tour
 - Import/parse Godot 4.7.2 : PASS
-- Smoke, catalogue locomotion, parcours runtime, sécurité gameplay/mobile et
-  garage plein écran, narration/progression : PASS
+- Neuf suites Godot : PASS — smoke, locomotion, runtime, narration, sécurité,
+  garage, détails mécha, animations mécaniques et décors multi-LOD
+- Persistance de résultats : PASS — rollback complet, aucun faux titre/couronne,
+  retry avec feedback UI, aucune double récompense et cartes de podium homologué
+  masquées pendant `save_failed`
+- Vérification JavaScript : PASS — 68 fichiers
 - Tests moteur du compagnon : 12/12 ; intégration : 21/21
 - Validation Web : 115/115 ; agrégat `npm run qa` : PASS
 - Export Web mono-thread : 9/9 artefacts, source synchronisée
-- QA Chrome : PASS en 1258 × 622 et 844 × 390
+- QA Chrome finale 2.5.0 : PASS — bureau 1440x900, mobile 844x390, console/réseau propres
 
-STATUT DE PUBLICATION 2.4.0
-- Export Web 2.4.0, stamp et QA navigateur bureau/mobile : PASS local
-- Publication distante : PASS — `main` public, CI verte, release v2.4.0 et Vercel READY
+STATUT DE PUBLICATION 2.5.0
+- Sources, neuf suites, agrégat Node et export Web stampé : PASS local
+- QA navigateur bureau/mobile finale : PASS sur l’empreinte source ci-dessous
+- Publication distante, CI, release v2.5.0 et Vercel : EN ATTENTE
 - Empreinte source exportée :
-  ee2b4cc5b6e034a7dced01308b07a42f07fec09af6370ab533bc8f82bb9ad06c
+  73435a0e59657b3f9f718b3112833b2ecc006e67296386df5bb61eb88c4bad15
+- SHA-256 et tailles des neuf artefacts : godot3d/build.json
 
 P2 RESTANTS
 - vraies collisions 3D et interactions caméra ; hazards sensibles à la voie
-- confirmation avant écrasement d’un championnat ; retry de sauvegarde avec UI
+- confirmation avant écrasement d’un championnat
 - remapping complet ; déblocages progressifs de contenu ; coupes personnalisées
 - audit caméra des 500 configurations
 

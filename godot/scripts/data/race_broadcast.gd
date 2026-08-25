@@ -6,21 +6,21 @@ extends RefCounted
 ## simulation contracts or save migrations.
 
 const TRACK_LORE := {
-	"foundry": "Le Grand Tour s’ouvre dans les docks-portes de Meridian, là où chaque mécha reçoit son sceau intergalactique.",
+	"foundry": "Les docks-portes de Meridian relient la piste aux ateliers où chaque mécha reçoit son sceau intergalactique.",
 	"dunes": "Vermillon a révélé Mara Vex dans ses ligues clandestines. La Faille réclame toujours le même courage à pleine vitesse.",
 	"glacier": "L’Arc Polaire entoure la première Porte stable entre trois galaxies; K-17 y lit la glace comme une carte stellaire.",
 	"orbital": "Morrigan est un mémorial autant qu’un circuit. Echo Vale dérive entre les épaves pour saluer les convois disparus.",
 	"canopy": "Elysia n’autorise la course que si les réacteurs respectent le rythme lumineux de sa forêt-monde vivante.",
 	"tempest": "Stratos diffuse la Ligue à travers trois galaxies; ses rafales départagent les pilotes des simples calculateurs.",
-	"abyss": "Néréide accueille l’avant-dernière escale. Ses sas de pression font céder les configurations que la saison a déjà fragilisées.",
-	"caldera": "Circuit Zero est le tracé originel et la finale. Une seule fenêtre de plasma sépare la grille de la Couronne.",
+	"abyss": "Les sas de pression de Néréide font céder les configurations fragilisées et récompensent les trajectoires disciplinées.",
+	"caldera": "Circuit Zero est le tracé originel de la Caldeira IX. Sa fenêtre de plasma a décidé plus d’une Couronne.",
 }
 
 const ANNOUNCER_OPENERS := {
 	"quick": "Contrôle course à toutes les unités : grille scellée, télémétrie en direct.",
 	"time_trial": "Canal chrono ouvert. Une machine, une trajectoire, aucune excuse.",
 	"elimination": "Alerte élimination : à chaque seuil, la dernière signature quittera la grille.",
-	"grand_prix": "Transmission Grand Tour : chaque position comptera jusqu’à Circuit Zero.",
+	"grand_prix": "Transmission championnat : chaque position comptera jusqu’au titre.",
 }
 
 
@@ -28,6 +28,7 @@ static func briefing(config: Dictionary) -> Dictionary:
 	var track_id := String(config.get("track_id", config.get("track", "foundry")))
 	var track := GameDatabase.get_track(track_id)
 	var mode := String(config.get("mode", "quick"))
+	var championship_id := String(config.get("championship_id", config.get("cup_id", "")))
 	var ruleset_id := String(config.get("ruleset_id", "division_locked"))
 	var ruleset := GameDatabase.get_ruleset(ruleset_id)
 	var performance := GameDatabase.get_performance_class(String(config.get("performance_class_id", ruleset.get("performance_class_id", "tuned"))))
@@ -51,7 +52,7 @@ static func briefing(config: Dictionary) -> Dictionary:
 		"rules": "%s  //  CLASSE %s" % [String(ruleset.get("name", ruleset_id)).to_upper(), String(performance.get("name", "TUNED")).to_upper()],
 		"rules_detail": String(ruleset.get("description", "Règlement standard de la Ligue.")),
 		"objective": _objective(mode),
-		"announcer": String(ANNOUNCER_OPENERS.get(mode, ANNOUNCER_OPENERS["quick"])),
+		"announcer": _announcer_opener(mode, championship_id),
 		"lore": String(TRACK_LORE.get(track_id, track.get("description", "Circuit homologué par la Ligue."))),
 		"conditions": conditions,
 	}
@@ -81,6 +82,15 @@ static func finish_call(result: Dictionary) -> Dictionary:
 	}
 
 
+static func _announcer_opener(mode: String, championship_id: String) -> String:
+	if mode != "grand_prix":
+		return String(ANNOUNCER_OPENERS.get(mode, ANNOUNCER_OPENERS["quick"]))
+	var championship := GameDatabase.get_championship(championship_id)
+	if championship_id == "nexus_open":
+		return "Transmission Grand Open : huit mondes, cinq divisions; chaque position comptera jusqu’à Circuit Zero."
+	if not championship.is_empty():
+		return "Transmission %s : chaque position compte pour le titre de division et l’invitation au Grand Open." % String(championship.get("name", "Coupe de division")).to_upper()
+	return String(ANNOUNCER_OPENERS["grand_prix"])
 static func _mode_name(mode: String) -> String:
 	match mode:
 		"time_trial": return "CONTRE-LA-MONTRE"

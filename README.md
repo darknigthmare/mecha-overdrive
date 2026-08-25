@@ -13,11 +13,11 @@ Le visuel de présentation est une création originale générée avec OpenAI po
 | **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 500 locomotions, 8 circuits, 6 championnats, garage 3D, mobile, TPS/cockpit et sauvegarde v5 | Godot **4.7.2** ou navigateur WebGL2 |
 | **Web — compagnon autonome** | racine du dépôt | 8 châssis, Course rapide, Grand Prix et Contre-la-montre, PWA hors ligne | Navigateur moderne, Node.js facultatif |
 
-La version déclarée dans le projet Godot est `2.4.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+La version déclarée dans le projet Godot est `2.5.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
 
 ## Jouer en ligne
 
-- **Godot 3D 2.4.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
+- **Godot 3D 2.5.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
 - **Édition web légère** : [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app)
 
 L’export Godot est mono-thread et WebGL2. Il prend en charge clavier, manette et une surface tactile responsive à dix commandes sur mobile. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste la variante PWA hors ligne.
@@ -101,7 +101,7 @@ Les classes **Série**, **Préparé** et **Prototype** imposent réellement leur
 - **Tranchée Hadale** — océan de Néréide ;
 - **Circuit Zero** — Caldeira IX, tracé originel et finale de la Couronne.
 
-Les circuits sont assemblés en 3D par `TrackFactory` à partir de huit profils géométriques et de dangers jouables distincts. Leurs chaussées font 35 à 42 m pour homologuer trois méchas de 9,5 m côte à côte ; la grille 2 × 4, les contacts, les limites de voie et les dépassements IA tiennent compte des gabarits. Les profils Canopée et Glacier sont continus après élargissement. Les dix silhouettes sont générées par `MechaFactory`, sans modèle 3D externe ; dix-neuf assets bitmap originaux OpenAI couvrent méchas, cockpits, pistes, décors, introduction et équipe du garage.
+Les circuits sont assemblés en 3D par `TrackFactory` à partir de huit profils géométriques et de dangers jouables distincts. Leurs chaussées font 35 à 42 m pour homologuer trois méchas de 9,5 m côte à côte ; la grille 2 × 4, les contacts, les limites de voie et les dépassements IA tiennent compte des gabarits. Les profils Canopée et Glacier restent continus après enrichissement. Les dix silhouettes procédurales gagnent une couche de panneaux, actuateurs, capteurs, évents et détails propre à chaque architecture ; les décors séparent avant-plan, monuments, infrastructures et silhouettes lointaines. Vingt-et-un assets bitmap originaux OpenAI couvrent méchas, cockpits, pistes, décors, introduction et équipe du garage.
 
 ### Combat et progression
 
@@ -163,9 +163,12 @@ Cette commande exécute la QA web (`npm test`) puis le validateur structurel God
 godot --headless --path godot --editor --quit
 godot --headless --path godot --script res://tests/smoke_test.gd
 godot --headless --path godot --script res://tests/runtime_flow_test.gd
+godot --headless --path godot --script res://tests/mecha_detail_test.gd
+godot --headless --path godot --script res://tests/mecha_animation_test.gd
+godot --headless --path godot --script res://tests/track_scenery_production_test.gd
 ```
 
-Le premier passage force l’import et le parse des ressources. Le smoke vérifie le catalogue, la sauvegarde et la simulation déterministe. Le flux runtime traverse la vraie application du menu à une course 3D, puis aux résultats et au retour menu, sans modifier la sauvegarde du joueur.
+Le premier passage force l’import et le parse des ressources. Le smoke vérifie le catalogue, la sauvegarde et la simulation déterministe. Le flux runtime traverse la vraie application du menu à une course 3D, puis aux résultats et au retour menu. Les trois suites de production mesurent les meshes/triangles des dix architectures, les animations mécaniques et les budgets multi-LOD des huit circuits.
 
 ## Édition web autonome
 
@@ -211,11 +214,14 @@ MECHA_OVERDRIVE/
 │   ├── project.godot
 │   ├── scenes/                    app, menu, garage, codex, résultats
 │   ├── scripts/                   données, systèmes, course, UI, audio, fabriques visuelles
-│   ├── assets/textures/openai/    dix-neuf assets bitmap et manifeste de provenance
+│   ├── assets/textures/openai/    vingt-et-un assets bitmap et manifeste de provenance
 │   ├── assets/                    key art original intégré
 │   └── tests/
 │       ├── smoke_test.gd          contrat déterministe headless
-│       └── runtime_flow_test.gd   flux menu/course/résultats headless
+│       ├── runtime_flow_test.gd   flux menu/course/résultats headless
+│       ├── mecha_detail_test.gd   densité et budgets des dix architectures
+│       ├── mecha_animation_test.gd locomotions et mouvement réduit
+│       └── track_scenery_production_test.gd  huit décors multi-LOD
 ├── godot3d/                       export Web Godot 4.7.2 vérifié et publiable
 ├── index.html                     édition web Canvas pseudo-3D
 ├── js/                            moteur, données, rendu et UI web

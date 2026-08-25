@@ -39,6 +39,10 @@ func _run() -> void:
 				"utility": "utility_scanner",
 			}
 			test_profile["loadouts"] = test_loadouts
+			var test_stats: Dictionary = test_profile.get("stats", {})
+			# The flow exercises the qualified Grand Open after the dedicated cup.
+			test_stats["championships"] = maxi(1, int(test_stats.get("championships", 0)))
+			test_profile["stats"] = test_stats
 			var test_settings: Dictionary = test_profile.get("settings", {})
 			test_settings["camera_view"] = "tps"
 			test_profile["settings"] = test_settings
@@ -112,6 +116,9 @@ func _run() -> void:
 		"seed": 240817,
 	}
 	var session: Node = root.get_node_or_null("GameSession")
+	if _save_system != null and session != null:
+		_configure_isolated_save(_save_system)
+		session.set("_save_system_override", _save_system)
 	if session != null and session.has_method(&"configure"):
 		var configured: Variant = session.call(&"configure", config)
 		if configured is Dictionary:
@@ -418,9 +425,29 @@ func _expect(condition: bool, message: String) -> void:
 		_failures.append(message)
 
 
+func _configure_isolated_save(service: Node) -> void:
+	var stem := "user://mecha_overdrive_runtime_flow"
+	service.set("_save_path", "%s.json" % stem)
+	service.set("_temp_path", "%s.tmp" % stem)
+	service.set("_backup_path", "%s.backup.json" % stem)
+	service.set("_corrupt_path", "%s.corrupt.json" % stem)
+	service.set("_backup_corrupt_path", "%s.backup.corrupt.json" % stem)
+	_cleanup_isolated_save(service)
+
+
+func _cleanup_isolated_save(service: Node) -> void:
+	for property_name: String in [
+		"_save_path", "_temp_path", "_backup_path", "_corrupt_path", "_backup_corrupt_path",
+	]:
+		var path := String(service.get(property_name))
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
 func _restore_profile() -> void:
 	if _save_system == null:
 		return
+	_cleanup_isolated_save(_save_system)
 	_save_system.name = &"SaveSystem"
 	if not _profile_before.is_empty():
 		_save_system.set("profile", _profile_before.duplicate(true))

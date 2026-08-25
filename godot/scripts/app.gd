@@ -122,10 +122,22 @@ func _show_results(result: Dictionary) -> void:
 		_show_main_menu()
 		return
 	results.retry_requested.connect(_retry_last_race)
+	results.persistence_retry_requested.connect(_retry_result_persistence.bind(results))
 	results.menu_requested.connect(_show_main_menu)
 	results.next_requested.connect(_start_next_round)
 	_replace_screen(results)
 	results.call_deferred(&"present", result)
+
+
+func _retry_result_persistence(results: ResultsScreen) -> void:
+	if not is_instance_valid(results):
+		return
+	var session := get_node_or_null("/root/GameSession") as GameSessionService
+	if session == null or not session.has_method(&"retry_result_persistence"):
+		return
+	var retried: Variant = session.call(&"retry_result_persistence")
+	if retried is Dictionary:
+		results.present(Dictionary(retried))
 
 
 func _retry_last_race() -> void:

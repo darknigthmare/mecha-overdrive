@@ -382,21 +382,32 @@ func get_championship() -> Dictionary:
 
 
 func save_championship(championship_data: Dictionary) -> bool:
+	var snapshot := profile.duplicate(true)
 	profile["championship"] = _sanitize_championship(championship_data)
-	return _commit_profile()
+	if _commit_profile():
+		return true
+	profile = snapshot
+	return false
 
 
 func clear_championship() -> bool:
 	var current: Variant = profile.get("championship", {})
 	if current is Dictionary and Dictionary(current).is_empty():
 		return true
+	var snapshot := profile.duplicate(true)
 	profile["championship"] = {}
-	return _commit_profile()
+	if _commit_profile():
+		return true
+	profile = snapshot
+	return false
 
 
 func record_race_result(result: Dictionary) -> bool:
+	var snapshot := profile.duplicate(true)
+	var championship_data: Dictionary = {}
 	if result.has("championship") and result["championship"] is Dictionary:
-		profile["championship"] = _sanitize_championship(result["championship"])
+		championship_data = Dictionary(result["championship"]).duplicate(true)
+		profile["championship"] = _sanitize_championship(championship_data)
 	var finished := bool(result.get("finished", false)) and not bool(result.get("dnf", false))
 	var stats: Dictionary = profile.get("stats", {})
 	stats["races"] = maxi(0, int(stats.get("races", 0))) + 1
@@ -406,13 +417,23 @@ func record_race_result(result: Dictionary) -> bool:
 			stats["wins"] = maxi(0, int(stats.get("wins", 0))) + 1
 		if position <= 3:
 			stats["podiums"] = maxi(0, int(stats.get("podiums", 0))) + 1
-		if bool(result.get("championship_won", false)):
-			stats["championships"] = maxi(0, int(stats.get("championships", 0))) + 1
+	var champion_id := String(championship_data.get("champion_id", ""))
+	var championship_won := (
+		bool(result.get("championship_won", false))
+		and not championship_data.is_empty()
+		and bool(championship_data.get("complete", false))
+		and champion_id == "player"
+	)
+	if championship_won:
+		stats["championships"] = maxi(0, int(stats.get("championships", 0))) + 1
 	profile["stats"] = stats
 
 	# DNF results deliberately stop here: no credits, no best time, no record.
 	if not finished:
-		return _commit_profile()
+		if _commit_profile():
+			return true
+		profile = snapshot
+		return false
 
 	var reward := maxi(0, int(result.get("reward", 0)))
 	profile["credits"] = maxi(0, int(profile.get("credits", 0))) + reward
@@ -430,7 +451,10 @@ func record_race_result(result: Dictionary) -> bool:
 			track_records[mode] = elapsed
 			records[track_id] = track_records
 			profile["records"] = records
-	return _commit_profile()
+	if _commit_profile():
+		return true
+	profile = snapshot
+	return false
 
 
 func _commit_profile() -> bool:

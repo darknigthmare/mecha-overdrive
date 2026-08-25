@@ -14,7 +14,7 @@ Le tracé originel, construit autour de la Caldeira IX, porte le nom de **Circui
 
 Vex ne triche pas : elle pense qu’un standard central rendrait le sport plus rapide et plus sûr. Face à elle, le **Hangar 08**, dernière écurie indépendante, défend l’idée opposée — l’innovation naît de centaines de solutions, pas d’une machine parfaite imposée à tous.
 
-Le joueur reçoit le dixième siège de la saison. Son objectif est clair : remporter une Coupe, parcourir les huit mondes et battre Vex lors de la finale de Circuit Zero afin de préserver la Charte libre.
+Le joueur reçoit le dixième siège du roster saisonnier. À l’ouverture de chaque championnat, la Ligue homologue huit des dix pilotes et place deux signatures en réserve ; les huit retenus conservent leur place jusqu’à la finale de la série. Son objectif est clair : remporter une Coupe, parcourir les huit mondes et battre Vex lors de la finale de Circuit Zero afin de préserver la Charte libre.
 
 ### Les cinq divisions homologuées
 
@@ -76,7 +76,7 @@ Le tracé originel entoure un réacteur tellurique assez puissant pour alimenter
 - **Iris Quell — Argon Vector :** analyste devenue stratège de course.
 - **Echo Vale — indépendant :** spécialiste de l’orbital et de la dérive.
 
-Le joueur occupe le dixième siège sous son propre indicatif et représente le Hangar 08.
+Le joueur occupe le dixième siège du roster saisonnier sous son propre indicatif et représente le Hangar 08.
 
 ## Le Hangar 08
 

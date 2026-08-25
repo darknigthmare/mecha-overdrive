@@ -2,6 +2,42 @@
 
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
+
+## [2.5.0] — 2026-08-25
+
+### Ajouté
+
+- deux textures OpenAI originales : micro-panneaux de mécha et infrastructures de circuit, avec prompts, identifiants et SHA-256 ;
+- suites de régression dédiées aux modèles détaillés, aux animations mécaniques et aux huit décors de production.
+
+### Amélioré
+
+- dix architectures procédurales enrichies de panneaux superposés, actuateurs, capteurs, évents, trappes et signatures mécaniques distinctes ;
+- les 18 modules reçoivent des micro-détails manufacturés visibles immédiatement dans le garage plein écran ;
+- locomotion animée par technologie : marche articulée, braquage, suspension, chenilles, rails, rotors, propulseurs, inertie, freinage et impacts ;
+- huit biomes reconstruits en niveaux avant-plan, landmarks de virage, infrastructures, paddock et silhouettes MultiMesh lointaines ;
+- surfaces dédiées réellement branchées sur les panneaux secondaires, portiques, tribunes, tours et bâtiments de service.
+
+### Corrigé
+
+- qualification du Grand Open appliquée aussi dans le service de session, sans contournement possible du verrou du menu ;
+- champion de championnat déterminé avec le même départage déterministe que le classement affiché ;
+- titre de saison validé uniquement à partir d’un championnat complet dont le joueur est réellement champion, y compris après une finale DNF ;
+- annonces de piste contextualisées selon Course rapide, Coupe de division ou Grand Open, et nomenclature `Circuit Zero` harmonisée.
+- persistance de course rendue atomique : rollback complet en cas d’échec, aucun faux titre ou couronne, retry explicite avec feedback UI, aucune double récompense et cartes de podium homologué masquées pendant `save_failed` ;
+
+### Performance et accessibilité
+
+- LOD hero/course et budgets de meshes mesurés sur chaque châssis et chaque module ;
+- décors plafonnés à 210 descendants, éclairage borné et silhouettes lointaines instanciées pour le Web/mobile ;
+- cache d’animation procédurale sans recherche de nœuds par frame et pose stabilisée en mode mouvement réduit.
+
+### Validation
+
+- contrats dédiés sur les dix architectures, les huit circuits, les familles de locomotion, les budgets et les textures réellement utilisées ;
+- manifeste OpenAI schema 2 porté à 21 assets originaux et vérifiés par empreinte.
+- scénarios de régression sur échec de persistance, retry UI, absence de faux titre/couronne et unicité des récompenses.
+
 ## [2.4.0] — 2026-08-25
 
 ### Ajouté

@@ -1,6 +1,6 @@
 # MECHA OVERDRIVE — édition Godot 3D
 
-Cette arborescence contient l’édition principale **2.4.0** de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale.
+Cette arborescence contient l’édition principale **2.5.0** de **MECHA OVERDRIVE: Circuit Zero**, développée pour **Godot 4.7.2** en GDScript et 3D procédurale détaillée.
 
 ## Ouvrir le projet
 
@@ -34,7 +34,7 @@ Sous Windows, remplacez `godot` par le chemin de `Godot_v4.7.2-stable_win64.exe`
 - **8 objets** de combat/mobilité ;
 - grilles dédiées par défaut, mélange interdivision uniquement en Open ;
 - garage, peintures, améliorations, codex, HUD, résultats et progression ;
-- **19 assets bitmap OpenAI** sur méchas, cockpits, pistes, décors, introduction et équipe mécano ;
+- **21 assets bitmap OpenAI** sur méchas, cockpits, pistes, décors, introduction et équipe mécano ;
 - Grand Tour intergalactique, Mara Vex, onglet des dix pilotes, briefing, compte à rebours, arrivée, podium et épilogue ;
 - commandes tactiles multitouch à dix actions et IA profilée avec anticipation, danger, trafic et objets contextuels ;
 - grille de départ 2 × 4, contacts et dépassements IA tenant compte des gabarits ;
@@ -99,9 +99,12 @@ Puis les contrats spécialisés :
 ```bash
 godot --headless --path godot --script res://tests/gameplay_safety_test.gd
 godot --headless --path godot --script res://tests/garage_preview_test.gd
+godot --headless --path godot --script res://tests/mecha_detail_test.gd
+godot --headless --path godot --script res://tests/mecha_animation_test.gd
+godot --headless --path godot --script res://tests/track_scenery_production_test.gd
 ```
 
-Le smoke contrôle le contrat 10 châssis / 500 locomotions / 5 divisions / 8 circuits / 18 modules / 6 championnats / 19 assets OpenAI, la sauvegarde v5, le mobile, l’IA, le briefing, le podium, les migrations et la simulation déterministe. Le flux runtime vérifie le parcours réel. Les suites spécialisées couvrent chaussées/gabarits/grille/contacts/difficulté/DNF et le garage plein écran avec mécanos. Les résultats confirmés sont consignés dans [`../docs/QA_REPORT.md`](../docs/QA_REPORT.md).
+Le smoke contrôle le contrat 10 châssis / 500 locomotions / 5 divisions / 8 circuits / 18 modules / 6 championnats / 21 assets OpenAI, la sauvegarde v5, le mobile, l’IA, le briefing, le podium, les migrations et la simulation déterministe. Le flux runtime vérifie le parcours réel. Les suites spécialisées couvrent chaussées/gabarits/grille/contacts/difficulté/DNF, le garage plein écran, les budgets meshes/triangles, les animations par locomotion et les huit décors multi-LOD. Les résultats confirmés sont consignés dans [`../docs/QA_REPORT.md`](../docs/QA_REPORT.md).
 
 ## Organisation
 
@@ -109,7 +112,7 @@ Le smoke contrôle le contrat 10 châssis / 500 locomotions / 5 divisions / 8 ci
 godot/
 ├── project.godot
 ├── assets/
-│   └── textures/openai/  dix-neuf PNG et manifeste de provenance
+│   └── textures/openai/  vingt-et-un PNG et manifeste de provenance
 ├── scenes/
 │   ├── app.tscn
 │   ├── main_menu.tscn
@@ -128,7 +131,10 @@ godot/
 └── tests/
     ├── gameplay_safety_test.gd
     ├── garage_preview_test.gd
+    ├── mecha_animation_test.gd
+    ├── mecha_detail_test.gd
     ├── smoke_test.gd
+    ├── track_scenery_production_test.gd
     └── runtime_flow_test.gd
 ```
 
@@ -144,7 +150,7 @@ npm run validate
 
 Le manifeste `godot3d/build.json` contient l’empreinte des sources et de chaque artefact. Toute modification du projet exige donc un nouvel export et un nouveau stamp avant publication.
 
-L’export Web cible les ordinateurs avec WebGL2, clavier ou manette. L’édition compagnon à la racine conserve les commandes tactiles et la PWA hors ligne.
+L’export Web cible les ordinateurs et mobiles compatibles WebGL2, avec clavier, manette ou commandes tactiles selon l’appareil. L’édition compagnon à la racine conserve en plus son mode PWA hors ligne.
 
 ## Frontière avec l’édition web
 

@@ -26,7 +26,7 @@ Le dépôt contient deux runtimes indépendants qui partagent la même identité
 
 ## 2. Architecture de l’édition Godot 3D
 
-Cette section décrit le contrat de la release **Godot 2.4.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
+Cette section décrit le contrat de la release **Godot 2.5.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
 
 ### 2.1 Configuration du projet
 
@@ -69,7 +69,7 @@ Le coordinateur écoute des signaux de haut niveau (`race_requested`, `screen_re
 - trois classes de performance : `stock`, `tuned`, `unlimited` ;
 - trois règlements de grille : `division_locked`, `open_mixed`, `elite_open` ;
 - six championnats : cinq coupes dédiées à une division et le `nexus_open` « Grand Open des Huit Mondes », seule coupe ouverte aux divisions mélangées ;
-- neuf pilotes IA canoniques, auxquels s’ajoute le joueur pour former une grille narrative de dix pilotes ;
+- neuf pilotes IA canoniques, auxquels s’ajoute le joueur pour former un roster saisonnier de dix pilotes ; chaque championnat en homologue huit et conserve ce plateau jusqu’à sa finale ;
 - trois difficultés, quatre familles d’améliorations et barème de championnat.
 
 `scripts/data/locomotion_catalog.gd` compose dix technologies et cinq montages pour chacune des dix familles, soit exactement 500 configurations. `scripts/data/lore_database.gd` expose huit archives originales au Codex. La Saison 03 « La Couronne Libre » relie la Nexus Grand League, les huit mondes de trois galaxies, Hangar 08 et l’antagoniste Mara Vex ; `race_broadcast.gd`, l’introduction, le menu, le Codex, les résultats et les épilogues consomment ce même canon.
@@ -92,11 +92,11 @@ La méthode `sample_pose(track, distance, lane)` fournit un `Transform3D` commun
 
 `scripts/world/track_safety.gd` est la source de vérité de l’homologation en mètres. Il impose une route d’au moins **35 m**, trois colonnes de dépassement, 1,50 m d’écart et de dégagement extérieur, calcule le gabarit des 500 configurations et adapte les limites de voie. `TrackFactory` élargit toute spécification trop étroite et publie un rapport d’homologation ; la grille à huit concurrents est disposée en **2 × 4** avec 10,5 m entre rangées.
 
-`scripts/visual/track_visual_profiles.gd` applique le profil de tracé, le grip, les accessoires et les dangers propres à chacun des huit circuits. `scripts/visual/material_library.gd` charge les textures raster originales générées avec OpenAI ; le manifeste de schéma 2 atteste identifiant, prompt, usage, dimensions et SHA-256 de **19 bitmaps**, dont `intergalactic_crown_race.png` et `garage_crew.png`.
+`scripts/visual/track_visual_profiles.gd` applique le profil de tracé, le grip, les accessoires, les niveaux de détail et les dangers propres à chacun des huit circuits. `scripts/visual/material_library.gd` charge les textures raster originales générées avec OpenAI ; le manifeste de schéma 2 atteste identifiant, prompt, usage, dimensions et SHA-256 de **21 bitmaps**, dont `mecha_detail_panels.png` et `track_infrastructure_detail.png`.
 
 ### 2.5 Construction procédurale des méchas
 
-`scripts/mecha/mecha_factory.gd` génère une silhouette 3D propre à chaque architecture avec les primitives Godot. `scripts/visual/mecha_visual_modules.gd` installe les trois modules visibles et `scripts/visual/locomotion_visuals.gd` construit les roues, jambes, chenilles, appuis, sphères, propulseurs, rails ou turbines sélectionnés. `scripts/mecha/racer_visual.gd` anime les parties mobiles, rotors, boost et dégâts.
+`scripts/mecha/mecha_factory.gd` génère une silhouette 3D propre à chaque architecture avec panneaux superposés, évents, capteurs, actuateurs et LOD hero/course. `scripts/visual/mecha_visual_modules.gd` installe les trois modules et leurs micro-détails visibles ; `scripts/visual/locomotion_visuals.gd` construit roues, jambes, chenilles, appuis, sphères, propulseurs, rails ou turbines avec tessellation explicite. `scripts/mecha/racer_visual.gd` anime marche, inertie, braquage, freinage, suspension, rotors, boost, impacts et dégâts via un cache sans recherche de nœuds par frame.
 
 Le visuel ne possède pas la vérité physique. Il reçoit à chaque trame un snapshot du pilote puis est replacé sur la pose de piste. La simulation peut ainsi rester déterministe et indépendante de la fréquence d’affichage.
 
@@ -227,7 +227,7 @@ ResultsScreen + PodiumPresenter
 
 ## 4. Architecture historique de l’édition compagnon web
 
-Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.4.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
+Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.5.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
 
 | Fichier | Responsabilité |
 |---|---|
@@ -275,12 +275,15 @@ Les deux surfaces sont publiées ensemble :
 ### Godot
 
 - `tools/validate-godot.mjs` : contrat statique des ressources et données Godot.
-- `godot/tests/smoke_test.gd` : 10 châssis, 500 locomotions, 5 divisions, 8 circuits, 6 coupes, 18 modules, 19 assets OpenAI, sauvegarde v5, mobile, IA, podium, migrations et déterminisme.
+- `godot/tests/smoke_test.gd` : 10 châssis, 500 locomotions, 5 divisions, 8 circuits, 6 coupes, 18 modules, 21 assets OpenAI, sauvegarde v5, mobile, IA, podium, migrations et déterminisme.
 - `godot/tests/locomotion_catalog_test.gd` : produit exhaustif 10 × 50, isolation visuelle et texture Aether.
 - `godot/tests/runtime_flow_test.gd` : vraie scène, grille par division, modules, vues TPS/cockpit, mouvement, DNF, résultats et coupes dédiée/ouverte avec sauvegarde isolée.
 - `godot/tests/gameplay_safety_test.gd` : homologation 35 m, grille 2 × 4, gabarits, contacts, classement/DNF et géométrie mobile paysage/portrait.
 - `godot/tests/garage_preview_test.gd` : plein écran, viewport réactif, focus/tactile, cadre préservé, modules live et quatre acteurs de stand animés.
 - `godot/tests/narrative_progression_test.gd` : verrouillage/déverrouillage/reprise du Grand Open et épilogues joueur/Vex/rival.
+- `godot/tests/mecha_detail_test.gd` : densité, textures et budgets réels meshes/triangles des dix architectures et 18 modules.
+- `godot/tests/mecha_animation_test.gd` : marche, inertie, suspension, roues, chenilles, propulseurs, impacts, mouvement réduit et budget polygonal.
+- `godot/tests/track_scenery_production_test.gd` : huit signatures, LOD, déterminisme, clearance, matériau infrastructure et plafond de nœuds.
 - `godot --headless --path godot --editor --quit` : import et parse par le vrai moteur.
 
 ### Web
@@ -298,7 +301,7 @@ Les deux surfaces sont publiées ensemble :
 npm run qa
 ```
 
-Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le validateur statique Godot. Pour 2.4.0, il réussit avec 115/115 contrôles Web, 12/12 tests moteur, 21/21 contrôles d’intégration et le contrat Godot statique. Le parse/import et les six tests Godot restent exécutés séparément avec Godot 4.7.2.
+Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le validateur statique Godot. Le parse/import et les neuf suites Godot restent exécutés séparément avec Godot 4.7.2. Les totaux et résultats effectivement observés pour le commit publié sont consignés dans `docs/QA_REPORT.md`.
 
 ## 6. Ajouter du contenu Godot
 
@@ -331,5 +334,5 @@ Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le valida
 - Un déploiement Vercel `READY` prouve la publication, pas à lui seul le bon déroulement d’une course WebGL.
 - Chaque modification des sources Godot impose un nouvel export, un nouveau stamp et un parcours navigateur du build produit.
 - Toute annonce doit citer les gates réellement exécutés sur le commit publié.
-- Pour 2.4.0, sources, export Web synchronisé, QA Chrome bureau/mobile, GitHub Actions, release GitHub et alias Vercel sont qualifiés ; les identifiants de preuve figurent dans `docs/QA_REPORT.md`.
-- P2 connus : vraies collisions 3D/caméra, hazards lane-aware, confirmation avant écrasement d’un championnat, retry save/UI, remapping complet, déblocages progressifs de contenu, coupes personnalisées et audit caméra des 500 configurations.
+- Le statut des sources, de l’export Web synchronisé, des parcours Chrome bureau/mobile, de GitHub Actions, de la release GitHub et de l’alias Vercel est documenté avec ses identifiants de preuve dans `docs/QA_REPORT.md`.
+- P2 connus : vraies collisions 3D/caméra, hazards lane-aware, confirmation avant écrasement d’un championnat, remapping complet, déblocages progressifs de contenu, coupes personnalisées et audit caméra des 500 configurations.

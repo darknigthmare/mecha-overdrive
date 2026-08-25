@@ -16,6 +16,9 @@ var config: Dictionary = {}
 var last_result: Dictionary = {}
 var championship: Dictionary = {}
 var _result_committed := false
+var _pending_result: Dictionary = {}
+var _pending_championship: Dictionary = {}
+var _pending_championship_snapshot: Dictionary = {}
 var _session_counter := 0
 var _save_system_override: Node = null
 
@@ -76,7 +79,9 @@ func configure(request: Dictionary) -> Dictionary:
 
 	if mode == "grand_prix":
 		if bool(request.get("new_championship", false)) or championship.is_empty() or not bool(championship.get("active", false)):
-			_start_championship(request, difficulty, profile_data)
+			if not _start_championship(request, difficulty, profile_data):
+				config = {}
+				return {}
 		var gp_tracks: Array = championship.get("tracks", GRAND_PRIX_TRACKS)
 		if gp_tracks.is_empty():
 			return {}
@@ -120,6 +125,7 @@ func configure(request: Dictionary) -> Dictionary:
 		"seed": session_seed,
 	}
 	_result_committed = false
+	_clear_pending_persistence()
 	last_result = {}
 	session_configured.emit(config.duplicate(true))
 	return config.duplicate(true)
@@ -167,23 +173,125 @@ func complete_race(raw_result: Dictionary) -> Dictionary:
 	}
 	_apply_record_contract(result, save_system)
 
-	if mode == "grand_prix":
-		_apply_championship_result(result)
-		var championship_result := _championship_result()
-		result["championship"] = championship_result
-		result["round"] = int(championship_result.get("round", 1))
-		result["total_rounds"] = int(championship_result.get("total_rounds", _championship_tracks().size()))
-		result["championship_standings"] = championship_result.get("standings", [])
-		result["championship_complete"] = bool(championship_result.get("complete", false))
-		result["can_continue"] = bool(championship_result.get("can_continue", false))
+	var championship_snapshot := championship.duplicate(true)
+	var championship_applied := true
 
+	if mode == "grand_prix":
+		championship_applied = _apply_championship_result(result)
+		if championship_applied:
+			var championship_result := _championship_result()
+			result["championship"] = championship_result
+			result["round"] = int(championship_result.get("round", 1))
+			result["total_rounds"] = int(championship_result.get("total_rounds", _championship_tracks().size()))
+			result["championship_standings"] = championship_result.get("standings", [])
+			result["championship_complete"] = bool(championship_result.get("complete", false))
+			result["can_continue"] = bool(championship_result.get("can_continue", false))
+
+	if not championship_applied:
+		championship = championship_snapshot
+		_clear_pending_persistence()
+		var invalid_result := _persistence_failure_result(result, false)
+		invalid_result["save_error_message"] = "Le championnat n’est plus disponible. Retournez au paddock."
+		_result_committed = false
+		last_result = invalid_result.duplicate(true)
+		return invalid_result.duplicate(true)
+
+	var candidate_championship := championship.duplicate(true)
+	var persistence_ok := false
+	if save_system == null:
+		# Detached sessions are intentionally in-memory for deterministic unit tests.
+		persistence_ok = not is_inside_tree()
+	elif save_system.has_method(&"record_race_result"):
+		persistence_ok = bool(save_system.call(&"record_race_result", result.duplicate(true)))
+	if not persistence_ok:
+		_pending_result = result.duplicate(true)
+		_pending_championship = candidate_championship
+		_pending_championship_snapshot = championship_snapshot
+		championship = championship_snapshot
+		var failed_result := _persistence_failure_result(result, true)
+		_result_committed = false
+		last_result = failed_result.duplicate(true)
+		return failed_result.duplicate(true)
+
+	return _finalize_persisted_result(result)
+
+
+func retry_result_persistence() -> Dictionary:
+	if _result_committed:
+		return last_result.duplicate(true)
+	if _pending_result.is_empty():
+		return last_result.duplicate(true)
+
+	var save_system := _save_system()
+	var persistence_ok := false
+	if save_system == null:
+		persistence_ok = not is_inside_tree()
+	elif save_system.has_method(&"record_race_result"):
+		persistence_ok = bool(save_system.call(&"record_race_result", _pending_result.duplicate(true)))
+	if not persistence_ok:
+		championship = _pending_championship_snapshot.duplicate(true)
+		var failed_result := _persistence_failure_result(_pending_result, true)
+		last_result = failed_result.duplicate(true)
+		return failed_result.duplicate(true)
+
+	championship = _pending_championship.duplicate(true)
+	return _finalize_persisted_result(_pending_result.duplicate(true))
+
+
+func has_pending_persistence() -> bool:
+	return not _pending_result.is_empty() and not _result_committed
+
+
+func _persistence_failure_result(candidate: Dictionary, retry_available: bool) -> Dictionary:
+	var failure := candidate.duplicate(true)
+	failure["persisted"] = false
+	failure["save_failed"] = true
+	failure["result_homologated"] = false
+	failure["persistence_retry_available"] = retry_available
+	failure["save_error_message"] = "Progression non enregistrée. Réessayez la sauvegarde avant de quitter."
+	failure["reward"] = 0
+	failure["new_record"] = false
+	failure["record"] = false
+	failure["best_time"] = float(failure.get("previous_record", 0.0))
+	failure["record_time"] = failure["best_time"]
+	if String(failure.get("mode", "quick")) == "grand_prix":
+		var restored := _championship_result() if not championship.is_empty() else {}
+		if not restored.is_empty():
+			restored["complete"] = false
+			restored["championship_complete"] = false
+			restored["can_continue"] = false
+			restored["champion_id"] = ""
+		failure["championship"] = restored
+		failure["round"] = int(restored.get("round", 0))
+		failure["total_rounds"] = int(restored.get("total_rounds", 0))
+		failure["championship_standings"] = restored.get("standings", [])
+		failure["championship_complete"] = false
+		failure["championship_won"] = false
+		failure["championship_points"] = 0
+		failure["points"] = 0
+		failure["can_continue"] = false
+	return failure
+
+
+func _finalize_persisted_result(candidate: Dictionary) -> Dictionary:
+	var result := candidate.duplicate(true)
+	result["persisted"] = true
+	result["save_failed"] = false
+	result["result_homologated"] = true
+	result["persistence_retry_available"] = false
 	_result_committed = true
 	last_result = result.duplicate(true)
-	# SaveSystem was resolved before result normalization.
-	if save_system != null and save_system.has_method(&"record_race_result"):
-		save_system.call(&"record_race_result", result.duplicate(true))
+	_clear_pending_persistence()
+	if String(result.get("mode", "quick")) == "grand_prix":
+		championship_changed.emit(championship.duplicate(true))
 	race_completed.emit(result.duplicate(true))
 	return result.duplicate(true)
+
+
+func _clear_pending_persistence() -> void:
+	_pending_result = {}
+	_pending_championship = {}
+	_pending_championship_snapshot = {}
 
 
 func abort_race(reason: String = "abandoned") -> Dictionary:
@@ -213,16 +321,20 @@ func start_next_grand_prix_round() -> Dictionary:
 	return start_next_championship_round()
 
 
-func abandon_championship() -> void:
+func abandon_championship() -> bool:
 	if championship.is_empty():
-		return
+		return true
+	var snapshot := championship.duplicate(true)
 	championship["active"] = false
 	championship["abandoned"] = true
-	_persist_championship()
+	if not _persist_championship():
+		championship = snapshot
+		return false
 	championship_changed.emit(championship.duplicate(true))
+	return true
 
 
-func _start_championship(request: Dictionary, difficulty: String, profile_data: Dictionary = {}) -> void:
+func _start_championship(request: Dictionary, difficulty: String, profile_data: Dictionary = {}) -> bool:
 	if profile_data.is_empty():
 		profile_data = _profile()
 	var championship_id := String(request.get("championship_id", request.get("cup_id", "command_cup")))
@@ -230,6 +342,12 @@ func _start_championship(request: Dictionary, difficulty: String, profile_data: 
 	if definition.is_empty():
 		championship_id = "command_cup"
 		definition = GameDatabase.get_championship(championship_id)
+	var stats_value: Variant = profile_data.get("stats", {})
+	var profile_stats: Dictionary = stats_value if stats_value is Dictionary else {}
+	var access := GameDatabase.championship_access(championship_id, profile_stats, {})
+	if not bool(access.get("available", false)):
+		return false
+
 	var tracks: Array = Array(definition.get("track_ids", GRAND_PRIX_TRACKS)).duplicate()
 	var mixed_divisions := bool(definition.get("mixed_divisions", false))
 	var grid_policy := "mixed" if mixed_divisions else "division"
@@ -244,6 +362,7 @@ func _start_championship(request: Dictionary, difficulty: String, profile_data: 
 		var entrant: Dictionary = entrants[entrant_index]
 		entrant["points"] = 0
 		entrants[entrant_index] = entrant
+	var championship_snapshot := championship.duplicate(true)
 	championship = {
 		"active": true,
 		"abandoned": false,
@@ -262,13 +381,17 @@ func _start_championship(request: Dictionary, difficulty: String, profile_data: 
 		"entrants": entrants,
 		"champion_id": "",
 	}
-	_persist_championship()
+	if not _persist_championship():
+		championship = championship_snapshot
+		return false
 	championship_changed.emit(championship.duplicate(true))
 
+	return true
 
-func _apply_championship_result(result: Dictionary) -> void:
+func _apply_championship_result(result: Dictionary) -> bool:
 	if championship.is_empty():
-		_start_championship(config, String(config.get("difficulty", "pilot")))
+		if not _start_championship(config, String(config.get("difficulty", "pilot"))):
+			return false
 	var entrants: Array = championship.get("entrants", [])
 	var classification: Array = result.get("classification", [])
 	if classification.is_empty():
@@ -306,14 +429,14 @@ func _apply_championship_result(result: Dictionary) -> void:
 	if int(championship["round_index"]) >= _championship_tracks().size():
 		championship["active"] = false
 		var sorted_entrants := entrants.duplicate(true)
-		sorted_entrants.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.get("points", 0)) > int(b.get("points", 0)))
+		sorted_entrants.sort_custom(Callable(self, "_championship_entry_precedes"))
 		var champion_id := ""
 		if not sorted_entrants.is_empty():
 			var champion: Dictionary = sorted_entrants[0]
 			champion_id = String(champion.get("id", ""))
 		championship["champion_id"] = champion_id
 		result["championship_won"] = champion_id == "player"
-	championship_changed.emit(championship.duplicate(true))
+	return true
 
 
 func _apply_record_contract(result: Dictionary, save_system: Node) -> void:
@@ -497,14 +620,17 @@ func _championship_entry_precedes(a: Dictionary, b: Dictionary) -> bool:
 	return a_points > b_points
 
 
-func _persist_championship() -> void:
+func _persist_championship() -> bool:
 	var save_system := _save_system()
 	if save_system == null:
-		return
-	if bool(championship.get("active", false)) and save_system.has_method(&"save_championship"):
-		save_system.call(&"save_championship", championship.duplicate(true))
-	elif save_system.has_method(&"clear_championship"):
-		save_system.call(&"clear_championship")
+		return not is_inside_tree()
+	if bool(championship.get("active", false)):
+		if not save_system.has_method(&"save_championship"):
+			return false
+		return bool(save_system.call(&"save_championship", championship.duplicate(true)))
+	if not save_system.has_method(&"clear_championship"):
+		return false
+	return bool(save_system.call(&"clear_championship"))
 
 
 func _save_system() -> Node:

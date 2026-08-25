@@ -208,10 +208,11 @@ func _test_asset_manifest_contract() -> void:
 		"module_utility.png", "track_thermal.png", "track_cryo.png", "garage_bay.png",
 		"prop_industrial.png", "prop_biome.png", "prop_urban_wet.png", "race_ceremonial.png",
 		"locomotion_antigrav.png", "intergalactic_crown_race.png", "garage_crew.png",
+		"mecha_detail_panels.png", "track_infrastructure_detail.png",
 	]
 	var assets: Array = manifest.get("assets", [])
 	var seen: Dictionary = {}
-	_expect(assets.size() == 19, "le manifest OpenAI doit décrire 19 assets")
+	_expect(assets.size() == 21, "le manifest OpenAI doit décrire 21 assets")
 	for asset_value: Variant in assets:
 		if not asset_value is Dictionary:
 			_expect(false, "entrée du manifest OpenAI invalide")
@@ -285,14 +286,25 @@ func _test_division_grids() -> void:
 	_expect(String(mixed_mismatch.get("ruleset_id", "")) == "open_mixed", "une grille mixte ne doit jamais conserver un règlement dédié")
 	var division_mismatch: Dictionary = service.configure({"mode": "quick", "grid_policy": "division", "ruleset_id": "open_mixed", "seed": 23})
 	_expect(String(division_mismatch.get("ruleset_id", "")) == "division_locked", "une grille dédiée ne doit jamais conserver un règlement Open")
-	var cup: Dictionary = service.configure({"mode": "grand_prix", "championship_id": "nexus_open", "difficulty": "ace", "new_championship": true, "racer_count": 2, "seed": 91})
+	var open_request := {"mode": "grand_prix", "championship_id": "nexus_open", "difficulty": "ace", "new_championship": true, "racer_count": 2, "seed": 91}
+	var locked_cup: Dictionary = service.configure(open_request)
+	_expect(locked_cup.is_empty() and service.championship.is_empty(), "le Grand Open doit rester verrouillé sans titre")
+	var titled_save: SaveSystemService = _new_test_save("division_open_access")
+	titled_save.profile = titled_save._default_profile()
+	var titled_stats: Dictionary = titled_save.profile.get("stats", {})
+	titled_stats["championships"] = 1
+	titled_save.profile["stats"] = titled_stats
+	service._save_system_override = titled_save
+	var cup: Dictionary = service.configure(open_request)
 	_expect(String(cup.get("championship_id", "")) == "nexus_open", "le Grand Open doit être sélectionnable")
 	_expect(String(cup.get("grid_policy", "")) == "mixed" and _roster_divisions(cup).size() >= 3, "le Grand Open doit conserver sa grille interdivision")
 	_expect(Array(service.championship.get("tracks", [])).size() == 8, "le Grand Open doit parcourir les 8 circuits")
 	var resumed_cup: Dictionary = service.configure({"mode": "grand_prix", "championship_id": "nexus_open", "difficulty": "rookie", "new_championship": false})
 	_expect(String(resumed_cup.get("difficulty", "")) == "ace", "la reprise doit conserver la difficulté homologuée du championnat")
-	service.free()
 	_expect(int(cup.get("racer_count", 0)) == 8 and Array(cup.get("roster", [])).size() == 8, "un GP doit toujours homologuer et lancer 8 concurrents")
+	service.free()
+	_cleanup_test_storage(titled_save)
+	titled_save.free()
 
 
 func _test_modular_contract() -> void:

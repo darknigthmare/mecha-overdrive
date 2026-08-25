@@ -85,6 +85,19 @@ Le key art réserve volontairement une zone sombre à gauche pour le récit et p
 
 Les deux prompts complets, empreintes SHA-256, dimensions et usages sont archivés dans le manifeste schema 2, qui décrit désormais dix-neuf assets. Les contraintes de génération interdisent texte, logo, UI, watermark et reprise de design de franchise. Les personnages et véhicules sont des créations originales de MECHA OVERDRIVE ; l’inspiration générale du paddock spatial n’emploie aucun personnage, costume ou accessoire tiers.
 
+## Détails de production méchas et circuits — édition Godot 2.5.0
+
+Deux textures originales supplémentaires ont été créées le 25 août 2026 avec le générateur d’images OpenAI intégré, en mode nouvelle génération raster et sans image de référence :
+
+| Fichier | Identifiant de génération | Dimensions | Usage runtime |
+|---|---|---:|---|
+| `mecha_detail_panels.png` | `exec-030beee4-1803-4c03-b785-4bb5f149d15d` | 1254 × 1254 | panneaux secondaires, évents, trappes et micro-détails des dix architectures |
+| `track_infrastructure_detail.png` | `exec-8f153011-8e63-4ef7-bcd3-7cdcbc7d9c86` | 1254 × 1254 | portiques, tribunes, tours de maintenance, barrières et bâtiments de service |
+
+Les deux images sont des textures carrées à densité uniforme, conçues pour rester lisibles sur des primitives procédurales et pour se répéter sans imposer de silhouette. Les contraintes excluent texte, logo, marque, watermark, personnage, véhicule et langage visuel reconnaissable de franchise.
+
+Le manifeste schema 2 archive les prompts finaux complets, les identifiants, les dimensions, les usages et les SHA-256 vérifiés. Il décrit désormais vingt-et-un assets runtime ; les copies projet sont stockées sous `godot/assets/textures/openai/` et les originaux restent dans le dossier de générations Codex associé à cette exécution.
+
 ### Statut
 
 Les copies runtime sont versionnées sous `godot/assets/textures/openai/`. Les originaux restent dans le dossier de générations Codex. Une vérification juridique séparée des noms commerciaux reste recommandée avant une diffusion mondiale.

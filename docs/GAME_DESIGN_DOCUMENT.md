@@ -1,6 +1,6 @@
 # Game Design Document — MECHA OVERDRIVE: Circuit Zero
 
-## Contrat de jeu actuel — Godot 2.4.0
+## Contrat de jeu actuel — Godot 2.5.0
 
 Cette section est la spécification autoritative de l’édition Godot. Elle remplace, pour cette édition, les quantités et limites de la baseline Canvas/PWA 1.0 archivée plus bas.
 
@@ -74,7 +74,7 @@ Canopée et Glacier utilisent des courbes continues sans cassure de ruban. Les d
 
 Tous les châssis fournissent une vue TPS et une vue cockpit/FPS avec ancres dédiées. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé par châssis. La vue interne active le composite cockpit et masque les pièces extérieures obstructives.
 
-La bibliothèque de matériaux couvre l’armure légère et lourde, les trois familles de modules, les surfaces standard, thermiques et cryogéniques, le cockpit, les panneaux d’environnement et la baie du garage. Dix-neuf assets raster originaux OpenAI incluent désormais le key art intergalactique et la texture de l’équipe mécano. Les fichiers, identifiants de génération, prompts, dimensions, empreintes SHA-256 et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
+La bibliothèque de matériaux couvre l’armure légère et lourde, les micro-panneaux de détail, les trois familles de modules, les surfaces standard, thermiques et cryogéniques, le cockpit, les infrastructures et la baie du garage. Vingt-et-un assets raster originaux OpenAI incluent le key art intergalactique, l’équipe mécano et deux surfaces de production dédiées aux méchas et aux décors. Les fichiers, identifiants de génération, prompts, dimensions, empreintes SHA-256 et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
 
 ### Sauvegarde et continuité
 
@@ -82,7 +82,7 @@ Le profil Godot utilise `SAVE_VERSION = 5`. Il conserve les chargements, locomot
 
 ## Annexe — Spécification historique du compagnon web 1.0
 
-Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.4.0 ci-dessus.
+Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.5.0 ci-dessus.
 
 ## 1. Vision
 
@@ -125,7 +125,7 @@ Une course sur le circuit choisi, de un à cinq tours, contre sept rivaux. Les t
 
 ### Grand Prix Circuit Zero
 
-Championnat de quatre manches. L’ordre des circuits commence par la piste choisie puis suit la rotation complète. Le même plateau de pilotes et de châssis est conservé. Les points attribués sont : **12, 9, 7, 5, 4, 3, 2, 1**. Le classement cumulé détermine le champion et peut donner une prime supplémentaire.
+Les cinq Coupes dédiées disputent quatre manches et le Grand Open en dispute huit, dans l’ordre de circuits défini par leur catalogue. Chaque championnat conserve le même plateau de huit pilotes et châssis. Les points attribués aux concurrents classés sont **15, 12, 10, 8, 6, 5, 4, 3** ; les DNF et éliminés marquent zéro point. Le classement cumulé détermine le champion.
 
 ### Contre-la-montre
 

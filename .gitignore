@@ -13,6 +13,11 @@ dist/
 .vercel/
 .tmp/
 .patch-probe*
+.tmp-*.patch
+.audit/
+.audit-*
+.tools/
+*.rej
 
 # Godot-generated state and export artifacts
 godot/.godot/
