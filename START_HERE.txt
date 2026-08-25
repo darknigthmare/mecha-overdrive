@@ -17,10 +17,15 @@ MECHA OVERDRIVE — CIRCUIT ZERO 2.5.1
 - QA navigateur FPS finale : PASS — cockpit Raptor stable à 105 km/h,
   sensorium Mantis bureau/mobile et console e227 sans erreur ni échec réseau.
 - Les preuves finales sont sous `docs/audits/assets/2.5.1-after/`.
-- Publication distante, CI, release v2.5.1 et Vercel : EN ATTENTE.
-- Aucun commit, tag, déploiement ou alias public 2.5.1 n’est revendiqué ici.
+- Publication distante, CI, release v2.5.1 et Vercel : PASS.
+- Commit public : 8ed5b72a55d5ed328a375b7d1c0d0bd2d987c21d.
+- GitHub Actions Quality : PASS — run 32894483650.
+- Release publique :
+  https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.5.1
+- Vercel production READY : dpl_4YSQLpQa1c3MRZzVu7qiauYc1Exr.
+- Build public 2.5.1/e227 : 9/9 artefacts identiques ; canvas et console PASS.
 - Publication historique 2.5.0 conservée dans `docs/QA_REPORT.md`.
-- Jeu public historique 2.5.0 :
+- Jeu public 2.5.1 :
   https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
 
 LANCER LES SOURCES 2.5.1 AVEC GODOT

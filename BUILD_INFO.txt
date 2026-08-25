@@ -45,10 +45,15 @@ VALIDATION LOCALE FINALE 2.5.1 — PASS
 - Preuves : `desktop-biped-cockpit-final.png`, `desktop-mantis-sensorium-final.png`,
   `mobile-mantis-sensorium-final.png` et `console-final.json`
 
-STATUT CANDIDAT 2.5.1
+STATUT PUBLIÉ 2.5.1
 - Validation locale finale : PASS
-- Publication distante, CI, release v2.5.1 et Vercel : EN ATTENTE
-- Aucun commit, tag, déploiement ou alias 2.5.1 n’est revendiqué ici
+- Commit public : 8ed5b72a55d5ed328a375b7d1c0d0bd2d987c21d
+- GitHub Actions Quality : PASS — run 32894483650
+- Release : https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.5.1
+- Vercel production READY : dpl_4YSQLpQa1c3MRZzVu7qiauYc1Exr
+- Jeu public : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
+- Build public : version 2.5.1, source e2279876… et 9/9 artefacts identiques
+- Smoke public : canvas 1440 × 900 actif, console et scan Vercel sans erreur
 
 HISTORIQUE DE PUBLICATION 2.5.0
 - Sources, neuf suites, agrégat Node et export Web stampé : PASS local

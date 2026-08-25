@@ -4,7 +4,7 @@ Date de validation locale : 25 août 2026
 
 Édition principale : sources Godot 4.7.2, renderer GL Compatibility
 
-Décision locale : **GO local sur l’empreinte post-revue : 10/10 suites Godot, `npm run qa`, export/stamp 9/9 et QA navigateur FPS finale sont PASS. La publication distante 2.5.1 reste en attente.**
+Décision de release : **GO local et distant sur l’empreinte post-revue : 10/10 suites Godot, `npm run qa`, export/stamp 9/9, QA navigateur FPS et publication publique sont PASS.**
 
 ## Périmètre livré dans les sources
 
@@ -36,7 +36,7 @@ Décision locale : **GO local sur l’empreinte post-revue : 10/10 suites Godot,
 | Export Web mono-thread | PASS — version 2.5.1, source synchronisée et 9/9 artefacts attestés |
 | QA navigateur FPS finale | PASS — cockpit Raptor à 105 km/h, sensorium Mantis bureau/mobile et console e227 propre |
 
-La passe finale est sans échec. `narrative_progression_test.gd` émet quatre warnings intentionnels « Impossible d’ouvrir le fichier temporaire » pour exercer le rollback, puis termine PASS/code 0. Aucune ligne de cette section ne constitue une preuve de publication distante.
+La passe finale est sans échec. `narrative_progression_test.gd` émet quatre warnings intentionnels « Impossible d’ouvrir le fichier temporaire » pour exercer le rollback, puis termine PASS/code 0. Les preuves distantes sont consignées dans la qualification de release ci-dessous.
 
 ### Baseline publiée 2.5.0 — historique conservé
 
@@ -132,17 +132,19 @@ Les captures de [`audits/2026-08-25-gameplay-ux-audit.md`](audits/2026-08-25-gam
 
 - **Sources 2.5.1 : GO local sur `e2279876…` — 10/10 suites Godot, `npm run qa` et export/stamp 9/9 PASS.**
 - **QA Chrome FPS finale 2.5.1 : PASS sur les preuves e227 bureau/mobile et console.**
-- **Publication distante 2.5.1 : EN ATTENTE — aucun commit, tag, déploiement ou alias n’est revendiqué.**
+- **Publication distante 2.5.1 : PASS — commit, CI, release GitHub, Vercel production et artefacts publics vérifiés.**
 
-### Candidat distant 2.5.1
+### Publication distante 2.5.1
 
 | Gate distante 2.5.1 | Statut |
 |---|---|
-| Commit de release | EN ATTENTE — aucun commit 2.5.1 revendiqué |
-| GitHub Actions | EN ATTENTE — aucun run distant 2.5.1 revendiqué |
-| Tag/release GitHub | EN ATTENTE — aucune release 2.5.1 revendiquée |
-| Déploiement Vercel | EN ATTENTE — aucun déploiement 2.5.1 revendiqué |
-| Alias public | EN ATTENTE — aucune version publique 2.5.1 revendiquée |
+| Commit de release | [`8ed5b72`](https://github.com/darknigthmare/mecha-overdrive/commit/8ed5b72a55d5ed328a375b7d1c0d0bd2d987c21d) poussé sur `main` |
+| GitHub Actions | [Quality `32894483650`](https://github.com/darknigthmare/mecha-overdrive/actions/runs/32894483650) : PASS, dix suites Godot incluses |
+| Tag/release GitHub | [`v2.5.1`](https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.5.1) publique, cible `8ed5b72`, ni draft ni prerelease |
+| Déploiement Vercel | `dpl_4YSQLpQa1c3MRZzVu7qiauYc1Exr` ; production `READY` ; scan d’erreurs de la dernière heure vide |
+| Alias public | [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive) : HTTP 200 et canvas 1440 × 900 actif |
+| Build public | Version 2.5.1, source `e2279876…` et 9/9 tailles/empreintes strictement identiques au `build.json` local |
+| Smoke navigateur public | PASS : six infos Godot/WebGL attendues, 0 exception, warning/erreur ou requête échouée |
 
 ### Historique de publication 2.5.0
 
