@@ -1,10 +1,20 @@
-# Rapport QA — MECHA OVERDRIVE 2.5.1
+# Rapport QA — MECHA OVERDRIVE 2.6.0
 
-Date de validation locale : 25 août 2026
+Date de validation locale : 28 août 2026
 
 Édition principale : sources Godot 4.7.2, renderer GL Compatibility
 
-Décision de release : **GO local et distant sur l’empreinte post-revue : 10/10 suites Godot, `npm run qa`, export/stamp 9/9, QA navigateur FPS et publication publique sont PASS.**
+Décision de release 2.6.0 : **GO local — 11/11 suites Godot, `npm run qa` et export/stamp 9/9 sont PASS. Publication distante à qualifier après déploiement.**
+
+## Candidat physique 2.6.0
+
+- volumes OBB 3D dimensionnés pour les 500 configurations ;
+- route et barrières en corps statiques sur les huit circuits ;
+- trois zones dangereuses physiques, visibles et lane-aware par tracé ;
+- anticipation IA et alerte HUD de dégagement latéral ;
+- caméra TPS protégée par raycast, cockpit/sensorium FPS inchangés ;
+- suite `physics_hazard_test.gd` PASS et intégrée à la CI ;
+- empreinte source exportée : `5d69b4c31a7b889c2a809933b4774ebd9a869be3446e443e6d42be08a5005e3c`.
 
 ## Périmètre livré dans les sources
 

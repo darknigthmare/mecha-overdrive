@@ -39,6 +39,7 @@ const files = {
   mechaAnimationTest: 'godot/tests/mecha_animation_test.gd',
   trackSceneryProductionTest: 'godot/tests/track_scenery_production_test.gd',
   fpsPresentationTest: 'godot/tests/fps_presentation_test.gd',
+  physicsHazardTest: 'godot/tests/physics_hazard_test.gd',
 };
 
 const failures = [];
@@ -221,6 +222,7 @@ check(source.mechaDetailTest.includes('MECHA DETAIL PRODUCTION: PASS') && source
 check(source.mechaAnimationTest.includes('MECHA ANIMATION: PASS') && source.mechaAnimationTest.includes('_test_polygon_budget'), 'production: test animation/polygones absent');
 check(source.trackSceneryProductionTest.includes('MECHA TRACK SCENERY PRODUCTION: PASS') && source.trackSceneryProductionTest.includes('track_infrastructure_detail.png'), 'production: test décors/infrastructure absent');
 check(source.fpsPresentationTest.includes('MECHA FPS PRESENTATION: PASS') && source.fpsPresentationTest.includes('sensor_overlay_visible'), 'FPS: test dédié cockpit/sensorium absent');
+check(source.physicsHazardTest.includes('MECHA PHYSICS + HAZARDS: PASS') && source.physicsHazardTest.includes('500 volumes'), 'physique: test dédié collisions 3D et dangers par voie absent');
 check(source.trackSceneryProductionTest.includes('_assert_trackside_clearance') && source.trackSceneryProductionTest.includes('_test_budget_guardrails'), 'production: garde-fous clearance/budget décors absents');
 check(source.project.includes('SaveSystem="*res://scripts/systems/save_system.gd"'), 'project: autoload SaveSystem absent');
 check(source.project.includes('GameSession="*res://scripts/systems/game_session.gd"'), 'project: autoload GameSession absent');

@@ -7,6 +7,7 @@ extends RefCounted
 ## `race_active`, `grip`, `curvature`, `hazard`, and `speed_multiplier`.
 
 const TrackSafetyType := preload("res://scripts/world/track_safety.gd")
+const TrackHazardSystemType := preload("res://scripts/world/track_hazard_system.gd")
 
 const BASE_TOP_SPEED := 56.0
 const BASE_ACCELERATION := 25.0
@@ -41,6 +42,7 @@ var total_laps := 3
 var grid_index := 0
 var vehicle_width := 3.5
 var vehicle_length := 4.0
+var vehicle_height := 3.5
 var lane_limit := MAX_LANE
 var offroad_lane := 0.82
 var distance := 0.0
@@ -115,6 +117,8 @@ func configure(spec: Dictionary) -> RacerState:
 	var footprint := TrackSafetyType.vehicle_footprint(chassis_id, locomotion)
 	vehicle_width = footprint.x
 	vehicle_length = footprint.y
+	var collision_size := TrackSafetyType.vehicle_collision_size(chassis_id, locomotion)
+	vehicle_height = collision_size.y
 	lane_limit = minf(MAX_LANE, TrackSafetyType.safe_lane_limit(track_width, vehicle_width))
 	offroad_lane = minf(lane_limit - 0.04, TrackSafetyType.offroad_lane_threshold(track_width, vehicle_width))
 	var physics: Dictionary = chassis.get("physics", {})
@@ -193,32 +197,33 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 	var drifting := bool(controls.get("drift", false)) and speed > top_speed * 0.25
 	var grip := clampf(float(context.get("grip", 1.0)), 0.35, 1.35)
 	var hazard_value: Variant = context.get("hazard", "")
+	var hazard_intensity := clampf(float(context.get("hazard_intensity", 1.0 if not String(hazard_value).is_empty() else 0.0)), 0.0, 1.0)
 	var curvature := clampf(float(context.get("curvature", 0.0)), -1.0, 1.0)
 	var speed_multiplier := clampf(float(context.get("speed_multiplier", 1.0)), 0.25, 1.75)
-	var hazard_drag := _hazard_drag(hazard_value)
+	var hazard_drag := _hazard_drag(hazard_value) * hazard_intensity
 	if chassis_id == "centurion" and String(hazard_value) in ["debris", "gravity"]:
 		grip = maxf(grip, 0.98)
 	# Every authored circuit hazard changes the deterministic vehicle model.
 	match String(hazard_value):
 		"mud":
-			grip *= 0.82
+			grip *= lerpf(1.0, 0.82, hazard_intensity)
 		"spores":
-			grip *= 0.92
-			heat = minf(1.0, heat + dt * 0.025)
+			grip *= lerpf(1.0, 0.92, hazard_intensity)
+			heat = minf(1.0, heat + dt * 0.025 * hazard_intensity)
 		"rain":
-			grip *= 0.78
+			grip *= lerpf(1.0, 0.78, hazard_intensity)
 		"crosswind":
-			lane_velocity += sin(distance * 0.055 + seed * 0.13) * dt * 0.78
+			lane_velocity += sin(distance * 0.055 + seed * 0.13) * dt * 0.78 * hazard_intensity
 		"current":
-			lane_velocity += sin(distance * 0.041 + seed * 0.17) * dt * 1.05
+			lane_velocity += sin(distance * 0.041 + seed * 0.17) * dt * 1.05 * hazard_intensity
 		"pressure":
-			throttle *= 0.88
+			throttle *= lerpf(1.0, 0.88, hazard_intensity)
 		"lava":
-			heat = minf(1.0, heat + dt * 0.22)
-			armor = maxf(0.0, armor - dt * 1.5)
+			heat = minf(1.0, heat + dt * 0.22 * hazard_intensity)
+			armor = maxf(0.0, armor - dt * 1.5 * hazard_intensity)
 		"eruption":
-			heat = minf(1.0, heat + dt * 0.14)
-			_impact_velocity += sin(distance * 0.09 + seed) * dt * 0.32
+			heat = minf(1.0, heat + dt * 0.14 * hazard_intensity)
+			_impact_velocity += sin(distance * 0.09 + seed) * dt * 0.32 * hazard_intensity
 	if _emp_time > 0.0:
 		grip *= 0.55
 		throttle *= 0.72
@@ -300,15 +305,18 @@ func ai_controls(context: Dictionary) -> Dictionary:
 	var wave_amplitude := maxf(0.018, (0.17 - skill * 0.10) * float(personality.get("line_noise", 1.0)))
 	target_lane += sin(distance * 0.0105 + seed * 0.731) * wave_amplitude
 
+	var ai_lane_limit := maxf(0.46, lane_limit - 0.05)
 	var hazard_now := _hazard_drag(context.get("hazard", ""))
 	var hazard_ahead := _hazard_drag(context.get("hazard_ahead", ""))
 	var hazard_far := _hazard_drag(context.get("hazard_far", ""))
 	var hazard_load := maxf(hazard_now, maxf(hazard_ahead * 0.88, hazard_far * 0.62))
 	if hazard_ahead > 0.18 or hazard_far > 0.28:
-		var escape_side := -1.0 if posmod(seed, 2) == 0 else 1.0
-		target_lane += escape_side * minf(0.34, hazard_load * (0.30 + ai_precision * 0.18))
+		var avoidance_sample: Dictionary = context.get("hazard_sample_ahead", {})
+		if hazard_ahead <= 0.18:
+			avoidance_sample = context.get("hazard_sample_far", {})
+		var safe_lane := TrackHazardSystemType.avoidance_target(avoidance_sample, lane, ai_lane_limit, seed)
+		target_lane = lerpf(target_lane, safe_lane, clampf(0.58 + ai_precision * 0.26, 0.58, 0.84))
 
-	var ai_lane_limit := maxf(0.46, lane_limit - 0.05)
 	var traffic := _traffic_ahead(context)
 	if bool(traffic.get("found", false)):
 		var traffic_gap := float(traffic.get("gap", 999.0))
@@ -647,6 +655,7 @@ func snapshot() -> Dictionary:
 		"vehicle_width": vehicle_width,
 		"vehicle_length": vehicle_length,
 		"lane_limit": lane_limit,
+		"vehicle_height": vehicle_height,
 		"speed": speed,
 		"speed_ratio": clampf(speed / maxf(1.0, top_speed), 0.0, 1.23),
 		"lap": lap,

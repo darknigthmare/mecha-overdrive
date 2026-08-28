@@ -3,6 +3,23 @@
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
 
+## [2.6.0] — 2026-08-28
+
+### Ajouté
+
+- volumes de collision 3D orientés pour les 500 configurations locomotrices ;
+- surfaces de piste et barrières physiques statiques sur les huit circuits ;
+- trois zones dangereuses visibles et sensibles à la voie sur chaque tracé ;
+- anticipation IA vers une voie sûre et alerte HUD dédiée ;
+- protection de la caméra TPS par raycast contre la route et les barrières ;
+- suite de régression physique couvrant volumes, contacts, circuits, dangers et masque caméra.
+
+### Corrigé
+
+- les contacts entre concurrents ne reposent plus sur une enveloppe plane approximative ;
+- les hazards ne pénalisent plus les pilotes engagés dans une voie adjacente libre.
+
+
 ## [2.5.1] — 2026-08-25
 
 ### Ajouté

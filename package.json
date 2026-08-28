@@ -1,8 +1,8 @@
 {
   "name": "mecha-overdrive-circuit-zero",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "private": true,
-  "description": "MECHA OVERDRIVE 2.5.1 : cockpits profilés, sensoriums distants et Grand Tour intergalactique sous Godot.",
+  "description": "MECHA OVERDRIVE 2.6.0 : collisions 3D, dangers par voie et Grand Tour intergalactique sous Godot.",
   "type": "module",
   "scripts": {
     "start": "node tools/server.mjs",

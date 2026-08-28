@@ -28,6 +28,18 @@ const FAMILY_HALF_EXTENTS := {
 	"orb": Vector2(1.80, 1.60),
 	"centurion": Vector2(1.75, 2.80),
 }
+const FAMILY_HEIGHTS := {
+	"biped": 5.8,
+	"tripod": 4.8,
+	"quadruped": 3.4,
+	"hexapod": 2.9,
+	"octopod": 3.0,
+	"hover": 2.4,
+	"tracked": 2.8,
+	"monowheel": 4.2,
+	"orb": 3.4,
+	"centurion": 3.2,
+}
 
 
 static func minimum_road_width() -> float:
@@ -81,6 +93,16 @@ static func vehicle_footprint(chassis_id: String, configuration: Dictionary) -> 
 		clampf(half_width * 2.0, 2.20, MAX_HOMOLOGATED_WIDTH),
 		clampf(half_length * 2.0, 2.60, MAX_HOMOLOGATED_LENGTH)
 	)
+static func vehicle_collision_size(chassis_id: String, configuration: Dictionary) -> Vector3:
+	var footprint := vehicle_footprint(chassis_id, configuration)
+	var family_id := chassis_id if FAMILY_HEIGHTS.has(chassis_id) else "biped"
+	var visual: Dictionary = configuration.get("visual", {}) if configuration.get("visual", {}) is Dictionary else {}
+	var height_scale := clampf(float(visual.get("height", 1.0)), 0.75, 1.20)
+	var height := float(FAMILY_HEIGHTS[family_id]) * height_scale
+	var drive_id := String(configuration.get("drive_id", visual.get("drive_id", "mecha_legs")))
+	if drive_id in ["wheels", "treads", "hover_skids", "sphere_drive", "mono_gyro"]:
+		height *= 0.92
+	return Vector3(footprint.x, clampf(height, 1.6, 7.0), footprint.y)
 
 
 static func safe_lane_limit(track_width: float, vehicle_width: float) -> float:

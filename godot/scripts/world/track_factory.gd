@@ -6,6 +6,8 @@ extends RefCounted
 ## as metadata so the race simulation remains independent from the visuals.
 
 const TrackSafetyType := preload("res://scripts/world/track_safety.gd")
+const RaceCollisionSystemType := preload("res://scripts/race/race_collision_system.gd")
+const TrackHazardSystemType := preload("res://scripts/world/track_hazard_system.gd")
 
 const DEFAULT_WIDTH := 35.0
 const SAMPLE_STEP := 4.0
@@ -32,6 +34,7 @@ static func build(spec: Dictionary) -> Node3D:
 
 	_build_environment(root, effective_spec)
 	_build_road(root, curve, length, width, effective_spec)
+	_build_hazard_zones(root, curve, length, width, effective_spec)
 	_build_scenery(root, curve, length, width, effective_spec)
 	_build_start_finish_complex(root, curve, length, width, effective_spec)
 	_build_gameplay_markers(root, curve, length, width, effective_spec)
@@ -137,6 +140,7 @@ static func _build_road(root: Node3D, curve: Curve3D, length: float, width: floa
 	road_material.uv1_scale.y = float(tuning.get("road_repeat", 0.055))
 	road.material_override = road_material
 	root.add_child(road)
+	_build_road_surface_collision(root, road_mesh)
 
 	# Slightly wider shoulder is rendered first and lowered to avoid z-fighting.
 	var shoulder := MeshInstance3D.new()
@@ -157,6 +161,124 @@ static func _build_road(root: Node3D, curve: Curve3D, length: float, width: floa
 		rail.mesh = _ribbon_mesh(curve, length, width * 0.5 * side, 0.22, 0.1)
 		rail.material_override = _emissive_material(glow_color, 2.8)
 		root.add_child(rail)
+	_build_barrier_collision(root, curve, length, width)
+
+
+static func _build_road_surface_collision(root: Node3D, road_mesh: ArrayMesh) -> void:
+	var body := StaticBody3D.new()
+	body.name = "RoadCollisionBody"
+	body.collision_layer = RaceCollisionSystemType.TRACK_SURFACE_LAYER
+	body.collision_mask = 0
+	var collision := CollisionShape3D.new()
+	collision.name = "RoadCollisionShape"
+	var shape := ConcavePolygonShape3D.new()
+	shape.backface_collision = true
+	shape.set_faces(road_mesh.get_faces())
+	collision.shape = shape
+	body.add_child(collision)
+	body.set_meta("collision_kind", "static_road_trimesh")
+	body.set_meta("triangle_count", int(shape.get_faces().size() / 3.0))
+	root.add_child(body)
+
+
+static func _build_barrier_collision(root: Node3D, curve: Curve3D, length: float, width: float) -> void:
+	var faces := PackedVector3Array()
+	var segment_count := maxi(32, int(ceil(length / 8.0)))
+	var lateral_offset := width * 0.5 + 0.34
+	var barrier_height := 2.45
+	for index in range(segment_count):
+		var d0 := length * float(index) / float(segment_count)
+		var d1 := length * float(index + 1) / float(segment_count)
+		var p0 := curve.sample_baked_with_rotation(d0, true, true)
+		var p1 := curve.sample_baked_with_rotation(fposmod(d1, length), true, true)
+		for side: float in [-1.0, 1.0]:
+			var bottom0 := p0.origin + p0.basis.x.normalized() * lateral_offset * side
+			var bottom1 := p1.origin + p1.basis.x.normalized() * lateral_offset * side
+			var top0 := bottom0 + p0.basis.y.normalized() * barrier_height
+			var top1 := bottom1 + p1.basis.y.normalized() * barrier_height
+			faces.append_array(PackedVector3Array([
+				bottom0, top0, top1,
+				bottom0, top1, bottom1,
+			]))
+	var body := StaticBody3D.new()
+	body.name = "TrackBarrierBody"
+	body.collision_layer = RaceCollisionSystemType.TRACK_BARRIER_LAYER
+	body.collision_mask = 0
+	var collision := CollisionShape3D.new()
+	collision.name = "TrackBarrierShape"
+	var shape := ConcavePolygonShape3D.new()
+	shape.backface_collision = true
+	shape.set_faces(faces)
+	collision.shape = shape
+	body.add_child(collision)
+	body.set_meta("collision_kind", "static_barrier_trimesh")
+	body.set_meta("segment_count", segment_count * 2)
+	root.add_child(body)
+
+
+static func _build_hazard_zones(root: Node3D, curve: Curve3D, length: float, width: float, spec: Dictionary) -> void:
+	var zones := TrackHazardSystemType.zones(spec, length)
+	root.set_meta("hazard_zones", zones)
+	var holder := Node3D.new()
+	holder.name = "HazardZones3D"
+	holder.set_meta("zone_count", zones.size())
+	holder.set_meta("collision_layer", RaceCollisionSystemType.HAZARD_LAYER)
+	root.add_child(holder)
+	var authored_segments := 0
+	for zone: Dictionary in zones:
+		var start_distance := float(zone.get("start_distance", 0.0))
+		var zone_length := maxf(1.0, float(zone.get("length", 1.0)))
+		var segment_count := maxi(2, int(ceil(zone_length / 14.0)))
+		var lane_center := float(zone.get("lane_center", 0.0))
+		var lane_half_width := float(zone.get("lane_half_width", 0.28))
+		var zone_width := maxf(2.0, lane_half_width * 2.0 * width * TrackSafetyType.LANE_SCALE)
+		for segment in range(segment_count):
+			var segment_length := zone_length / float(segment_count)
+			var center_distance := start_distance + (float(segment) + 0.5) * segment_length
+			var pose := curve.sample_baked_with_rotation(fposmod(center_distance, length), true, true)
+			pose.origin += pose.basis.x.normalized() * lane_center * width * TrackSafetyType.LANE_SCALE
+			pose.origin += pose.basis.y.normalized() * 0.10
+			var area := Area3D.new()
+			area.name = "%s_%02d" % [String(zone.get("id", "hazard")), segment]
+			area.transform = pose
+			area.collision_layer = RaceCollisionSystemType.HAZARD_LAYER
+			area.collision_mask = RaceCollisionSystemType.VEHICLE_LAYER
+			area.monitoring = false
+			area.monitorable = true
+			area.set_meta("hazard_id", String(zone.get("hazard_id", "")))
+			area.set_meta("lane_center", lane_center)
+			area.set_meta("lane_half_width", lane_half_width)
+			area.set_meta("sector", int(zone.get("sector", 0)))
+			var collision := CollisionShape3D.new()
+			collision.name = "HazardCollisionShape"
+			var box := BoxShape3D.new()
+			box.size = Vector3(zone_width, 0.32, segment_length + 1.5)
+			collision.shape = box
+			area.add_child(collision)
+			var visual := MeshInstance3D.new()
+			visual.name = "HazardSurface"
+			var visual_box := BoxMesh.new()
+			visual_box.size = Vector3(zone_width, 0.045, segment_length + 1.5)
+			visual.mesh = visual_box
+			visual.material_override = _hazard_zone_material(Color(zone.get("color", Color("ffd45b"))))
+			visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			area.add_child(visual)
+			holder.add_child(area)
+			authored_segments += 1
+	holder.set_meta("segment_count", authored_segments)
+
+
+static func _hazard_zone_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	var transparent := color
+	transparent.a = 0.22
+	material.albedo_color = transparent
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = 1.7
+	return material
 
 
 static func _strip_mesh(curve: Curve3D, length: float, width: float, color: Color, y_offset: float) -> ArrayMesh:

@@ -11,6 +11,8 @@ signal retry_requested(config: Dictionary)
 
 const TrackFactoryType := preload("res://scripts/world/track_factory.gd")
 const TrackSafetyType := preload("res://scripts/world/track_safety.gd")
+const RaceCollisionSystemType := preload("res://scripts/race/race_collision_system.gd")
+const TrackHazardSystemType := preload("res://scripts/world/track_hazard_system.gd")
 const MechaFactoryType := preload("res://scripts/mecha/mecha_factory.gd")
 const RacerStateType := preload("res://scripts/race/racer_state.gd")
 const AudioDirectorType := preload("res://scripts/audio/audio_director.gd")
@@ -61,6 +63,8 @@ var _mobile_item_pending := false
 var _mobile_control_strengths: Dictionary[StringName, float] = {}
 var _next_elimination := ELIMINATION_START
 var _marker_cooldowns: Dictionary[String, float] = {}
+var _contact_cooldowns: Dictionary[String, float] = {}
+var _camera_collision_adjusted := false
 var _ai_item_cooldowns: Dictionary[String, float] = {}
 var _finish_order: Array[String] = []
 
@@ -197,13 +201,21 @@ func _step_simulation(delta: float) -> void:
 			continue
 		var context: Dictionary = base_context.duplicate(true)
 		var racer_distance := float(before.get("distance", 0.0))
+		var racer_lane := float(before.get("lane", 0.0))
 		var lookahead := clampf(18.0 + float(before.get("speed", 0.0)) * 0.82, 18.0, 66.0)
 		context["curvature"] = _curvature_at(racer_distance)
 		context["curvature_ahead"] = _curvature_at(racer_distance + lookahead)
 		context["curvature_far"] = _curvature_at(racer_distance + lookahead * 1.75)
-		context["hazard"] = _hazard_at(racer_distance)
-		context["hazard_ahead"] = _hazard_at(racer_distance + lookahead)
-		context["hazard_far"] = _hazard_at(racer_distance + lookahead * 1.75)
+		var hazard_sample := _hazard_sample(racer_distance, racer_lane)
+		var hazard_ahead := _hazard_sample(racer_distance + lookahead, racer_lane)
+		var hazard_far := _hazard_sample(racer_distance + lookahead * 1.75, racer_lane)
+		context["hazard_sample"] = hazard_sample
+		context["hazard_sample_ahead"] = hazard_ahead
+		context["hazard_sample_far"] = hazard_far
+		context["hazard"] = String(hazard_sample.get("active_hazard", ""))
+		context["hazard_ahead"] = String(hazard_ahead.get("active_hazard", ""))
+		context["hazard_far"] = String(hazard_far.get("active_hazard", ""))
+		context["hazard_intensity"] = float(hazard_sample.get("intensity", 0.0))
 		context["lookahead_distance"] = lookahead
 		context["position"] = _rank_in_snapshots(String(before.get("racer_id", "")), Array(base_context.get("racers", [])))
 		context["race_progress"] = clampf(racer_distance / maxf(1.0, _track_length * int(_config.get("laps", 3))), 0.0, 1.0)
@@ -315,6 +327,7 @@ func _should_ai_use_item(source: RefCounted, state: Dictionary, item_id: String)
 	var armor_ratio := float(state.get("armor_ratio", 1.0))
 	var speed_ratio := float(state.get("speed_ratio", 0.0))
 	var distance := float(state.get("distance", 0.0))
+	var lane := float(state.get("lane", 0.0))
 	var rank := _rank_for_racer(String(state.get("racer_id", "")))
 	var ai_style := String(state.get("ai_trait", "adaptive"))
 	var aggression := clampf(float(state.get("ai_aggression", 0.50)), 0.0, 1.0)
@@ -337,7 +350,7 @@ func _should_ai_use_item(source: RefCounted, state: Dictionary, item_id: String)
 		"overdrive":
 			var lookahead := clampf(20.0 + float(state.get("speed", 0.0)) * 0.72, 20.0, 58.0)
 			var on_straight := absf(_curvature_at(distance)) <= STRAIGHT_CURVATURE_LIMIT and absf(_curvature_at(distance + lookahead)) <= STRAIGHT_CURVATURE_LIMIT * 1.25
-			var safe_sector := _hazard_at(distance + lookahead).is_empty()
+			var safe_sector := _hazard_at(distance + lookahead, lane).is_empty()
 			var needs_energy := float(state.get("boost_energy", 0.0)) <= 0.72
 			var tactical_window := needs_energy or rank > 1 or progress > 0.90
 			return on_straight and safe_sector and speed_ratio >= 0.45 and float(state.get("heat_ratio", 0.0)) < (0.82 + aggression * 0.07) and tactical_window
@@ -509,27 +522,92 @@ func _process_marker_contact(racer: RefCounted, snapshot: Dictionary) -> void:
 
 
 func _resolve_close_contacts() -> void:
+	_sync_collision_transforms()
+	_update_contact_cooldowns(FIXED_STEP)
+	var contact_applied := false
 	for first_index in range(_racers.size()):
 		var first: RefCounted = _racers[first_index]
 		var a: Dictionary = first.call(&"snapshot")
-		if bool(a.get("dnf", false)) or bool(a.get("finished", false)) or bool(a.get("eliminated", false)):
+		if not _is_active_racer_state(a):
 			continue
 		for second_index in range(first_index + 1, _racers.size()):
 			var second: RefCounted = _racers[second_index]
 			var b: Dictionary = second.call(&"snapshot")
-			if bool(b.get("dnf", false)) or bool(b.get("finished", false)) or bool(b.get("eliminated", false)):
+			if not _is_active_racer_state(b):
 				continue
-			var contact_length := (maxf(1.0, float(a.get("vehicle_length", 4.0))) + maxf(1.0, float(b.get("vehicle_length", 4.0)))) * 0.5
-			var contact_width := (maxf(1.0, float(a.get("vehicle_width", 3.5))) + maxf(1.0, float(b.get("vehicle_width", 3.5)))) * 0.5
-			var physical_track_width := maxf(_track_width, maxf(float(a.get("track_width", _track_width)), float(b.get("track_width", _track_width))))
-			var lateral_gap := TrackSafetyType.lateral_gap_meters(float(a.get("lane", 0.0)), float(b.get("lane", 0.0)), physical_track_width)
-			if absf(float(a.get("distance", 0.0)) - float(b.get("distance", 0.0))) < contact_length and lateral_gap < contact_width:
-				var direction := -1.0 if float(a.get("lane", 0.0)) < float(b.get("lane", 0.0)) else 1.0
-				var first_strength := float(first.call(&"contact_damage_multiplier"))
-				var second_strength := float(second.call(&"contact_damage_multiplier"))
-				# Each chassis authors the damage and shove it deals to the rival.
-				first.call(&"apply_hit", 0.018 * second_strength, direction * 0.04 * second_strength)
-				second.call(&"apply_hit", 0.018 * first_strength, -direction * 0.04 * first_strength)
+			var first_id := String(a.get("racer_id", ""))
+			var second_id := String(b.get("racer_id", ""))
+			var pair_key := _contact_pair_key(first_id, second_id)
+			if float(_contact_cooldowns.get(pair_key, 0.0)) > 0.0:
+				continue
+			var first_visual: RacerVisual = _visuals.get(first_id)
+			var second_visual: RacerVisual = _visuals.get(second_id)
+			if first_visual == null or second_visual == null:
+				continue
+			var contact := RaceCollisionSystemType.contact_between(first_visual, second_visual)
+			if not bool(contact.get("colliding", false)):
+				continue
+
+			var middle_distance := (float(a.get("distance", 0.0)) + float(b.get("distance", 0.0))) * 0.5
+			var track_pose := TrackFactoryType.sample_pose(_track, middle_distance)
+			var side_axis := track_pose.basis.x.normalized()
+			var normal: Vector3 = contact.get("normal", side_axis)
+			var side_projection := normal.dot(side_axis)
+			var first_direction := -signf(side_projection)
+			if is_zero_approx(first_direction):
+				first_direction = -1.0 if float(a.get("lane", 0.0)) <= float(b.get("lane", 0.0)) else 1.0
+			var penetration := clampf(float(contact.get("penetration", 0.0)), 0.0, 4.0)
+			var relative_speed := absf(float(a.get("speed", 0.0)) - float(b.get("speed", 0.0)))
+			var base_damage := clampf(0.22 + relative_speed * 0.025 + penetration * 0.14, 0.22, 2.2)
+			var shove := clampf(0.16 + penetration * 0.08, 0.16, 0.48)
+			var first_strength := float(first.call(&"contact_damage_multiplier"))
+			var second_strength := float(second.call(&"contact_damage_multiplier"))
+			first.call(&"apply_hit", base_damage * second_strength, first_direction * shove * second_strength)
+			second.call(&"apply_hit", base_damage * first_strength, -first_direction * shove * first_strength)
+			first_visual.notify_impact(clampf(base_damage / 2.2, 0.18, 1.0), first_direction)
+			second_visual.notify_impact(clampf(base_damage / 2.2, 0.18, 1.0), -first_direction)
+			_contact_cooldowns[pair_key] = 0.10
+			contact_applied = true
+	if contact_applied:
+		_refresh_snapshots_from_racers()
+
+
+func _sync_collision_transforms() -> void:
+	if _track == null:
+		return
+	for racer: RefCounted in _racers:
+		var state: Dictionary = racer.call(&"snapshot")
+		var visual: RacerVisual = _visuals.get(String(state.get("racer_id", "")))
+		if visual == null:
+			continue
+		visual.transform = TrackFactoryType.sample_pose(
+			_track,
+			float(state.get("distance", 0.0)),
+			float(state.get("lane", 0.0))
+		)
+		visual.force_update_transform()
+
+
+func _refresh_snapshots_from_racers() -> void:
+	_snapshots.clear()
+	for racer: RefCounted in _racers:
+		_snapshots.append(racer.call(&"snapshot"))
+
+
+func _update_contact_cooldowns(delta: float) -> void:
+	for key: String in _contact_cooldowns.keys():
+		var remaining := maxf(0.0, float(_contact_cooldowns.get(key, 0.0)) - delta)
+		if remaining <= 0.0:
+			_contact_cooldowns.erase(key)
+		else:
+			_contact_cooldowns[key] = remaining
+
+
+func _contact_pair_key(first_id: String, second_id: String) -> String:
+	var ids: Array[String] = [first_id, second_id]
+	ids.sort()
+	return "%s|%s" % [ids[0], ids[1]]
+
 
 
 func _sort_and_rank_snapshots() -> void:
@@ -791,16 +869,16 @@ func _curvature_at(distance: float) -> float:
 	return clampf(current_forward.signed_angle_to(future_forward, Vector3.UP) * 2.2, -1.0, 1.0)
 
 
-func _hazard_at(distance: float) -> String:
+func _hazard_sample(distance: float, lane: float) -> Dictionary:
 	var track_spec := GameDatabase.get_track(String(_config.get("track_id", "foundry")))
-	var hazards: Array = track_spec.get("hazards", [])
-	if hazards.is_empty():
-		return ""
-	var section := int(fposmod(distance, _track_length) / maxf(1.0, _track_length) * 12.0)
-	if section % 4 != 2:
-		return ""
-	var hazard_sector := int(section / 4)
-	return String(hazards[hazard_sector % hazards.size()])
+	return TrackHazardSystemType.sample(track_spec, _track_length, distance, lane)
+
+
+func _hazard_at(distance: float, lane: float = INF) -> String:
+	var sample_data := _hazard_sample(distance, lane)
+	if is_inf(lane):
+		return String(sample_data.get("hazard_id", ""))
+	return String(sample_data.get("active_hazard", ""))
 
 
 func _build_track() -> void:
@@ -896,6 +974,14 @@ func _build_racers() -> void:
 		visual.process_priority = -10
 		add_child(visual)
 		_visuals[racer_id] = visual
+		var state: Dictionary = racer.call(&"snapshot")
+		var collision_size := Vector3(
+			float(state.get("vehicle_width", 3.5)),
+			float(state.get("vehicle_height", 3.5)),
+			float(state.get("vehicle_length", 4.0))
+		)
+		RaceCollisionSystemType.install_vehicle_collider(visual, racer_id, collision_size)
+		visual.set_meta("race_collision_size", collision_size)
 
 
 func _grid_preview() -> Array[Dictionary]:
@@ -1184,6 +1270,11 @@ func _update_camera(delta: float) -> void:
 		else:
 			look_target = pose.origin + forward * (11.0 + float(state.get("speed_ratio", 0.0)) * 7.0) + pose.basis.y.normalized() * 1.7
 			response = 7.5
+	if _camera_mode == "fps":
+		_camera_collision_adjusted = false
+	else:
+		var camera_origin := pose.origin + pose.basis.y.normalized() * 2.1
+		target_position = _resolve_tps_camera_collision(camera_origin, target_position)
 	var weight := 1.0 - exp(-delta * response)
 	# A cockpit is rigidly attached to its camera anchor. Positional smoothing
 	# that is correct in TPS creates metres of lag at race speed and makes the
@@ -1194,6 +1285,34 @@ func _update_camera(delta: float) -> void:
 	var next_basis := _camera.global_transform.looking_at(look_target, Vector3.UP, false).basis
 	_camera.global_basis = next_basis if lock_to_anchor else _camera.global_basis.slerp(next_basis, weight)
 	_camera.fov = lerpf(_camera.fov, target_fov, weight)
+
+
+func _resolve_tps_camera_collision(origin: Vector3, desired_position: Vector3) -> Vector3:
+	_camera_collision_adjusted = false
+	if not is_inside_tree() or get_world_3d() == null:
+		return desired_position
+	var query := PhysicsRayQueryParameters3D.create(
+		origin,
+		desired_position,
+		RaceCollisionSystemType.CAMERA_COLLISION_MASK
+	)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	query.hit_back_faces = true
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		if _camera != null:
+			_camera.set_meta("collision_adjusted", false)
+		return desired_position
+	var hit_position: Vector3 = hit.get("position", desired_position)
+	var hit_normal: Vector3 = hit.get("normal", Vector3.ZERO)
+	if hit_normal.length_squared() <= 0.0001:
+		hit_normal = (origin - desired_position).normalized()
+	_camera_collision_adjusted = true
+	if _camera != null:
+		_camera.set_meta("collision_adjusted", true)
+		_camera.set_meta("collision_body", String((hit.get("collider") as Node).name) if hit.get("collider") is Node else "physics")
+	return hit_position + hit_normal.normalized() * 0.55
 
 
 func _update_feedback() -> void:
@@ -1209,6 +1328,13 @@ func _update_feedback() -> void:
 		hud_snapshot["mode"] = String(_config.get("mode", "quick"))
 		hud_snapshot["next_elimination"] = maxf(0.0, _next_elimination - _elapsed)
 		hud_snapshot["camera_view"] = _camera_mode
+		var hazard_sample := _hazard_sample(float(player_state.get("distance", 0.0)), float(player_state.get("lane", 0.0)))
+		hud_snapshot["hazard_id"] = String(hazard_sample.get("hazard_id", ""))
+		hud_snapshot["hazard_active"] = bool(hazard_sample.get("active", false))
+		hud_snapshot["hazard_intensity"] = float(hazard_sample.get("intensity", 0.0))
+		hud_snapshot["hazard_lane_center"] = float(hazard_sample.get("lane_center", 0.0))
+		if bool(hazard_sample.get("active", false)):
+			hud_snapshot["warning"] = "DANGER DE VOIE // %s // DÉGAGEZ LATÉRALEMENT" % String(hazard_sample.get("hazard_id", "")).to_upper()
 		if _start_penalty_remaining > 0.0:
 			hud_snapshot["warning"] = "PÉNALITÉ FAUX DÉPART // PROPULSEURS %.1f S" % _start_penalty_remaining
 		_hud.call(&"update_race", hud_snapshot)

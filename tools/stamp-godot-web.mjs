@@ -10,9 +10,10 @@ const htmlOutput = join(GODOT_WEB_ROOT, 'mecha-overdrive.html');
 const normalizedHtml = `${readFileSync(htmlOutput, 'utf8').trimEnd()}\n`;
 writeFileSync(htmlOutput, normalizedHtml, 'utf8');
 
+const gameVersion = readFileSync(join(GODOT_WEB_ROOT, '..', 'VERSION'), 'utf8').trim();
 const manifest = {
   schema: 1,
-  gameVersion: '2.5.1',
+  gameVersion,
   godotVersion: '4.7.2',
   preset: 'Web',
   threads: false,

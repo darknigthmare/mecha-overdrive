@@ -1,6 +1,6 @@
-# Roadmap après Godot 2.5.1
+# Roadmap après Godot 2.6.0
 
-Godot 2.5.1 est le contrat courant de production visuelle et de présentation FPS. Le statut de son export Web mono-thread, de ses validations locales, de ses parcours Chrome bureau/mobile et de toute publication distante éventuelle est suivi avec des preuves datées dans `docs/QA_REPORT.md`.
+Godot 2.6.0 ajoute le socle physique de course et les dangers par voie au contrat de production visuelle 2.5.1. Son export, ses validations et sa publication sont suivis dans `docs/QA_REPORT.md`.
 
 ## Livré dans la source Godot 2.5.1
 
@@ -21,8 +21,8 @@ Godot 2.5.1 est le contrat courant de production visuelle et de présentation FP
 
 ## P2 restants — priorité release
 
-1. Remplacer les enveloppes de proximité par de vraies collisions 3D et valider leurs interactions avec les caméras TPS/FPS.
-2. Rendre chaque hazard sensible à la voie occupée au lieu d’appliquer seulement un contexte global de secteur.
+1. ~~Remplacer les enveloppes de proximité par de vraies collisions 3D et valider leurs interactions avec les caméras TPS/FPS.~~ Livré en 2.6.0.
+2. ~~Rendre chaque hazard sensible à la voie occupée au lieu d’appliquer seulement un contexte global de secteur.~~ Livré en 2.6.0.
 3. Demander confirmation avant d’écraser un championnat actif par une nouvelle coupe.
 4. Fournir un remapping complet clavier, manette et profils tactiles.
 5. Étendre les déblocages progressifs aux châssis, modules, peintures et difficultés ; le Grand Open est déjà qualifié après une Coupe remportée.
