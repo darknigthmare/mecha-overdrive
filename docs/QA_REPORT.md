@@ -166,8 +166,20 @@ Les captures de [`audits/2026-08-25-gameplay-ux-audit.md`](audits/2026-08-25-gam
 ## Qualification de release
 
 - **Sources 2.7.0 : GO local sur `c16d4751…` — 12/12 suites Godot, `npm run qa` et export/stamp 9/9 PASS.**
-- **Publication distante 2.7.0 : à qualifier après commit, CI, release GitHub, Vercel et smoke navigateur public.**
+- **Publication distante 2.7.0 : PASS — commit, CI, release GitHub, Vercel production et artefacts publics vérifiés.**
 - **Publication distante 2.5.1 : historique PASS conservé ci-dessous.**
+
+### Publication distante 2.7.0
+
+| Gate distante 2.7.0 | Statut |
+|---|---|
+| Commit de release | [`64f1c4d`](https://github.com/darknigthmare/mecha-overdrive/commit/64f1c4d7f4c7c77276736bb550834a6ce5ee8361) poussé sur `main` |
+| GitHub Actions | [Quality `33286966997`](https://github.com/darknigthmare/mecha-overdrive/actions/runs/33286966997) : PASS, douze suites Godot incluses |
+| Tag/release GitHub | [`v2.7.0`](https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.7.0) publique, cible `64f1c4d`, ni draft ni prerelease |
+| Déploiement Vercel | `dpl_CSu1EdirXKZuvY76NB87fw6scZbD` ; production `READY` ; aucun log d’erreur post-déploiement |
+| Alias public | [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive) : HTTP 200 avec CSP Godot/WebAssembly attendue |
+| Build public | Version 2.7.0, source `c16d4751…`, PCK 44 120 612 octets et manifeste 9/9 strictement identique au local |
+| Smoke public | Accueil, jeu Godot et PCK : HTTP 200 ; le contrôle navigateur automatisé n’a pas été revendiqué, le runtime Browser de l’hôte étant bloqué et Playwright Python absent |
 
 ### Publication distante 2.5.1
 

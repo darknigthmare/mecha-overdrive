@@ -42,9 +42,16 @@ VALIDATION LOCALE FINALE 2.7.0 — PASS
 - HTML : 5 650 octets — SHA-256 `47fe5447be8522e30a03f4cedf0c04ff5be36b3cb8f6d179fc643f580a6da856`
 - PCK : 44 120 612 octets — SHA-256 `593fa08bdebdab6761a1157725021111cc55f81c32c348127fb64d663c2c8b99`
 
-STATUT CANDIDAT 2.7.0
+STATUT PUBLIÉ 2.7.0
 - Validation locale et export Web : PASS
-- GitHub, CI, release et Vercel : à qualifier après publication
+- Commit public : 64f1c4d7f4c7c77276736bb550834a6ce5ee8361
+- GitHub Actions Quality : PASS — run 33286966997
+- Release : https://github.com/darknigthmare/mecha-overdrive/releases/tag/v2.7.0
+- Vercel production READY : dpl_CSu1EdirXKZuvY76NB87fw6scZbD
+- Jeu public : https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive
+- Build public : version 2.7.0, source c16d4751… et 9/9 artefacts attestés
+- Smoke public HTTP : accueil, jeu et PCK HTTP 200 ; taille PCK identique
+- Scan Vercel : aucun log d’erreur sur la fenêtre post-déploiement
 
 HISTORIQUE PUBLIÉ 2.5.1
 - Validation locale finale : PASS
