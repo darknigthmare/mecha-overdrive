@@ -15,7 +15,7 @@ const FAMILY_IDS: Array[String] = [
 
 const DRIVE_OPTIONS: Array[Dictionary] = [
 	{
-		"id": "mecha_legs", "name": "Jambes mécaniques", "short": "JAMBES",
+		"id": "mecha_legs", "name": "Jambes mécha articulées", "short": "JAMBES",
 		"manufacturer": "Valkyr Articulation", "tier": 0, "power_draw": 0,
 		"description": "Articulations à rappel actif, talons amortis et vérins de relance.",
 		"lore": "Dérivées des premiers marcheurs industriels du Nexus, ces jambes restent réparables dans chaque paddock de la Ligue.",
@@ -43,35 +43,35 @@ const DRIVE_OPTIONS: Array[Dictionary] = [
 		"stats": {"speed": -2, "acceleration": 2, "handling": 6, "armor": 1, "stability": 6, "reactor": -2},
 	},
 	{
-		"id": "sphere_drive", "name": "Sphères omnidirectionnelles", "short": "SPHÈRES",
+		"id": "sphere_drive", "name": "Roulage sphérique", "short": "ROULEUR",
 		"manufacturer": "Nexus Inertia Lab", "tier": 1, "power_draw": 2,
 		"description": "Contacts sphériques capables de pousser dans toutes les directions.",
 		"lore": "Des anneaux magnétiques déplacent le point d'appui autour de chaque sphère sans interrompre la motricité.",
 		"stats": {"speed": 2, "acceleration": 1, "handling": 7, "armor": -2, "stability": 3, "reactor": -2},
 	},
 	{
-		"id": "mono_gyro", "name": "Gyro-roue tandem", "short": "GYRO",
+		"id": "mono_gyro", "name": "Cycle gyroscopique", "short": "CYCLE",
 		"manufacturer": "Aster Gyrodynamics", "tier": 1, "power_draw": 2,
 		"description": "Anneaux gyroscopiques tandem avec récupération de dérive.",
 		"lore": "Deux volants opposés annulent les oscillations parasites tout en conservant l'énergie accumulée pendant une longue dérive.",
 		"stats": {"speed": 5, "acceleration": 2, "handling": 5, "armor": -3, "stability": -1, "reactor": 1},
 	},
 	{
-		"id": "hover_skids", "name": "Patins magnétiques", "short": "MAG-PATINS",
+		"id": "hover_skids", "name": "Hover magnétique", "short": "HOVER",
 		"manufacturer": "Nexus Fieldworks", "tier": 1, "power_draw": 2,
 		"description": "Patins sans contact et stabilisateurs de lacet.",
 		"lore": "Le champ porteur suit les balises de piste et efface la plupart des irrégularités, au prix d'une consommation constante.",
 		"stats": {"speed": 5, "acceleration": 3, "handling": 1, "armor": -3, "stability": 2, "reactor": -3},
 	},
 	{
-		"id": "twin_antigrav", "name": "Bi-propulseur Aether", "short": "BI-PROPULSEUR",
+		"id": "twin_antigrav", "name": "Pods vectoriels Aether", "short": "PODS",
 		"manufacturer": "Aether Independent Racing", "tier": 2, "power_draw": 3,
 		"description": "Deux nacelles antigravité distantes reliées par des bras de contrôle.",
 		"lore": "Aether a séparé la poussée du cockpit afin que chaque nacelle puisse chercher sa propre ligne. Cette architecture originale est née sur le Circuit Zero.",
 		"stats": {"speed": 9, "acceleration": 5, "handling": -2, "armor": -5, "stability": -4, "reactor": -4},
 	},
 	{
-		"id": "articulated_rail", "name": "Rails articulés", "short": "RAILS",
+		"id": "articulated_rail", "name": "Glisseur de surface", "short": "SPEEDER",
 		"manufacturer": "Valkyr Transit Lab", "tier": 1, "power_draw": 2,
 		"description": "Lames motrices articulées pour accélérations rectilignes.",
 		"lore": "Les rails sont composés de plaques qui se verrouillent à haute vitesse puis se désolidarisent pour rendre le braquage au pilote.",
@@ -117,8 +117,8 @@ const MOUNT_OPTIONS: Array[Dictionary] = [
 const DEFAULT_DRIVE_BY_FAMILY := {
 	"biped": "mecha_legs", "tripod": "mecha_legs", "quadruped": "mecha_legs",
 	"hexapod": "multi_support", "octopod": "multi_support", "hover": "hover_skids",
-	"tracked": "treads", "monowheel": "mono_gyro", "orb": "sphere_drive",
-	"centurion": "multi_support",
+	"tracked": "twin_antigrav", "monowheel": "mono_gyro", "orb": "sphere_drive",
+	"centurion": "hover_skids",
 }
 
 

@@ -898,9 +898,16 @@ func _build_racers() -> void:
 	var division_id := String(_config.get("division_id", selected_division))
 	if GameDatabase.get_division(division_id).is_empty():
 		division_id = selected_division
-	var chassis_pool := GameDatabase.get_all_chassis() if grid_policy == "mixed" else GameDatabase.get_chassis_for_division(division_id)
+	var category_chassis_id := String(_config.get("category_chassis_id", selected_chassis.get("id", "biped")))
+	if not GameDatabase.has_chassis(category_chassis_id):
+		category_chassis_id = selected_id
+	var chassis_pool: Array[Dictionary] = []
+	if grid_policy == "mixed":
+		chassis_pool.assign(GameDatabase.get_all_chassis())
+	else:
+		chassis_pool.append(GameDatabase.get_chassis(category_chassis_id))
 	if chassis_pool.is_empty():
-		chassis_pool = [selected_chassis]
+		chassis_pool.append(selected_chassis)
 	var pilots := GameDatabase.get_all_pilots()
 	var roster_value: Variant = _config.get("roster", [])
 	var roster: Array = roster_value if roster_value is Array else []
@@ -913,10 +920,14 @@ func _build_racers() -> void:
 	for index in range(racer_count):
 		var entrant: Dictionary = roster[index] if index < roster.size() and roster[index] is Dictionary else {}
 		var is_player := bool(entrant.get("is_player", entrant.get("player", index == 0))) or String(entrant.get("racer_id", entrant.get("id", ""))) == "player"
-		var fallback_chassis := selected_chassis if is_player else chassis_pool[index % chassis_pool.size()]
+		# A dedicated grid is authoritative even when the roster is incomplete or
+		# tampered with: every fallback, including the player, stays in category.
+		var fallback_chassis := chassis_pool[index % chassis_pool.size()]
+		if grid_policy == "mixed" and is_player:
+			fallback_chassis = selected_chassis
 		var chassis_id := String(entrant.get("chassis_id", fallback_chassis.get("id", "biped")))
 		var chassis := GameDatabase.get_chassis(chassis_id)
-		if chassis.is_empty() or (grid_policy == "division" and String(chassis.get("division_id", "")) != division_id):
+		if chassis.is_empty() or (grid_policy == "division" and chassis_id != category_chassis_id):
 			chassis = fallback_chassis
 			chassis_id = String(chassis.get("id", "biped"))
 		var pilot_id := String(entrant.get("pilot_id", "player" if is_player else pilots[(index - 1) % pilots.size()].get("id", "vex")))

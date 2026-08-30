@@ -39,6 +39,9 @@ func _run() -> void:
 				"utility": "utility_scanner",
 			}
 			test_profile["loadouts"] = test_loadouts
+			var test_locomotions: Dictionary = test_profile.get("locomotions", {})
+			test_locomotions["biped"] = LocomotionCatalog.get_default_configuration_id("biped")
+			test_profile["locomotions"] = test_locomotions
 			var test_stats: Dictionary = test_profile.get("stats", {})
 			# The flow exercises the qualified Grand Open after the dedicated cup.
 			test_stats["championships"] = maxi(1, int(test_stats.get("championships", 0)))
@@ -128,7 +131,8 @@ func _run() -> void:
 	# before RaceController exists, so no test transition can write user data.
 	if _save_system != null:
 		_save_system.name = &"SaveSystem_RuntimeFlowIsolated"
-	_expect(String(config.get("grid_policy", "")) == "division" and not bool(config.get("mixed_divisions", true)), "le flux rapide doit rester en division dédiée")
+	_expect(String(config.get("grid_policy", "")) == "division" and not bool(config.get("mixed_divisions", true)), "le flux rapide doit rester en catégorie dédiée")
+	_expect(String(config.get("category_chassis_id", "")) == "biped", "la course rapide doit verrouiller la catégorie Bipède")
 	_expect(String(config.get("ruleset_id", "")) == "division_locked", "le flux rapide doit utiliser le règlement dédié")
 	var configured_roster: Array = config.get("roster", [])
 	_expect(configured_roster.size() == 8, "la configuration doit fournir 8 entrants stables")
@@ -136,6 +140,7 @@ func _run() -> void:
 		if entrant_value is Dictionary:
 			var entrant: Dictionary = entrant_value
 			_expect(String(entrant.get("division_id", "")) == "command", "un entrant hors Commandement a contaminé la grille dédiée")
+			_expect(String(entrant.get("chassis_id", "")) == "biped", "un châssis hors catégorie Bipède a contaminé la grille dédiée")
 			var entrant_chassis := GameDatabase.get_chassis(String(entrant.get("chassis_id", "")))
 			_expect(String(entrant_chassis.get("division_id", "")) == "command", "le roster annonce une division incohérente avec son châssis")
 
@@ -405,7 +410,7 @@ func _run() -> void:
 		var dedicated_ids := _roster_signature(dedicated_cup.get("roster", []))
 		var resumed_cup: Dictionary = session.call(&"configure", {"mode": "grand_prix", "championship_id": "command_cup", "new_championship": false, "seed": 12345})
 		_expect(_roster_signature(resumed_cup.get("roster", [])) == dedicated_ids, "un championnat doit conserver son roster entre les manches")
-		_expect(String(dedicated_cup.get("grid_policy", "")) == "division" and _division_count(dedicated_cup.get("roster", [])) == 1, "la Coupe Commandement doit rester dédiée")
+		_expect(String(dedicated_cup.get("grid_policy", "")) == "division" and _chassis_count(dedicated_cup.get("roster", [])) == 1, "la Coupe Bipède doit rester strictement mono-catégorie")
 		if returned_menu != null:
 			returned_menu.call(&"refresh")
 			var resume_button: Button = returned_menu.get_node_or_null("%GrandPrixButton") as Button
@@ -510,3 +515,12 @@ func _division_count(roster_value: Variant) -> int:
 			if entrant_value is Dictionary:
 				divisions[String(Dictionary(entrant_value).get("division_id", ""))] = true
 	return divisions.size()
+
+
+func _chassis_count(roster_value: Variant) -> int:
+	var chassis_ids: Dictionary = {}
+	if roster_value is Array:
+		for entrant_value: Variant in roster_value:
+			if entrant_value is Dictionary:
+				chassis_ids[String(Dictionary(entrant_value).get("chassis_id", ""))] = true
+	return chassis_ids.size()

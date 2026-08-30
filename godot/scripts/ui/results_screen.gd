@@ -179,7 +179,7 @@ func _apply_championship_epilogue(championship_id: String, champion_id: String) 
 	elif player_champion:
 		result_title.text = "COUPE REMPORTÉE"
 		position_value.text = "CHAMPION"
-		result_summary.text = "Votre titre de division offre au Hangar 08 son invitation sportive au Grand Open des Huit Mondes."
+		result_summary.text = "Votre titre de catégorie offre au Hangar 08 son invitation sportive au Grand Open des Huit Mondes."
 	else:
 		result_summary.text = "La Coupe se termine sans titre. Renforcez votre architecture avant de repartir chercher l’invitation au Grand Open."
 
@@ -223,8 +223,9 @@ func _populate_championship(mode: String) -> void:
 	var standings: Variant = _dictionary_value(championship_dictionary, "standings", [])
 	var championship_name := String(_dictionary_value(championship_dictionary, "name", "CHAMPIONNAT"))
 	var grid_policy := String(_dictionary_value(championship_dictionary, "grid_policy", "division"))
-	var division := GameDatabase.get_division(String(_dictionary_value(championship_dictionary, "division_id", "")))
-	var grid_label := "OPEN / INTERDIVISION" if grid_policy == "mixed" else "DIVISION %s" % String(division.get("name", "ACTIVE")).to_upper()
+	var category_chassis_id := String(_dictionary_value(championship_dictionary, "category_chassis_id", ""))
+	var category := GameDatabase.get_race_category_for_chassis(category_chassis_id)
+	var grid_label := "OPEN / TOUTES CATÉGORIES" if grid_policy == "mixed" else "CATÉGORIE %s" % String(category.get("name", "ACTIVE")).to_upper()
 	var lines := PackedStringArray([
 		championship_name.to_upper(),
 		"MANCHE %d / %d" % [round_index, round_total],

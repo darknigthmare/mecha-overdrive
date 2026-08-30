@@ -2,7 +2,7 @@
 
 ## La course qui traverse trois galaxies
 
-Les **Portes du Nexus** relient huit mondes répartis dans trois galaxies. Une fois par cycle, la Nexus Grand League transporte pilotes, méchas et paddocks d’un portail à l’autre pour disputer le **Grand Tour des Huit Mondes** : cinq Coupes spécialisées, puis un Grand Open où toutes les architectures peuvent s’affronter.
+Les **Portes du Nexus** relient huit mondes répartis dans trois galaxies. Une fois par cycle, la Nexus Grand League transporte pilotes, méchas et paddocks d’un portail à l’autre pour disputer le **Grand Tour des Huit Mondes** : dix Coupes de catégorie, puis un Grand Open où toutes les architectures peuvent s’affronter.
 
 La Ligue ne classe pas une machine par ses roues, ses jambes ou ses propulseurs actifs, mais par le cadre, la masse et l’enveloppe énergétique de son châssis. Cette Charte libre permet à dix architectures et cinq cents configurations homologuées de concourir sans imposer une forme unique.
 
@@ -16,17 +16,22 @@ Vex ne triche pas : elle pense qu’un standard central rendrait le sport plus r
 
 Le joueur reçoit le dixième siège du roster saisonnier. À l’ouverture de chaque championnat, la Ligue homologue huit des dix pilotes et place deux signatures en réserve ; les huit retenus conservent leur place jusqu’à la finale de la série. Son objectif est clair : remporter une Coupe, parcourir les huit mondes et battre Vex lors de la finale de Circuit Zero afin de préserver la Charte libre.
 
-### Les cinq divisions homologuées
+### Les dix catégories homologuées
 
-- **Commandement** réunit le Raptor R2 et le Centurion S12, deux machines adaptatives conçues pour lire une course avant de la dominer.
-- **Stabilisés** associe le Triarch T3 et le Fenrir Q4 : l’un conserve le cap, l’autre transforme chaque rupture de rythme en relance.
-- **Essaim** rassemble le Mantis H6 et l’Arachne O8, dont les appuis multiples distribuent en permanence adhérence, calcul et impact.
-- **Sol** oppose le couple du Bastion C2 à la dérive gyroscopique du Cyclops M1.
-- **Expérimental** ouvre la grille au Wraith V0 et à l’Orb S7, prototypes fondés sur la sustentation et la recomposition d’inertie.
+- le **Pod vectoriel** Aether Lance P2 court sur deux nacelles indépendantes à poussée différentielle ;
+- le **Cycle** Valkyr C1 incline tout son cadre avant de restituer sa dérive ;
+- le **Rouleur** Orb S7 pivote autour de son noyau stabilisé et recycle les impacts ;
+- le **Bipède lourd** Raptor R2 avance par pas massifs et refuse les changements de cap improvisés ;
+- le **Tripode** Triarch T3 verrouille successivement trois appuis méthodiques ;
+- le **Quadrupède** Fenrir Q4 transforme chaque rupture de rythme en sprint prédateur ;
+- l’**Hexapode** Mantis H6 lit le terrain avec six contacts adaptatifs ;
+- l’**Octopode** Arachne O8 distribue masse, adhérence et impact sur huit jambes ;
+- le **Hover** Wraith V0 glisse sur un coussin magnétique sans contact continu ;
+- le **Land Speeder** Skimmer LS9 rase la chaussée sous effet de sol.
 
-La Ligue organise une coupe de quatre manches pour chacune de ces divisions. Les concurrents y affrontent uniquement des machines homologuées dans leur propre catégorie, ce qui fait de chaque titre une mesure de pilotage et de préparation plutôt qu’un concours de formes incompatibles.
+La Ligue organise une coupe de quatre manches pour chacune de ces catégories. Les concurrents y utilisent le même cadre de châssis, avec des peintures, modules et locomotions différents. Les cinq divisions techniques subsistent dans les ateliers pour classer les compatibilités de pièces, mais ne réunissent plus deux architectures dans une Coupe dédiée.
 
-L’épreuve reine est le **Grand Open des Huit Mondes**. Ses huit manches accueillent les cinq divisions en classe Prototype. Le mélange y est annoncé, assumé et recherché ; aucune Coupe dédiée ne peut l’imposer par accident.
+L’épreuve reine est le **Grand Open des Huit Mondes**. Ses huit manches accueillent les dix catégories en classe Prototype. Le mélange y est annoncé, assumé et recherché ; aucune Coupe dédiée ne peut l’imposer par accident.
 
 Trois niveaux d’homologation encadrent les machines. La classe **Série** impose l’équipement d’usine, la classe **Préparé** autorise une mise au point contrôlée, et la classe **Prototype** libère tout le potentiel d’amélioration.
 
@@ -86,9 +91,9 @@ Chaque machine reçoit trois interfaces normalisées : **Noyau**, **Mobilité** 
 
 À ces modules s’ajoute la baie locomotrice : dix technologies et cinq montages autorisent cinquante configurations par châssis. Le **bi-propulseur Aether** emploie deux nacelles antigravité indépendantes reliées au cockpit central par un champ souple et pilotées en poussée différentielle.
 
-Sept architectures embarquent physiquement leur pilote. Raptor, Triarch, Fenrir, Arachne, Wraith, Bastion et Cyclops possèdent chacun un habitacle propre : verrière, montants, harnais, tableau de bord et écrans suivent leur volume et leur fonction.
+Sept architectures embarquent physiquement leur pilote. Raptor, Triarch, Fenrir, Arachne, Wraith, Aether Lance et Valkyr possèdent chacun un habitacle propre : verrière, montants, harnais, tableau de bord et écrans suivent leur volume et leur fonction.
 
-Mantis H6, Orb S7 et Centurion S12 sont des corps de course sans habitacle. Leur pilote reste au paddock et rejoint la machine par **sensorium de téléprésence** : horizon artificiel, réticule, vecteur de direction, qualité de liaison et état des sous-systèmes remplacent le faux cockpit. La Charte reconnaît comme pilote tout contrôleur organique ou synthétique, embarqué ou lié à distance.
+Mantis H6, Orb S7 et Skimmer LS9 sont des corps de course sans habitacle. Leur pilote reste au paddock et rejoint la machine par **sensorium de téléprésence** : horizon artificiel, réticule, vecteur de direction, qualité de liaison et état des sous-systèmes remplacent le faux cockpit. La Charte reconnaît comme pilote tout contrôleur organique ou synthétique, embarqué ou lié à distance.
 
 Tous les pilotes peuvent demander la vision tactique extérieure TPS. En FPS, la machine choisit automatiquement son cockpit physique ou son HUD capteurs canonique ; la locomotion modulaire ne change jamais ce contrat.
 

@@ -10,7 +10,7 @@ const ENTRIES: Array[Dictionary] = [
 		"title": "LE GRAND TOUR DES HUIT MONDES",
 		"epoch": "SAISON 03 // NEXUS GRAND LEAGUE",
 		"subtitle": "La même grille, trois galaxies, huit mondes",
-		"description": "Les Portes du Nexus transportent paddocks et méchas d’un monde à l’autre en quelques heures. Cinq Coupes révèlent les spécialistes; le Grand Open réunit toutes les architectures sur la tournée complète.",
+		"description": "Les Portes du Nexus transportent paddocks et méchas d’un monde à l’autre en quelques heures. Dix Coupes de catégorie révèlent les spécialistes; le Grand Open réunit toutes les architectures sur la tournée complète.",
 		"protocol": "CHAMPIONNAT INTERGALACTIQUE",
 		"protocol_description": "Chaque position homologuée à l’arrivée rapporte des points. La Couronne récompense la constance sur une saison entière, pas seulement la vitesse sur un tour.",
 		"telemetry": "MONDES    8\nGALAXIES  3\nFINALE    CIRCUIT ZERO",
@@ -39,8 +39,8 @@ const ENTRIES: Array[Dictionary] = [
 		"id": "five_divisions",
 		"title": "LES CINQ DIVISIONS",
 		"epoch": "CHARTE LIBRE // HOMOLOGATION",
-		"subtitle": "Cinq cadres structurels, cinq philosophies de course",
-		"description": "Commandement, Stabilisés, Essaim, Sol et Expérimental classent le cadre, la masse et l’enveloppe énergétique du châssis. La locomotion choisie ne change pas sa division.",
+		"subtitle": "Cinq affinités techniques, dix cadres de course",
+		"description": "Commandement, Stabilisés, Essaim, Sol et Expérimental classent les compatibilités d’atelier. Chaque cadre conserve sa propre catégorie de course, quelle que soit sa locomotion.",
 		"protocol": "HOMOLOGATION DU CADRE",
 		"protocol_description": "Chaque architecture accepte cinquante configurations locomotrices; la classe de performance contrôle la puissance réellement autorisée.",
 		"telemetry": "DIVISIONS       5\nARCHITECTURES   10\nCONFIGURATIONS  500",
@@ -50,7 +50,7 @@ const ENTRIES: Array[Dictionary] = [
 		"title": "HANGAR 08",
 		"epoch": "LICENCE INDÉPENDANTE // DERNIÈRE ACTIVE",
 		"subtitle": "Une licence, un pilote, cinq cents réponses",
-		"description": "Installé dans une ancienne navette-paddock, le Hangar 08 refuse les châssis propriétaires. Sept cadres embarquent leur pilote; Mantis, Orb et Centurion sont des corps de course sans habitacle joints par sensorium.",
+		"description": "Installé dans une ancienne navette-paddock, le Hangar 08 refuse les châssis propriétaires. Sept cadres embarquent leur pilote; Mantis H6, Orb S7 et Skimmer LS9 sont des corps de course sans habitacle joints par sensorium.",
 		"protocol": "OBJECTIF PILOTE",
 		"protocol_description": "La Charte reconnaît comme pilote tout contrôleur organique ou synthétique, embarqué ou lié à distance. Tous peuvent remporter une Coupe et la Couronne.",
 		"telemetry": "BUDGET       LIMITÉ\nPLACE        10 / 10\nDEVISE       AUCUNE FORME UNIQUE",
@@ -93,7 +93,7 @@ static func get_all() -> Array[Dictionary]:
 	var names := division_names()
 	for entry: Dictionary in entries:
 		if String(entry.get("id", "")) == "five_divisions":
-			entry["description"] = "%s classent le cadre, la masse et l’enveloppe énergétique du châssis. La locomotion choisie ne change pas sa division; le Grand Open autorise tous les croisements." % _french_list(names)
+			entry["description"] = "%s classent les affinités de modules et les compatibilités d’atelier. Chaque cadre conserve sa catégorie; seul le Grand Open autorise tous les croisements." % _french_list(names)
 			entry["telemetry"] = "DIVISIONS       %d\nARCHITECTURES   10\nCONFIGURATIONS  500" % names.size()
 	return entries
 

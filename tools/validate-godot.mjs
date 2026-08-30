@@ -32,6 +32,7 @@ const files = {
   lore: 'godot/scripts/data/lore_database.gd',
   manifest: 'godot/assets/textures/openai/manifest.json',
   smoke: 'godot/tests/smoke_test.gd',
+  raceCategoryTest: 'godot/tests/race_category_test.gd',
   garagePreviewTest: 'godot/tests/garage_preview_test.gd',
   gameplaySafetyTest: 'godot/tests/gameplay_safety_test.gd',
   narrativeProgressionTest: 'godot/tests/narrative_progression_test.gd',
@@ -40,6 +41,7 @@ const files = {
   trackSceneryProductionTest: 'godot/tests/track_scenery_production_test.gd',
   fpsPresentationTest: 'godot/tests/fps_presentation_test.gd',
   physicsHazardTest: 'godot/tests/physics_hazard_test.gd',
+  raceBroadcast: 'godot/scripts/data/race_broadcast.gd',
 };
 
 const failures = [];
@@ -57,8 +59,8 @@ for (const [label, relativePath] of Object.entries(files)) {
 const chassis = [
   ['biped', 'Raptor R2'], ['tripod', 'Triarch T3'], ['quadruped', 'Fenrir Q4'],
   ['hexapod', 'Mantis H6'], ['octopod', 'Arachne O8'], ['hover', 'Wraith V0'],
-  ['tracked', 'Bastion C2'], ['monowheel', 'Cyclops M1'], ['orb', 'Orb S7'],
-  ['centurion', 'Centurion S12'],
+  ['tracked', 'Aether Lance P2'], ['monowheel', 'Valkyr C1'], ['orb', 'Orb S7'],
+  ['centurion', 'Skimmer LS9'],
 ];
 for (const [id, name] of chassis) {
   check(source.database.includes(`_chassis("${id}"`), `catalogue: identifiant absent ${id}`);
@@ -66,6 +68,14 @@ for (const [id, name] of chassis) {
 }
 check((source.database.match(/^\s*_chassis\("/gm) ?? []).length === 10, 'catalogue: exactement 10 châssis requis');
 check(!/"(?:wheeled|serpentine)"/.test(source.database), 'catalogue: anciennes architectures détectées');
+const raceCategories = [
+  ['pod', 'tracked'], ['cycle', 'monowheel'], ['roll', 'orb'], ['biped', 'biped'], ['tripod', 'tripod'],
+  ['quadruped', 'quadruped'], ['hexapod', 'hexapod'], ['octopod', 'octopod'], ['hover', 'hover'], ['land_speeder', 'centurion'],
+];
+for (const [categoryId, chassisId] of raceCategories) {
+  check(source.database.includes(`"id": "${categoryId}", "chassis_id": "${chassisId}"`), `catégorie absente ou mal mappée: ${categoryId}`);
+}
+check((source.database.match(/"motion": \{"throttle_response":/g) ?? []).length === 10, 'catégories: dix signatures de pilotage requises');
 
 for (const trackId of ['foundry', 'dunes', 'glacier', 'orbital', 'canopy', 'tempest', 'abyss', 'caldera']) {
   check(source.database.includes(`"id": "${trackId}"`), `circuit absent: ${trackId}`);
@@ -80,7 +90,7 @@ check(trackWidths.length === 8 && trackWidths.every((value) => value >= 35), 'ci
 check(source.trackSafety.includes('REQUIRED_SIDE_BY_SIDE := 3') && source.trackSafety.includes('vehicle_footprint'), 'circuits: homologation des gabarits absente');
 
 check(source.database.includes('static var CHASSIS:'), 'catalogue: initialisation CHASSIS doit être parse-safe');
-check(source.save.includes('const SAVE_VERSION := 5'), 'sauvegarde: version 5 absente');
+check(source.save.includes('const SAVE_VERSION := 6'), 'sauvegarde: version 6 absente');
 check(!source.save.includes('`t'), 'sauvegarde: séquence littérale `t invalide détectée');
 check(source.save.includes('"loadouts": loadouts'), 'sauvegarde: loadouts modulaires absents');
 check(source.save.includes('"locomotions": locomotions'), 'sauvegarde: choix locomoteurs absents');
@@ -90,11 +100,12 @@ check(source.save.includes('func purchase_and_apply_garage('), 'sauvegarde: tran
 check(source.save.includes('var snapshot := profile.duplicate(true)') && source.save.includes('profile = snapshot'), 'sauvegarde: rollback atomique absent');
 check(source.save.includes('not counted.has(module_id)'), 'sauvegarde: protection anti-débit double absente');
 check(source.save.includes('source_version < CHAMPIONSHIP_SCHEMA_VERSION'), 'sauvegarde: migration championnat v3 absente');
+check(source.save.includes('CHAMPIONSHIP_CANONICAL_RULES_VERSION := 3'), 'sauvegarde: seuil anti-altération historique absent');
 check(source.save.includes('definition.get("track_ids"'), 'sauvegarde: canonicalisation des circuits de championnat absente');
 for (const divisionId of ['command', 'stabilized', 'swarm', 'ground', 'experimental']) {
   check(source.database.includes(`"id": "${divisionId}"`), `division absente: ${divisionId}`);
 }
-for (const cupId of ['command_cup', 'stabilized_cup', 'swarm_cup', 'ground_cup', 'experimental_cup', 'nexus_open']) {
+for (const cupId of ['command_cup', 'stabilized_cup', 'quadruped_cup', 'swarm_cup', 'octopod_cup', 'ground_cup', 'cycle_cup', 'experimental_cup', 'roll_cup', 'land_speeder_cup', 'nexus_open']) {
   check(source.database.includes(`"id": "${cupId}"`), `championnat absent: ${cupId}`);
 }
 const modulesBySlot = {
@@ -115,6 +126,8 @@ for (const [slotId, expectedIds] of Object.entries(modulesBySlot)) {
   check(expectedIds.every((id) => declaredModuleIds.includes(id)), `catalogue: contrat incomplet pour ${slotId}`);
 }
 check(source.session.includes('return "mixed" if value == "mixed" else "division"'), 'session: grille fail-closed absente');
+check(source.session.includes('pool.append(GameDatabase.get_chassis(category_chassis_id))') && source.session.includes('selected_id != category_chassis_id'), 'session: verrouillage exact de catégorie absent');
+check(source.raceController.includes('chassis_id != category_chassis_id'), 'course: rejet runtime des châssis hors catégorie absent');
 check(source.raceController.includes('switch_camera_view'), 'course: bascule TPS/FPS absente');
 check(source.database.includes('static func _first_person_spec('), 'FPS: profils canoniques de châssis absents');
 check((source.database.match(/"mode": "sensorium"/g) ?? []).length === 3, 'FPS: exactement trois sensoriums distants requis');
@@ -223,6 +236,8 @@ check(source.mechaAnimationTest.includes('MECHA ANIMATION: PASS') && source.mech
 check(source.trackSceneryProductionTest.includes('MECHA TRACK SCENERY PRODUCTION: PASS') && source.trackSceneryProductionTest.includes('track_infrastructure_detail.png'), 'production: test décors/infrastructure absent');
 check(source.fpsPresentationTest.includes('MECHA FPS PRESENTATION: PASS') && source.fpsPresentationTest.includes('sensor_overlay_visible'), 'FPS: test dédié cockpit/sensorium absent');
 check(source.physicsHazardTest.includes('MECHA PHYSICS + HAZARDS: PASS') && source.physicsHazardTest.includes('500 volumes'), 'physique: test dédié collisions 3D et dangers par voie absent');
+check(source.raceCategoryTest.includes('MECHA RACE CATEGORIES: PASS') && source.raceCategoryTest.includes('10 locked cups') && source.raceCategoryTest.includes('500 modular configurations'), 'catégories: test dédié physique/grilles/500 variantes absent');
+check(source.raceBroadcast.includes('dix catégories') && source.raceBroadcast.includes('titre de catégorie'), 'annonceur: vocabulaire des catégories absent');
 check(source.trackSceneryProductionTest.includes('_assert_trackside_clearance') && source.trackSceneryProductionTest.includes('_test_budget_guardrails'), 'production: garde-fous clearance/budget décors absents');
 check(source.project.includes('SaveSystem="*res://scripts/systems/save_system.gd"'), 'project: autoload SaveSystem absent');
 check(source.project.includes('GameSession="*res://scripts/systems/game_session.gd"'), 'project: autoload GameSession absent');
@@ -233,5 +248,5 @@ if (failures.length) {
   process.exitCode = 1;
 } else {
   console.log('Godot static validation: PASS');
-  console.log('10 chassis · 500 locomotions · 5 divisions · 8 tracks homologués · 18 modules · 6 championships · 21 assets OpenAI · détails production · garage plein écran · mobile · Grand Tour · save v5');
+  console.log('10 catégories · 500 locomotions · 8 pistes homologuées · 18 modules · 10 coupes fermées + 1 Grand Open · 21 assets OpenAI · détails production · garage plein écran · mobile · Grand Tour · save v6');
 }

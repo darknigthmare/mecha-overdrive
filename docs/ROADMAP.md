@@ -1,12 +1,12 @@
-# Roadmap après Godot 2.6.0
+# Roadmap après Godot 2.7.0
 
-Godot 2.6.0 ajoute le socle physique de course et les dangers par voie au contrat de production visuelle 2.5.1. Son export, ses validations et sa publication sont suivis dans `docs/QA_REPORT.md`.
+Godot 2.7.0 transforme les dix architectures en catégories de course réellement distinctes et ferme chaque grille dédiée à un seul cadre. Son export, ses validations et sa publication sont suivis dans `docs/QA_REPORT.md`.
 
-## Livré dans la source Godot 2.5.1
+## Livré dans la source Godot 2.7.0
 
-- 10 châssis originaux répartis dans 5 divisions : Commandement, Stabilisés, Essaim, Sol et Expérimental ;
+- 10 catégories originales au pilotage distinct : Pod, Cycle, Rouleur, Bipède lourd, Tripode, Quadrupède, Hexapode, Octopode, Hover et Land Speeder ;
 - 500 configurations locomotrices, soit 50 par châssis, et 18 modules visibles répartis sur 3 emplacements ;
-- courses dédiées à une division par défaut, mélange uniquement via un règlement Open explicite et 6 championnats ;
+- courses et 10 Coupes limitées à une catégorie exacte, mélange uniquement via un règlement Open explicite, soit 11 championnats ;
 - 8 circuits du Grand Tour, tous homologués à au moins 35 m, avec trois colonnes de dépassement et une grille 2 × 4 ;
 - gabarits de véhicules exprimés en mètres, limites de voie adaptées au châssis et contacts proches tenant compte de la largeur réelle ;
 - garage 3D plein écran derrière le HUD, rotation/zoom, peinture, locomotion, modules et statistiques mis à jour immédiatement ;
@@ -16,7 +16,7 @@ Godot 2.6.0 ajoute le socle physique de course et les dangers par voie au contra
 - vues TPS/FPS par architecture : sept cockpits pilotés profilés et trois sensoriums autonomes, préférence persistante, géométries exclusives, verrouillage FPS rigide à l’ancre à 60 Hz et HUD mobile responsive ;
 - briefing de grille, compte à rebours bloquant, faux départ, arrivée cinématique, podium, résultats et épilogues de championnat ;
 - 21 assets bitmap OpenAI originaux et manifestés, dont l’illustration du Grand Tour, l’équipe mécano et les surfaces détaillées méchas/infrastructures ;
-- sauvegarde v5 avec migrations et clé versionnée `season_intro_arc_2_seen` ;
+- sauvegarde v6 avec migration des anciennes Coupes de division vers la catégorie du châssis actif et clé versionnée `season_intro_arc_2_seen` ;
 - résultat homologué uniquement après écriture réussie, rollback complet, feedback explicite et relance de sauvegarde sans double récompense.
 
 ## P2 restants — priorité release
@@ -27,7 +27,7 @@ Godot 2.6.0 ajoute le socle physique de course et les dangers par voie au contra
 4. Fournir un remapping complet clavier, manette et profils tactiles.
 5. Étendre les déblocages progressifs aux châssis, modules, peintures et difficultés ; le Grand Open est déjà qualifié après une Coupe remportée.
 6. Auditer les caméras TPS/FPS sur les 500 configurations locomotrices, y compris les gabarits extrêmes.
-7. Ajouter des coupes personnalisées avec validation de division, règlement, classe et rotation de pistes.
+7. Ajouter des coupes personnalisées avec validation de catégorie, règlement, classe et rotation de pistes.
 
 ## Suites après P2
 

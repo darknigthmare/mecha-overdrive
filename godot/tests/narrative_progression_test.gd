@@ -103,8 +103,8 @@ func _test_broadcast_and_lore_contracts() -> void:
 	var open_briefing := BroadcastScript.briefing({"mode": "grand_prix", "track_id": "foundry", "championship_id": "nexus_open"})
 	var cup_announcer := String(cup_briefing.get("announcer", ""))
 	var open_announcer := String(open_briefing.get("announcer", ""))
-	_expect(cup_announcer.contains("COUPE COMMANDEMENT") and cup_announcer.contains("invitation au Grand Open"), "une Coupe dédiée doit annoncer son propre titre et sa qualification")
-	_expect(open_announcer.contains("huit mondes") and open_announcer.contains("Circuit Zero"), "le Grand Open doit annoncer sa tournée complète et Circuit Zero")
+	_expect(cup_announcer.contains("COUPE BIPÈDE") and cup_announcer.contains("titre de catégorie") and cup_announcer.contains("invitation au Grand Open"), "une Coupe dédiée doit annoncer sa catégorie et sa qualification")
+	_expect(open_announcer.contains("huit mondes") and open_announcer.contains("dix catégories") and open_announcer.contains("Circuit Zero"), "le Grand Open doit annoncer sa tournée complète, les dix catégories et Circuit Zero")
 
 	var grand_tour_entry: Dictionary = {}
 	for entry: Dictionary in LoreScript.ENTRIES:
@@ -112,6 +112,9 @@ func _test_broadcast_and_lore_contracts() -> void:
 			grand_tour_entry = entry
 			break
 	_expect(String(grand_tour_entry.get("protocol_description", "")).contains("Chaque position homologuée à l’arrivée rapporte des points"), "le Codex doit exclure les DNF non homologués de la promesse de points")
+	var codex_lore := str(LoreScript.get_all())
+	_expect(codex_lore.contains("Dix Coupes de catégorie"), "le Codex doit annoncer les dix Coupes de catégorie")
+	_expect(codex_lore.contains("Skimmer LS9") and not codex_lore.contains("Centurion"), "le Codex doit employer l’identité Land Speeder Skimmer actuelle")
 	_expect(not String(DatabaseScript.get_track("abyss").get("description", "")).contains("Avant-dernière"), "la description catalogue de Néréide doit rester neutre hors séquence")
 
 	var canonical_runtime_text := "%s\n%s\n%s\n%s\n%s" % [
@@ -354,12 +357,12 @@ func _test_main_menu_access_states() -> void:
 	if open_index >= 0:
 		_expect(selector.is_item_disabled(open_index), "l’item Grand Open doit être désactivé à zéro titre")
 		_expect(selector.get_item_text(open_index).contains("VERROUILLÉ"), "l’item verrouillé doit afficher son badge")
-		_expect(selector.get_popup().get_item_tooltip(open_index).contains("Coupe de division"), "l’item verrouillé doit expliquer comment obtenir l’invitation")
+		_expect(selector.get_popup().get_item_tooltip(open_index).contains("Coupe de catégorie"), "l’item verrouillé doit expliquer comment obtenir l’invitation")
 	var dedicated_available := 0
 	for index in range(selector.item_count):
 		if String(selector.get_item_metadata(index)) != "nexus_open" and not selector.is_item_disabled(index):
 			dedicated_available += 1
-	_expect(dedicated_available == 5, "les cinq Coupes dédiées doivent rester sélectionnables")
+	_expect(dedicated_available == 10, "les dix Coupes de catégorie doivent rester sélectionnables")
 	_expect(status.text.contains("GRAND OPEN VERROUILLÉ"), "le statut de saison doit annoncer le verrou du Grand Open")
 	if open_index >= 0:
 		selector.set_item_disabled(open_index, false)
@@ -367,8 +370,8 @@ func _test_main_menu_access_states() -> void:
 		menu.call(&"_on_race_option_selected", open_index)
 		_expect(action.disabled, "le bouton Grand Prix doit refuser un Grand Open verrouillé")
 		_expect(action.text.contains("GRAND OPEN VERROUILLÉ"), "le bouton verrouillé doit avoir un libellé explicite")
-		_expect(action.tooltip_text.contains("Coupe de division"), "le bouton verrouillé doit reprendre l’instruction data-driven")
-		_expect(selector.tooltip_text.contains("Coupe de division"), "le sélecteur doit exposer le même tooltip de verrouillage")
+		_expect(action.tooltip_text.contains("Coupe de catégorie"), "le bouton verrouillé doit reprendre l’instruction data-driven")
+		_expect(selector.tooltip_text.contains("Coupe de catégorie"), "le sélecteur doit exposer le même tooltip de verrouillage")
 		_expect(status.text.contains("GRAND OPEN VERROUILLÉ"), "une tentative de sélection doit conserver le statut de verrouillage")
 
 	stats["championships"] = 1

@@ -1,8 +1,8 @@
 {
   "name": "mecha-overdrive-circuit-zero",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "private": true,
-  "description": "MECHA OVERDRIVE 2.6.0 : collisions 3D, dangers par voie et Grand Tour intergalactique sous Godot.",
+  "description": "MECHA OVERDRIVE 2.7.0 : dix catégories de course distinctes, dix coupes dédiées et Grand Open intergalactique sous Godot.",
   "type": "module",
   "scripts": {
     "start": "node tools/server.mjs",

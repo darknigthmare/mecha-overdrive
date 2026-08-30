@@ -536,7 +536,7 @@ func _refresh_apply_state() -> void:
 	cancel_button.disabled = not dirty
 	if cost < 0:
 		apply_button.text = "CONFIGURATION INCOMPATIBLE"
-		purchase_summary.text = "Cette combinaison ne peut pas être homologuée pour la division active."
+		purchase_summary.text = "Cette combinaison ne peut pas être homologuée pour la division technique active."
 	elif cost > credits:
 		apply_button.text = "CRÉDITS INSUFFISANTS"
 		purchase_summary.text = "Coût %d CR  •  Solde %d CR  •  Manque %d CR" % [cost, credits, cost - credits]

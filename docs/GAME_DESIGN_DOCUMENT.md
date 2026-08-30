@@ -1,6 +1,6 @@
 # Game Design Document — MECHA OVERDRIVE: Circuit Zero
 
-## Contrat de jeu actuel — Godot 2.5.1
+## Contrat de jeu actuel — Godot 2.7.0
 
 Cette section est la spécification autoritative de l’édition Godot. Elle remplace, pour cette édition, les quantités et limites de la baseline Canvas/PWA 1.0 archivée plus bas.
 
@@ -14,32 +14,42 @@ La saison compte exactement dix pilotes : le joueur et neuf rivaux persistants. 
 
 ### Catalogue jouable
 
-La release comprend **10 châssis**, répartis dans **5 divisions** de deux architectures :
+La release comprend **10 catégories**, chacune liée à un cadre de châssis et à une signature de mouvement propre :
 
-| Division | Châssis | Intention de pilotage |
+| Catégorie | Châssis | Intention de pilotage |
 |---|---|---|
-| Commandement (`command`) | Raptor R2, Centurion S12 | Adaptation tactique et motricité |
-| Stabilisés (`stabilized`) | Triarch T3, Fenrir Q4 | Tenue de cap et relance |
-| Essaim (`swarm`) | Mantis H6, Arachne O8 | Précision multi-appuis et contrôle des terrains complexes |
-| Sol (`ground`) | Bastion C2, Cyclops M1 | Couple, impact et dérive mécanique |
-| Expérimental (`experimental`) | Wraith V0, Orb S7 | Sustentation et inertie non conventionnelles |
+| Pod vectoriel (`pod`) | Aether Lance P2 (`tracked`) | accélération et pointe extrêmes, direction réduite à haute vitesse |
+| Cycle (`cycle`) | Valkyr C1 (`monowheel`) | inclinaison vive, lean-drift et relance |
+| Rouleur (`roll`) | Orb S7 (`orb`) | inertie sphérique, pivot court et rebond |
+| Bipède lourd (`biped`) | Raptor R2 | foulée lente, masse et anticipation |
+| Tripode (`tripod`) | Triarch T3 | transferts d’appui méthodiques et ancrage |
+| Quadrupède (`quadruped`) | Fenrir Q4 | sprint prédateur et reprise franche |
+| Hexapode (`hexapod`) | Mantis H6 | six appuis adaptatifs et précision technique |
+| Octopode (`octopod`) | Arachne O8 | stabilité, blindage et conservation d’élan |
+| Hover (`hover`) | Wraith V0 | sustentation, dérive longue et faible contact au sol |
+| Land Speeder (`land_speeder`) | Skimmer LS9 (`centurion`) | effet de sol, grandes courbes et glisse au freinage |
 
-Les courses sont **dédiées à la division du joueur par défaut**. Une grille mélangée n’existe que lorsque le joueur choisit explicitement une règle ou un championnat Open ; une configuration incohérente est renormalisée avant la course.
+Les courses sont **dédiées à la catégorie du joueur par défaut**. Le roster utilise un seul `chassis_id`, y compris lorsque ses huit concurrents portent des locomotions modulaires différentes. Une grille mélangée n’existe que lorsque le joueur choisit explicitement une règle ou un championnat Open ; toute configuration incohérente est renormalisée avant la course. Les cinq divisions historiques restent une couche d’affinité technique pour les modules et les migrations de sauvegarde, pas une règle de mélange.
 
 ### Championnats et règlements
 
-Les Grands Prix utilisent huit concurrents, un plateau stable entre les manches et le barème cumulé. Six championnats sont livrés :
+Les Grands Prix utilisent huit concurrents, un plateau stable entre les manches et le barème cumulé. Onze championnats sont livrés :
 
 | Championnat | Grille | Classe | Circuits |
 |---|---|---|---|
-| Coupe Commandement | Commandement, `division_locked` | `tuned` | Fonderie Néon, Couronne Tempête, Arc Polaire, Cimetière Orbital |
-| Coupe Stabilisée | Stabilisés, `division_locked` | `tuned` | Faille Écarlate, Canopée d’Azura, Fonderie Néon, Tranchée Hadale |
-| Coupe Essaim | Essaim, `division_locked` | `tuned` | Canopée d’Azura, Arc Polaire, Tranchée Hadale, Cimetière Orbital |
-| Coupe Sol | Sol, `division_locked` | `tuned` | Faille Écarlate, Fonderie Néon, Couronne Tempête, Tranchée Hadale |
-| Coupe Expérimentale | Expérimental, `division_locked` | `tuned` | Cimetière Orbital, Couronne Tempête, Tranchée Hadale, Arc Polaire |
-| Grand Open des Huit Mondes (`nexus_open`) | cinq divisions, `elite_open` | `unlimited` | les huit circuits, Circuit Zero en finale |
+| Coupe Bipède | Bipède lourd uniquement, `division_locked` | `tuned` | Fonderie, Tempête, Glacier, Orbital |
+| Coupe Tripode | Tripode uniquement, `division_locked` | `tuned` | Dunes, Canopée, Fonderie, Tranchée |
+| Coupe Quadrupède | Quadrupède uniquement, `division_locked` | `tuned` | Fonderie, Canopée, Dunes, Tempête |
+| Coupe Hexapode | Hexapode uniquement, `division_locked` | `tuned` | Canopée, Glacier, Tranchée, Orbital |
+| Coupe Octopode | Octopode uniquement, `division_locked` | `tuned` | Tranchée, Fonderie, Glacier, Orbital |
+| Coupe Pod Vectoriel | Pod uniquement, `division_locked` | `tuned` | Dunes, Fonderie, Tempête, Tranchée |
+| Coupe Cycle | Cycle uniquement, `division_locked` | `tuned` | Tempête, Dunes, Fonderie, Orbital |
+| Coupe Hover | Hover uniquement, `division_locked` | `tuned` | Orbital, Tempête, Tranchée, Glacier |
+| Coupe Rouleur | Rouleur uniquement, `division_locked` | `tuned` | Glacier, Canopée, Orbital, Tempête |
+| Coupe Land Speeder | Land Speeder uniquement, `division_locked` | `tuned` | Dunes, Tempête, Orbital, Tranchée |
+| Grand Open des Huit Mondes (`nexus_open`) | dix catégories, `elite_open` | `unlimited` | les huit circuits, Circuit Zero en finale |
 
-Les trois règlements sont `division_locked`, `open_mixed` et `elite_open`. Le premier verrouille la grille à une division ; les deux autres autorisent explicitement le mélange, `elite_open` imposant aussi la classe Prototype.
+Les trois règlements sont `division_locked`, `open_mixed` et `elite_open`. Le nom interne historique `division_locked` verrouille désormais la grille à la **catégorie exacte** ; les deux autres autorisent explicitement le mélange, `elite_open` imposant aussi la classe Prototype.
 
 ### Classes et personnalisation modulaire
 
@@ -72,17 +82,17 @@ Canopée et Glacier utilisent des courbes continues sans cassure de ruban. Les d
 
 ### Caméras, direction visuelle et persistance
 
-Tous les châssis fournissent une vue TPS et une vue FPS avec ancres et FOV dédiés. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé. Le briefing, le compte à rebours et toute pause pré-GO conservent la caméra extérieure même si la préférence est FPS. Une fois la course lancée, la caméra FPS est verrouillée rigidement à l’ancre du mécha à 60 Hz afin d’éviter toute dérive du cadre. Sept architectures pilotées affichent un habitacle 3D propre au cadre. Mantis, Orb et Centurion, sans pilote embarqué, affichent un sensorium plein écran avec liaison, réticule, horizon, vecteur et diagnostics. Le mode dépend du châssis, jamais du pilote sélectionné ni des 50 locomotions.
+Tous les châssis fournissent une vue TPS et une vue FPS avec ancres et FOV dédiés. Le joueur bascule en course avec `V`, `Tab` ou `Y` à la manette ; le choix est sauvegardé. Le briefing, le compte à rebours et toute pause pré-GO conservent la caméra extérieure même si la préférence est FPS. Une fois la course lancée, la caméra FPS est verrouillée rigidement à l’ancre du mécha à 60 Hz afin d’éviter toute dérive du cadre. Sept architectures pilotées affichent un habitacle 3D propre au cadre. Mantis H6, Orb S7 et Skimmer LS9, sans pilote embarqué, affichent un sensorium plein écran avec liaison, réticule, horizon, vecteur et diagnostics. Le mode dépend du châssis, jamais du pilote sélectionné ni des 50 locomotions.
 
 La bibliothèque de matériaux couvre l’armure légère et lourde, les micro-panneaux de détail, les trois familles de modules, les surfaces standard, thermiques et cryogéniques, le cockpit, les infrastructures et la baie du garage. Vingt-et-un assets raster originaux OpenAI incluent le key art intergalactique, l’équipe mécano et deux surfaces de production dédiées aux méchas et aux décors. Les fichiers, identifiants de génération, prompts, dimensions, empreintes SHA-256 et usages sont consignés dans `godot/assets/textures/openai/manifest.json`.
 
 ### Sauvegarde et continuité
 
-Le profil Godot utilise `SAVE_VERSION = 5`. Il conserve les chargements, locomotions, inventaire de modules et caméra par châssis, la clé versionnée `season_intro_arc_2_seen`, ainsi que l’identité, la manche, la grille stable, la division, le règlement et la classe du championnat actif. Les profils v4 reçoivent le montage locomoteur constructeur. Le seuil de migration des anciens Grands Prix reste explicitement fixé au schéma championnat v3 : la montée en v5 ne rend jamais les circuits sauvegardés autoritatifs.
+Le profil Godot utilise `SAVE_VERSION = 6`. Il conserve les chargements, locomotions, inventaire de modules et caméra par châssis, la clé versionnée `season_intro_arc_2_seen`, ainsi que l’identité, la manche, la grille stable, la catégorie exacte, le règlement et la classe du championnat actif. Les profils antérieurs reçoivent le montage constructeur manquant et leurs anciennes Coupes de division sont remappées vers la Coupe du châssis sélectionné. Le seuil anti-altération des circuits reste fixé au schéma championnat v3 : la montée en v6 ne rend jamais les circuits sauvegardés autoritatifs.
 
 ## Annexe — Spécification historique du compagnon web 1.0
 
-Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.5.1 ci-dessus.
+Toutes les sections numérotées 1 à 13 ci-dessous décrivent la baseline Canvas/PWA 1.0 conservée à la racine du dépôt. Elles expliquent son historique de conception, mais leurs comptes de châssis, de circuits, de modes, de progression et de rendu ne remplacent pas le contrat Godot 2.7.0 ci-dessus.
 
 ## 1. Vision
 

@@ -3,6 +3,30 @@
 Toutes les évolutions notables de MECHA OVERDRIVE — Circuit Zero sont consignées ici.
 
 
+## [2.7.0] — 2026-08-30
+
+### Ajouté
+
+- dix catégories de course : Pod, Cycle, Rouleur, Bipède lourd, Tripode, Quadrupède, Hexapode, Octopode, Hover et Land Speeder ;
+- dix signatures de pilotage indépendantes combinant réponse des gaz, direction, braquage haute vitesse, grip de dérive et freinage ;
+- dix Coupes mono-catégorie de quatre manches et un Grand Open explicitement ouvert aux dix architectures ;
+- variations locomotrices déterministes des IA à l’intérieur d’une même catégorie, parmi les 50 montages homologués par châssis ;
+- suite `race_category_test.gd` et gate CI couvrant mapping, physiques, 500 configurations, grilles fermées et Open.
+
+### Modifié
+
+- Bastion C2 devient le Pod vectoriel **Aether Lance P2**, Cyclops M1 le Cycle **Valkyr C1** et Centurion S12 le Land Speeder **Skimmer LS9** ;
+- le Raptor R2 adopte une démarche bipède plus lente, lourde et anticipée ;
+- les Courses rapides, Éliminations et Coupes dédiées homologuent désormais un `category_chassis_id` exact au lieu d’une division de deux architectures ;
+- les annonces, menus, migrations et sauvegardes utilisent la catégorie ; `SAVE_VERSION` passe à 6.
+
+### Corrigé
+
+- le contrôleur runtime rejette aussi les entrants hors catégorie, même si une configuration externe est altérée ;
+- le seuil anti-altération des circuits de Coupe reste fixé au schéma historique v3 pendant la migration v6 ;
+- les pools typés de châssis sont construits sans conversion `Array` invalide dans Godot 4.7.2.
+
+
 ## [2.6.0] — 2026-08-28
 
 ### Ajouté

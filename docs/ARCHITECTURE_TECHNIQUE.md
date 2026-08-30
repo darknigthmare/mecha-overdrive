@@ -26,7 +26,7 @@ Le dépôt contient deux runtimes indépendants qui partagent la même identité
 
 ## 2. Architecture de l’édition Godot 3D
 
-Cette section décrit le contrat de la release **Godot 2.5.1**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
+Cette section décrit le contrat de la release **Godot 2.7.0**. La section 4 conserve séparément l’architecture historique du compagnon web ; ses limites ne définissent pas le contenu Godot actuel.
 
 ### 2.1 Configuration du projet
 
@@ -61,14 +61,15 @@ Le coordinateur écoute des signaux de haut niveau (`race_requested`, `screen_re
 
 `scripts/data/game_database.gd` centralise les données immuables :
 
-- dix châssis : Raptor R2, Triarch T3, Fenrir Q4, Mantis H6, Arachne O8, Wraith V0, Bastion C2, Cyclops M1, Orb S7 et Centurion S12 ;
-- cinq divisions : `command`, `stabilized`, `swarm`, `ground` et `experimental` ;
+- dix châssis/catégories : Raptor R2, Triarch T3, Fenrir Q4, Mantis H6, Arachne O8, Wraith V0, Aether Lance P2, Valkyr C1, Orb S7 et Skimmer LS9 ;
+- dix catégories de course : `pod`, `cycle`, `roll`, `biped`, `tripod`, `quadruped`, `hexapod`, `octopod`, `hover`, `land_speeder` ;
+- cinq divisions techniques conservées pour les affinités de modules et la compatibilité des sauvegardes ;
 - huit circuits/mondes : Fonderie Néon, Faille Écarlate, Arc Polaire, Cimetière Orbital, Canopée d’Azura, Couronne Tempête, Tranchée Hadale et Circuit Zero ;
 - huit objets ;
 - trois emplacements modulaires et dix-huit modules, six par emplacement ;
 - trois classes de performance : `stock`, `tuned`, `unlimited` ;
 - trois règlements de grille : `division_locked`, `open_mixed`, `elite_open` ;
-- six championnats : cinq coupes dédiées à une division et le `nexus_open` « Grand Open des Huit Mondes », seule coupe ouverte aux divisions mélangées ;
+- onze championnats : dix coupes liées chacune à un `category_chassis_id` et le `nexus_open` « Grand Open des Huit Mondes », seule coupe ouverte au mélange ;
 - neuf pilotes IA canoniques, auxquels s’ajoute le joueur pour former un roster saisonnier de dix pilotes ; chaque championnat en homologue huit et conserve ce plateau jusqu’à sa finale ;
 - trois difficultés, quatre familles d’améliorations et barème de championnat.
 
@@ -121,7 +122,7 @@ La grille, le briefing, le compte à rebours et toute pause pré-GO conservent u
 11. arrivée cinématique, interpolation visuelle, caméra, HUD et audio ;
 12. podium top 3 et résultats complets.
 
-L’accumulateur est borné pour éviter une spirale de rattrapage lors d’un ralentissement prolongé. Les contacts actuels utilisent distance longitudinale, largeur réelle et écart latéral en mètres ; ce sont des enveloppes déterministes, pas encore de vraies collisions 3D avec réponse caméra.
+L’accumulateur est borné pour éviter une spirale de rattrapage lors d’un ralentissement prolongé. `RaceCollisionSystem` installe sur chaque configuration un volume `Area3D` orienté, résout les contacts OBB et leur réponse déterministe ; les circuits exposent leurs corps statiques et la caméra TPS interroge ces volumes pour éviter les obstacles.
 
 ### 2.7 État d’un pilote
 
@@ -134,7 +135,7 @@ L’accumulateur est borné pour éviter une spirale de rattrapage lors d’un r
 - fin, DNF, élimination et motif ;
 - paramètres physiques calculés depuis le châssis, les améliorations, les modules et la classe de performance.
 
-L’IA utilise le même chemin de simulation que le joueur. Le contrôleur lui fournit courbure anticipée, ligne entrée/apex/sortie, danger, adhérence, trafic et situation de course. Les neuf profils de pilote pilotent agressivité, défense, dérive et usage contextuel des objets ; le rattrapage reste borné à 3,5 %. Le danger reste aujourd’hui un contexte de secteur global : son évaluation lane-aware est un P2.
+L’IA utilise le même chemin de simulation que le joueur. Le contrôleur lui fournit courbure anticipée, ligne entrée/apex/sortie, danger, adhérence, trafic et situation de course. Les neuf profils de pilote pilotent agressivité, défense, dérive et usage contextuel des objets ; le rattrapage reste borné à 3,5 %. `TrackHazardSystem` fournit des zones 3D déterministes par voie, leur intensité latérale et une cible d’évitement commune au joueur, au HUD et à l’IA.
 
 `scripts/input/mobile_touch_controls.gd` fournit dix actions multitouch, des cibles d’au moins 88 px, les zones sûres, l’haptique et des dispositions paysage/portrait sans émuler les entrées clavier/manette.
 
@@ -151,11 +152,11 @@ L’IA utilise le même chemin de simulation que le joueur. Le contrôleur lui f
 
 Un résultat n’est commité qu’une fois par session. `complete_race` normalise position, temps, tours, classement et récompense avant de transmettre une copie à `SaveSystem`. Un abandon passe par le même contrat avec `finished=false` et `dnf=true`.
 
-Par défaut, `GameSession` construit une grille de la division du châssis sélectionné. Le mélange n’est autorisé que par une demande explicite compatible avec `open_mixed` ou `elite_open`. Les classes appliquent aussi une politique réelle : configuration d’usine et améliorations nulles en `stock`, plafond de niveau 2 en `tuned`, plafond de niveau 4 en `unlimited`.
+Par défaut, `GameSession` construit une grille limitée au `category_chassis_id` sélectionné. Les IA conservent ce même cadre tout en recevant des variantes locomotrices homologuées. Le mélange n’est autorisé que par une demande explicite compatible avec `open_mixed` ou `elite_open`. `RaceController` répète ce contrôle au runtime et remplace toute entrée incohérente. Les classes appliquent aussi une politique réelle : configuration d’usine et améliorations nulles en `stock`, plafond de niveau 2 en `tuned`, plafond de niveau 4 en `unlimited`.
 
-### 2.9 Sauvegarde v5
+### 2.9 Sauvegarde v6
 
-Le schéma courant est `SAVE_VERSION = 5` et le fichier principal :
+Le schéma courant est `SAVE_VERSION = 6` et le fichier principal :
 
 ```text
 user://mecha_overdrive_profile.json
@@ -229,7 +230,7 @@ ResultsScreen + PodiumPresenter
 
 ## 4. Architecture historique de l’édition compagnon web
 
-Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.5.1. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
+Cette section documente la baseline Canvas/PWA 1.0 conservée à la racine. Elle ne doit pas être interprétée comme le catalogue ou le contrat de progression de l’édition Godot 2.7.0. L’édition compagnon est une application statique sans compilation et sans dépendance d’exécution. Dix scripts classiques partagent l’espace de noms `window.MO`.
 
 | Fichier | Responsabilité |
 |---|---|
@@ -277,9 +278,10 @@ Les deux surfaces sont publiées ensemble :
 ### Godot
 
 - `tools/validate-godot.mjs` : contrat statique des ressources et données Godot.
-- `godot/tests/smoke_test.gd` : 10 châssis, 500 locomotions, 5 divisions, 8 circuits, 6 coupes, 18 modules, 21 assets OpenAI, sauvegarde v5, mobile, IA, podium, migrations et déterminisme.
+- `godot/tests/smoke_test.gd` : contrat général, 10 châssis, 500 locomotions, 8 circuits, 18 modules, 21 assets OpenAI, sauvegarde v6, mobile, IA, podium, migrations et déterminisme.
 - `godot/tests/locomotion_catalog_test.gd` : produit exhaustif 10 × 50, isolation visuelle et texture Aether.
-- `godot/tests/runtime_flow_test.gd` : vraie scène, grille par division, modules, vues TPS/cockpit, mouvement, DNF, résultats et coupes dédiée/ouverte avec sauvegarde isolée.
+- `godot/tests/race_category_test.gd` : dix signatures physiques uniques, cinquante variantes chacune, dix grilles/coupes mono-catégorie et un Open explicite.
+- `godot/tests/runtime_flow_test.gd` : vraie scène, grille mono-catégorie, modules, vues TPS/cockpit, mouvement, DNF, résultats et coupes dédiée/ouverte avec sauvegarde isolée.
 - `godot/tests/gameplay_safety_test.gd` : homologation 35 m, grille 2 × 4, gabarits, contacts, classement/DNF et géométrie mobile paysage/portrait.
 - `godot/tests/garage_preview_test.gd` : plein écran, viewport réactif, focus/tactile, cadre préservé, modules live et quatre acteurs de stand animés.
 - `godot/tests/narrative_progression_test.gd` : verrouillage/déverrouillage/reprise du Grand Open et épilogues joueur/Vex/rival.
@@ -304,7 +306,7 @@ Les deux surfaces sont publiées ensemble :
 npm run qa
 ```
 
-Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le validateur statique Godot. Le parse/import et les dix suites Godot restent exécutés séparément avec Godot 4.7.2. Les totaux et résultats effectivement observés pour chaque candidat sont consignés dans `docs/QA_REPORT.md` sans préjuger d’une publication distante.
+Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le validateur statique Godot. Le parse/import et les douze suites Godot restent exécutés séparément avec Godot 4.7.2. Les totaux et résultats effectivement observés pour chaque candidat sont consignés dans `docs/QA_REPORT.md` sans préjuger d’une publication distante.
 
 ## 6. Ajouter du contenu Godot
 
@@ -338,4 +340,4 @@ Cet agrégat combine la QA Node, le contrat de l’export Godot Web et le valida
 - Chaque modification des sources Godot impose un nouvel export, un nouveau stamp et un parcours navigateur du build produit.
 - Toute annonce doit citer les gates réellement exécutés sur le commit publié.
 - Le statut des sources, de l’export Web synchronisé, des parcours Chrome bureau/mobile, de GitHub Actions, de la release GitHub et de l’alias Vercel est documenté avec ses identifiants de preuve dans `docs/QA_REPORT.md`.
-- P2 connus : vraies collisions 3D/caméra, hazards lane-aware, confirmation avant écrasement d’un championnat, remapping complet, déblocages progressifs de contenu, coupes personnalisées et audit caméra des 500 configurations.
+- P2 connus : confirmation avant écrasement d’un championnat, remapping complet, déblocages progressifs de contenu, coupes personnalisées et audit caméra des 500 configurations.

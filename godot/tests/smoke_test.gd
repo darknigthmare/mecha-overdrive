@@ -25,7 +25,7 @@ func _init() -> void:
 	_test_asset_manifest_contract()
 	_test_profile_contract()
 	_test_session_modes()
-	_test_division_grids()
+	_test_category_grids()
 	_test_modular_contract()
 	_test_module_purchase_contract()
 	_test_performance_classes()
@@ -46,7 +46,7 @@ func _init() -> void:
 	_test_active_locomotion_abilities()
 	_test_audio_event_lifecycle()
 	if _failures.is_empty():
-		print("MECHA GODOT SMOKE: PASS (race briefing, blocking countdown, podium, mobile multi-touch, profiled AI, deterministic racer, garage preview, 500 locomotions, TPS/FPS, save v5, GP resume, audio)")
+		print("MECHA GODOT SMOKE: PASS (race briefing, blocking countdown, podium, mobile multi-touch, profiled AI, deterministic racer, garage preview, 500 locomotions, TPS/FPS, save v6, GP resume, audio)")
 		quit(0)
 		return
 	for failure in _failures:
@@ -59,6 +59,7 @@ func _test_database() -> void:
 	_expect(DatabaseScript.TRACKS.size() == 8, "le catalogue doit contenir 8 circuits")
 	_expect(DatabaseScript.ITEMS.size() == 8, "le catalogue doit contenir 8 objets")
 	_expect(DatabaseScript.DIVISIONS.size() == 5, "le catalogue doit contenir 5 divisions")
+	_expect(DatabaseScript.RACE_CATEGORIES.size() == 10, "le catalogue doit contenir 10 catégories de course")
 	var expected_divisions: Array[String] = ["Commandement", "Stabilisés", "Essaim", "Sol", "Expérimental"]
 	_expect(LoreScript.division_names() == expected_divisions, "le lore doit dériver exactement les cinq divisions de GameDatabase")
 	var division_lore := ""
@@ -69,7 +70,7 @@ func _test_database() -> void:
 		_expect(division_lore.contains(division_name), "division absente du lore : %s" % division_name)
 	_expect(not division_lore.contains("Sillage") and not division_lore.contains("Bastion") and not division_lore.contains("Singularité"), "le lore conserve d’anciennes divisions non canoniques")
 	_expect(DatabaseScript.MODULE_SLOTS.size() == 3, "la customisation doit exposer 3 emplacements")
-	_expect(DatabaseScript.CHAMPIONSHIPS.size() == 6, "le catalogue doit contenir 6 championnats")
+	_expect(DatabaseScript.CHAMPIONSHIPS.size() == 11, "le catalogue doit contenir 10 coupes de catégorie et le Grand Open")
 	var module_count := 0
 	var module_ids: Dictionary = {}
 	for slot: Dictionary in DatabaseScript.MODULE_SLOTS:
@@ -91,8 +92,8 @@ func _test_database() -> void:
 	var expected := {
 		"biped": "Raptor R2", "tripod": "Triarch T3", "quadruped": "Fenrir Q4",
 		"hexapod": "Mantis H6", "octopod": "Arachne O8", "hover": "Wraith V0",
-		"tracked": "Bastion C2", "monowheel": "Cyclops M1", "orb": "Orb S7",
-		"centurion": "Centurion S12",
+		"tracked": "Aether Lance P2", "monowheel": "Valkyr C1", "orb": "Orb S7",
+		"centurion": "Skimmer LS9",
 	}
 	for chassis_id: String in expected:
 		var chassis: Dictionary = DatabaseScript.get_chassis(chassis_id)
@@ -107,14 +108,21 @@ func _test_database() -> void:
 		var palette: Dictionary = track.get("palette", {})
 		for key: String in ["sky", "ground", "road", "shoulder", "glow", "accent", "key"]:
 			_expect(palette.has(key), "palette %s incomplète : %s" % [track.get("id", "?"), key])
+	var dedicated_categories: Dictionary = {}
+	var mixed_cups := 0
 	for cup: Dictionary in DatabaseScript.CHAMPIONSHIPS:
 		var mixed := bool(cup.get("mixed_divisions", false))
 		var division_id := String(cup.get("division_id", ""))
 		_expect(Array(cup.get("track_ids", [])).size() >= 4, "championnat trop court : %s" % cup.get("id", "?"))
 		if mixed:
+			mixed_cups += 1
 			_expect(division_id.is_empty(), "un Open mixte ne doit pas imposer de division")
 		else:
+			var category_chassis_id := String(cup.get("category_chassis_id", ""))
+			dedicated_categories[category_chassis_id] = true
 			_expect(not DatabaseScript.get_division(division_id).is_empty(), "coupe dédiée sans division")
+			_expect(DatabaseScript.has_chassis(category_chassis_id), "coupe dédiée sans catégorie valide")
+	_expect(dedicated_categories.size() == 10 and mixed_cups == 1, "chaque catégorie doit avoir sa Coupe et un seul Open doit autoriser le mélange")
 	for texture_path: String in [
 		"res://assets/textures/openai/mecha_armor.png",
 		"res://assets/textures/openai/track_surface.png",
@@ -233,7 +241,7 @@ func _test_asset_manifest_contract() -> void:
 
 func _test_profile_contract() -> void:
 	var service: SaveSystemService = SaveScript.new()
-	_expect(SaveScript.SAVE_VERSION == 5, "SAVE_VERSION doit être 5")
+	_expect(SaveScript.SAVE_VERSION == 6, "SAVE_VERSION doit être 6")
 	var clean: Dictionary = service._sanitize_profile({
 		"version": -4,
 		"credits": -900,
@@ -244,9 +252,9 @@ func _test_profile_contract() -> void:
 	_expect(int(clean.get("credits", -1)) == 0, "les crédits négatifs doivent être normalisés")
 	_expect(String(clean.get("selected_chassis", "")) == "biped", "fallback châssis invalide")
 	_expect(Dictionary(clean.get("records", {})).is_empty(), "un chrono invalide ne doit pas survivre")
-	_expect(Dictionary(clean.get("loadouts", {})).size() == 10, "la migration v5 doit créer 10 loadouts")
-	_expect(Dictionary(clean.get("locomotions", {})).size() == 10, "la migration v5 doit créer 10 locomotions constructeur")
-	_expect(String(Dictionary(clean.get("settings", {})).get("camera_view", "")) == "tps", "la migration v5 doit utiliser la vue TPS")
+	_expect(Dictionary(clean.get("loadouts", {})).size() == 10, "la migration v6 doit créer 10 loadouts")
+	_expect(Dictionary(clean.get("locomotions", {})).size() == 10, "la migration v6 doit créer 10 locomotions constructeur")
+	_expect(String(Dictionary(clean.get("settings", {})).get("camera_view", "")) == "tps", "la migration v6 doit utiliser la vue TPS")
 	var historic_modules: Array[String] = [
 		"core_balanced", "core_overdrive", "core_bastion",
 		"mobility_vector", "mobility_sprint", "mobility_adaptive",
@@ -270,18 +278,18 @@ func _test_session_modes() -> void:
 		service.free()
 
 
-func _test_division_grids() -> void:
+func _test_category_grids() -> void:
 	var service: GameSessionService = SessionScript.new()
 	var dedicated: Dictionary = service.configure({"mode": "quick", "track_id": "foundry", "seed": 23})
 	_expect(String(dedicated.get("grid_policy", "")) == "division", "la grille rapide doit être dédiée par défaut")
 	_expect(not bool(dedicated.get("mixed_divisions", true)), "une grille dédiée ne doit pas être marquée mixte")
-	_expect(_roster_divisions(dedicated).size() == 1 and _roster_divisions(dedicated).has("command"), "la grille dédiée doit rester en Commandement")
+	_expect(_roster_chassis(dedicated).size() == 1 and _roster_chassis(dedicated).has("biped"), "la grille dédiée doit rester entièrement Bipède")
 	var invalid: Dictionary = service.configure({"mode": "quick", "grid_policy": "future_open", "seed": 23})
 	_expect(String(invalid.get("grid_policy", "")) == "division", "une politique inconnue doit échouer en mode dédié")
-	_expect(_roster_divisions(invalid).size() == 1, "une politique invalide ne doit jamais ouvrir la grille")
+	_expect(_roster_chassis(invalid).size() == 1, "une politique invalide ne doit jamais ouvrir la catégorie")
 	var mixed: Dictionary = service.configure({"mode": "quick", "grid_policy": "mixed", "ruleset_id": "open_mixed", "seed": 23})
 	_expect(String(mixed.get("grid_policy", "")) == "mixed" and bool(mixed.get("mixed_divisions", false)), "l'Open explicite doit activer la grille mixte")
-	_expect(_roster_divisions(mixed).size() >= 3, "l'Open doit réellement mélanger plusieurs divisions")
+	_expect(_roster_chassis(mixed).size() >= 6, "l'Open doit réellement mélanger plusieurs catégories")
 	var mixed_mismatch: Dictionary = service.configure({"mode": "quick", "grid_policy": "mixed", "ruleset_id": "division_locked", "seed": 23})
 	_expect(String(mixed_mismatch.get("ruleset_id", "")) == "open_mixed", "une grille mixte ne doit jamais conserver un règlement dédié")
 	var division_mismatch: Dictionary = service.configure({"mode": "quick", "grid_policy": "division", "ruleset_id": "open_mixed", "seed": 23})
@@ -297,7 +305,7 @@ func _test_division_grids() -> void:
 	service._save_system_override = titled_save
 	var cup: Dictionary = service.configure(open_request)
 	_expect(String(cup.get("championship_id", "")) == "nexus_open", "le Grand Open doit être sélectionnable")
-	_expect(String(cup.get("grid_policy", "")) == "mixed" and _roster_divisions(cup).size() >= 3, "le Grand Open doit conserver sa grille interdivision")
+	_expect(String(cup.get("grid_policy", "")) == "mixed" and _roster_chassis(cup).size() >= 6, "le Grand Open doit conserver sa grille toutes catégories")
 	_expect(Array(service.championship.get("tracks", [])).size() == 8, "le Grand Open doit parcourir les 8 circuits")
 	var resumed_cup: Dictionary = service.configure({"mode": "grand_prix", "championship_id": "nexus_open", "difficulty": "rookie", "new_championship": false})
 	_expect(String(resumed_cup.get("difficulty", "")) == "ace", "la reprise doit conserver la difficulté homologuée du championnat")
@@ -399,7 +407,7 @@ func _test_performance_classes() -> void:
 	for hazard_id: String in ["mud", "spores", "rain", "crosswind", "current", "pressure", "lava", "eruption"]:
 		var racer: RacerState = _configured_racer("biped", "hazard_%s" % hazard_id)
 		_expect(racer._hazard_drag(hazard_id) > 0.0, "danger sans effet physique : %s" % hazard_id)
-	_expect(_configured_racer("tracked", "hazard_tracked")._hazard_drag("mud") < _configured_racer("biped", "hazard_biped")._hazard_drag("mud"), "les chenilles doivent mieux franchir la boue")
+	_expect(_configured_racer("tracked", "hazard_pod")._hazard_drag("mud") < _configured_racer("biped", "hazard_biped")._hazard_drag("mud"), "les pods vectoriels doivent survoler la boue")
 	controller.free()
 
 
@@ -490,6 +498,57 @@ func _test_championship_migration_and_tamper_guard() -> void:
 		session.free()
 		service.free()
 
+	var legacy_second_chassis_cases := {
+		"quadruped": {"division_id": "stabilized", "legacy_chassis_id": "tripod", "legacy_cup_id": "stabilized_cup", "category_cup_id": "quadruped_cup"},
+		"octopod": {"division_id": "swarm", "legacy_chassis_id": "hexapod", "legacy_cup_id": "swarm_cup", "category_cup_id": "octopod_cup"},
+		"monowheel": {"division_id": "ground", "legacy_chassis_id": "tracked", "legacy_cup_id": "ground_cup", "category_cup_id": "cycle_cup"},
+		"orb": {"division_id": "experimental", "legacy_chassis_id": "hover", "legacy_cup_id": "experimental_cup", "category_cup_id": "roll_cup"},
+		"centurion": {"division_id": "command", "legacy_chassis_id": "biped", "legacy_cup_id": "command_cup", "category_cup_id": "land_speeder_cup"},
+	}
+	for selected_chassis_id: String in legacy_second_chassis_cases:
+		var migration_case: Dictionary = legacy_second_chassis_cases[selected_chassis_id]
+		var service: SaveSystemService = SaveScript.new()
+		var profile_v5: Dictionary = service._default_profile()
+		profile_v5["version"] = 5
+		profile_v5["selected_chassis"] = selected_chassis_id
+		var division_id := String(migration_case.get("division_id", "command"))
+		var legacy_chassis_id := String(migration_case.get("legacy_chassis_id", "biped"))
+		var session: GameSessionService = SessionScript.new()
+		var entrants := session._build_roster(profile_v5, 8, division_id, "division", 105, "tuned", selected_chassis_id)
+		var preserved_locomotion_id := "%s__wheels__compact" % selected_chassis_id
+		var player_entrant: Dictionary = entrants[0]
+		player_entrant["locomotion_id"] = preserved_locomotion_id
+		entrants[0] = player_entrant
+		for entrant_index in range(1, entrants.size(), 2):
+			var legacy_entrant: Dictionary = entrants[entrant_index]
+			legacy_entrant["chassis_id"] = legacy_chassis_id
+			legacy_entrant["division_id"] = division_id
+			legacy_entrant["race_category_id"] = String(DatabaseScript.get_race_category_for_chassis(legacy_chassis_id).get("id", legacy_chassis_id))
+			legacy_entrant["locomotion_id"] = CatalogScript.get_default_configuration_id(legacy_chassis_id)
+			legacy_entrant["loadout"] = service._default_loadout(legacy_chassis_id)
+			entrants[entrant_index] = legacy_entrant
+		profile_v5["championship"] = {
+			"active": true,
+			"championship_id": String(migration_case.get("legacy_cup_id", "command_cup")),
+			"difficulty": "pilot",
+			"round_index": 1,
+			"tracks": ["foundry", "dunes", "glacier", "orbital"],
+			"entrants": entrants,
+		}
+		var migrated: Dictionary = service._sanitize_profile(profile_v5)
+		var migrated_cup: Dictionary = migrated.get("championship", {})
+		_expect(String(migrated_cup.get("championship_id", "")) == String(migration_case.get("category_cup_id", "")), "la coupe v5 doit suivre le second châssis %s" % selected_chassis_id)
+		_expect(String(migrated_cup.get("category_chassis_id", "")) == selected_chassis_id, "la migration v5 doit verrouiller la catégorie %s" % selected_chassis_id)
+		var migrated_entrants: Array = migrated_cup.get("entrants", [])
+		for migrated_entrant_value: Variant in migrated_entrants:
+			if migrated_entrant_value is Dictionary:
+				_expect(String(Dictionary(migrated_entrant_value).get("chassis_id", "")) == selected_chassis_id, "un ancien entrant de division n'a pas été remappé vers %s" % selected_chassis_id)
+		_expect(not migrated_entrants.is_empty() and String(Dictionary(migrated_entrants[0]).get("locomotion_id", "")) == preserved_locomotion_id, "la locomotion homologuée du joueur doit survivre à la migration v5 : %s" % selected_chassis_id)
+		var constructor_locomotion_id := CatalogScript.get_default_configuration_id(selected_chassis_id)
+		_expect(migrated_entrants.size() > 1 and String(Dictionary(migrated_entrants[1]).get("locomotion_id", "")) == constructor_locomotion_id, "une locomotion d'une ancienne famille doit revenir au montage constructeur : %s" % selected_chassis_id)
+		session.free()
+		service.free()
+
 	var guard_service: SaveSystemService = SaveScript.new()
 	var guard_profile: Dictionary = guard_service._default_profile()
 	guard_profile["version"] = 3
@@ -517,6 +576,14 @@ func _roster_divisions(config_data: Dictionary) -> Dictionary:
 		if entrant_value is Dictionary:
 			divisions[String(Dictionary(entrant_value).get("division_id", ""))] = true
 	return divisions
+
+
+func _roster_chassis(config_data: Dictionary) -> Dictionary:
+	var chassis_ids: Dictionary = {}
+	for entrant_value: Variant in config_data.get("roster", []):
+		if entrant_value is Dictionary:
+			chassis_ids[String(Dictionary(entrant_value).get("chassis_id", ""))] = true
+	return chassis_ids
 
 
 func _test_time_trial_results_contract() -> void:
@@ -568,10 +635,10 @@ func _test_grand_prix_persistence() -> void:
 		"mode": "grand_prix", "difficulty": "pilot", "championship_id": "command_cup", "new_championship": true, "laps": 1,
 	})
 	_expect(String(first_config.get("track_id", "")) == "foundry", "le GP doit commencer à la Fonderie")
-	_expect(String(first_config.get("championship_id", "")) == "command_cup", "l'identité de la Coupe Commandement doit être conservée")
-	_expect(String(first_config.get("grid_policy", "")) == "division", "la Coupe Commandement doit rester dédiée")
+	_expect(String(first_config.get("championship_id", "")) == "command_cup", "l'identité interne de la Coupe Bipède doit être conservée")
+	_expect(String(first_config.get("grid_policy", "")) == "division", "la Coupe Bipède doit rester dédiée")
 	var original_roster: Array = first_config.get("roster", [])
-	_expect(_roster_divisions(first_config).size() == 1 and _roster_divisions(first_config).has("command"), "la Coupe Commandement doit homologuer uniquement sa division")
+	_expect(_roster_chassis(first_config).size() == 1 and _roster_chassis(first_config).has("biped"), "la Coupe Bipède doit homologuer uniquement sa catégorie")
 	var first_result: Dictionary = _complete_grand_prix_round(session, 82.0)
 	_expect(int(first_result.get("round", 0)) == 1 and int(first_result.get("total_rounds", 0)) == 4, "Results doit afficher la manche GP 1/4")
 	_expect(bool(first_result.get("can_continue", false)) and not bool(first_result.get("championship_complete", true)), "la manche GP 1 doit proposer la suivante")
@@ -726,9 +793,9 @@ func _roster_signature(roster: Array) -> Array[String]:
 		if not entrant_value is Dictionary:
 			continue
 		var entrant: Dictionary = entrant_value
-		output.append("%s|%s|%s|%s|%s" % [
+		output.append("%s|%s|%s|%s|%s|%s" % [
 			entrant.get("id", ""), entrant.get("chassis_id", ""), entrant.get("division_id", ""),
-			entrant.get("paint", ""), JSON.stringify(entrant.get("loadout", {})),
+			entrant.get("paint", ""), JSON.stringify(entrant.get("loadout", {})), entrant.get("locomotion_id", ""),
 		])
 	return output
 
@@ -887,11 +954,11 @@ func _test_boost_pad_contract() -> void:
 
 func _test_chassis_abilities() -> void:
 	var expected_ids := {
-		"biped": "gyro_correction", "tripod": "vector_anchor",
+		"biped": "heavy_step", "tripod": "vector_anchor",
 		"quadruped": "predator_stride", "hexapod": "adaptive_steps",
 		"octopod": "distributed_ram", "hover": "magnetic_cushion",
-		"tracked": "heavy_transmission", "monowheel": "gyro_drift",
-		"orb": "inertial_rebound", "centurion": "walking_wave",
+		"tracked": "twin_pod_thrust", "monowheel": "lean_drift",
+		"orb": "inertial_rebound", "centurion": "ground_effect",
 	}
 	for chassis_id: String in expected_ids:
 		var racer: RacerState = _configured_racer(chassis_id, "ability_%s" % chassis_id)
@@ -901,7 +968,7 @@ func _test_chassis_abilities() -> void:
 
 	var biped: RacerState = _configured_racer("biped", "ability_biped")
 	biped.apply_hit(0.0, 1.0)
-	_expect(is_equal_approx(float(biped.chassis_ability_snapshot().get("control_loss_factor", 0.0)), 0.60), "gyro-correction bipède non branchée")
+	_expect(is_equal_approx(float(biped.chassis_ability_snapshot().get("control_loss_factor", 0.0)), 0.60), "démarche lourde bipède non branchée")
 
 	var tripod: RacerState = _configured_racer("tripod", "ability_tripod")
 	tripod.apply_hit(10.0, 1.0)
@@ -926,8 +993,10 @@ func _test_chassis_abilities() -> void:
 	_expect(is_equal_approx(hover.armor, hover_armor) and hover.offroad_drag_factor() < 0.2, "coussin magnétique hover incomplet")
 
 	var tracked: RacerState = _configured_racer("tracked", "ability_tracked")
-	_expect(is_zero_approx(tracked._hazard_drag("sand")) and is_zero_approx(tracked._hazard_drag("debris")), "chenilles : sable/débris encore pénalisants")
-	_expect(tracked.contact_damage_multiplier() > 1.3, "poussée de contact chenilles absente")
+	var pod_ability := tracked.chassis_ability_snapshot()
+	var pod_armor := tracked.armor
+	_expect(bool(pod_ability.get("twin_pods", false)) and float(pod_ability.get("high_speed_steer", 1.0)) < 0.7, "signature haute vitesse du Pod absente")
+	_expect(not tracked.apply_ground_mine() and is_equal_approx(tracked.armor, pod_armor), "les nacelles du Pod doivent survoler les mines")
 
 	var monowheel: RacerState = _configured_racer("monowheel", "ability_monowheel")
 	monowheel.speed = monowheel.top_speed * 0.62
@@ -937,7 +1006,7 @@ func _test_chassis_abilities() -> void:
 	context["elapsed"] = 1.05
 	monowheel.step(0.05, {"throttle": 1.0, "brake": 0.0, "steer": 0.0, "drift": false, "boost": false}, context)
 	_expect(bool(monowheel.locomotion_ability_snapshot().get("active", false)), "micro-poussée de sortie de drift absente")
-	_expect(monowheel.heat < 0.80, "refroidissement de drift monoroue absent")
+	_expect(monowheel.heat < 0.80, "refroidissement de drift Cycle absent")
 
 	var orb: RacerState = _configured_racer("orb", "ability_orb")
 	orb.speed = 18.0
@@ -946,8 +1015,8 @@ func _test_chassis_abilities() -> void:
 
 	var centurion: RacerState = _configured_racer("centurion", "ability_centurion")
 	var baseline: RacerState = _configured_racer("biped", "ability_baseline")
-	_expect(centurion._hazard_drag("debris") < baseline._hazard_drag("debris"), "résistance Centurion aux débris absente")
-	_expect(centurion._hazard_drag("gravity") < baseline._hazard_drag("gravity"), "résistance Centurion à la gravité absente")
+	_expect(bool(centurion.chassis_ability_snapshot().get("ground_effect", false)), "effet de sol du Land Speeder absent")
+	_expect(centurion._hazard_drag("crosswind") < baseline._hazard_drag("crosswind"), "stabilité en grande courbe du Land Speeder absente")
 
 
 func _test_active_locomotion_abilities() -> void:
@@ -973,7 +1042,7 @@ func _test_active_locomotion_abilities() -> void:
 	var multi_biped: RacerState = _configured_locomotion_racer("biped", "drive_multi", "multi_support")
 	var legged_biped: RacerState = _configured_locomotion_racer("biped", "drive_legs", "mecha_legs")
 	_expect(multi_biped.offroad_drag_factor() < legged_biped.offroad_drag_factor(), "les multi-appuis n'améliorent pas le hors-piste")
-	_expect(String(multi_biped.chassis_ability_snapshot().get("id", "")) == "gyro_correction", "changer de locomotion ne doit pas supprimer l'aptitude pure du châssis")
+	_expect(String(multi_biped.chassis_ability_snapshot().get("id", "")) == "heavy_step", "changer de locomotion ne doit pas supprimer l'aptitude pure du châssis")
 
 
 func _test_audio_event_lifecycle() -> void:

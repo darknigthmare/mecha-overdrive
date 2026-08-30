@@ -1,12 +1,25 @@
-# Rapport QA — MECHA OVERDRIVE 2.6.0
+# Rapport QA — MECHA OVERDRIVE 2.7.0
 
-Date de validation locale : 28 août 2026
+Date de validation locale : 30 août 2026
 
 Édition principale : sources Godot 4.7.2, renderer GL Compatibility
 
-Décision de release 2.6.0 : **GO local — 11/11 suites Godot, `npm run qa` et export/stamp 9/9 sont PASS. Publication distante à qualifier après déploiement.**
+Décision de release 2.7.0 : **GO local — 12/12 suites Godot, `npm run qa` et export/stamp 9/9 sont PASS. Publication distante à qualifier après déploiement.**
 
-## Candidat physique 2.6.0
+## Candidat catégories 2.7.0
+
+- dix catégories homologuées : Pod vectoriel, Cycle, Rouleur, Bipède lourd, Tripode, Quadrupède, Hexapode, Octopode, Hover et Land Speeder ;
+- dix signatures de conduite distinctes sur l’accélération, la direction, le braquage à haute vitesse, l’adhérence en dérive et le freinage ;
+- 50 configurations modulaires par catégorie, soit 500 combinaisons ;
+- dix championnats à grille strictement mono-catégorie et un Grand Open explicitement mixte ;
+- IA variée à l’intérieur de la catégorie autorisée et validation runtime des engagés ;
+- sauvegarde v6 avec migration canonique des championnats et conservation des finales de Circuit Zero ;
+- nouvelle suite `race_category_test.gd` intégrée à la CI ;
+- silhouettes Pod Aether et Land Speeder Skimmer reconstruites sans les anciennes géométries de char/myriapode ;
+- migration v1-v5 des Coupes de division vers la catégorie exacte, avec locomotions IA persistées et homologuées ;
+- empreinte source exportée : `c16d47513d47d5ae8c2a825cced5bcf179331ccd7475ccbde9866c90595358d9`.
+
+## Baseline physique 2.6.0
 
 - volumes OBB 3D dimensionnés pour les 500 configurations ;
 - route et barrières en corps statiques sur les huit circuits ;
@@ -20,7 +33,7 @@ Décision de release 2.6.0 : **GO local — 11/11 suites Godot, `npm run qa` et 
 
 - 10 architectures de mécha et 500 configurations locomotrices, soit 50 par châssis ;
 - 18 modules sur 3 emplacements, achats/équipement atomiques et rendu immédiat ;
-- 5 divisions, 8 circuits et 6 championnats à grilles dédiées ou Open ;
+- 10 catégories, 8 circuits, 10 championnats fermés et un Grand Open ;
 - Nexus Grand League, Saison 03 « La Couronne Libre » : Grand Tour de huit mondes dans trois galaxies ;
 - introduction en trois chapitres, 8 archives Codex et 10 pilotes canoniques (joueur + 9 IA) ;
 - garage 3D plein écran derrière le HUD avec rotation, zoom, peinture, modules et statistiques en direct ;
@@ -31,11 +44,23 @@ Décision de release 2.6.0 : **GO local — 11/11 suites Godot, `npm run qa` et 
 - largeur de piste minimale de 35 m, trois colonnes de dépassement, gabarits physiques en mètres et grille 2 × 4 ;
 - commandes clavier, manette et mobile multi-touch, HUD tactile compact et zones paysage/portrait non superposées ;
 - briefing, 3-2-1-GO bloquant, faux départ, arrivée cinématique, podium, classement et épilogues de championnat ;
-- sauvegarde v5 avec migrations et clé d’introduction versionnée `season_intro_arc_2_seen`.
+- sauvegarde v6 avec migrations de catégories et clé d’introduction versionnée `season_intro_arc_2_seen`.
 
 ## Contrôles locaux exécutés
 
-### Candidat post-P1 2.5.1
+### Candidat catégories 2.7.0
+
+| Gate | Résultat sur le candidat 2.7.0 |
+|---|---|
+| Empreinte source exportée | `c16d47513d47d5ae8c2a825cced5bcf179331ccd7475ccbde9866c90595358d9` |
+| Douze suites Godot | PASS — 12/12, code 0, ordre CI strictement séquentiel |
+| `godot/tests/race_category_test.gd` | PASS — 10 comportements, 10 coupes fermées, un Grand Open et 500 configurations |
+| `npm run qa` | PASS — 22 JS, validation Web 115/115, moteur 12/12, intégration 21/21 et structure Godot |
+| Export Web mono-thread | PASS — version 2.7.0, source synchronisée et 9/9 artefacts attestés |
+
+`narrative_progression_test.gd` émet quatre warnings intentionnels « Impossible d’ouvrir le fichier temporaire » pour exercer le rollback, puis termine PASS/code 0.
+
+### Candidat post-P1 2.5.1 — historique
 
 | Gate | Résultat sur le candidat 2.5.1 |
 |---|---|
@@ -80,7 +105,7 @@ Les trois suites de production instancient réellement les dix architectures et 
 
 `scripts/world/track_safety.gd` impose une largeur minimale calculée de 35 m, trois colonnes de dépassement, 1,50 m d’écart entre gabarits et une grille à deux concurrents sur quatre rangées. Les huit spécifications sont homologuées. `TrackFactory`, `RaceController` et `RacerState` partagent cette source de vérité pour la largeur, les limites de voie et les empreintes de véhicules.
 
-Cette passe améliore les enveloppes déterministes de contact, mais ne constitue pas encore une simulation par colliders 3D. Les hazards restent décrits par secteur et ne sont pas encore lane-aware.
+La baseline 2.6.0 ajoute les volumes OBB 3D, les corps statiques de route/barrières, les hazards visibles sensibles à la voie, leur anticipation IA et la protection TPS par raycast.
 
 ## Garage, narration et assets
 
@@ -96,19 +121,19 @@ Le fichier `godot3d/build.json` atteste le candidat post-revue exporté et stamp
 
 | Propriété | Valeur |
 |---|---|
-| Version jeu | `2.5.1` |
+| Version jeu | `2.7.0` |
 | Moteur | `4.7.2` |
 | Preset | `Web` |
 | Threads | `false` |
-| Empreinte source | `e22798767175472d920ac522f766a667d793a4a84bcc338cacd8b8780871786c` |
+| Empreinte source | `c16d47513d47d5ae8c2a825cced5bcf179331ccd7475ccbde9866c90595358d9` |
 | Artefacts attestés | 9/9 |
 
 | Artefact | Octets | SHA-256 |
 |---|---:|---|
-| `mecha-overdrive.html` | 5 650 | `51504b6a2ae642971ff74d6135a9038384909c72cb3b307153a669d4ab359979` |
+| `mecha-overdrive.html` | 5 650 | `47fe5447be8522e30a03f4cedf0c04ff5be36b3cb8f6d179fc643f580a6da856` |
 | `mecha-overdrive.js` | 279 815 | `33c94cb3175f3333b82e2a3be5e8e86f77986f0aa2042b1631f6367a4e5bb6ba` |
 | `mecha-overdrive.wasm` | 39 514 754 | `fc74679e3b97f76878947fcd4fbe1268cbfa6188182a2e33bbc3f5dc9bfa57d0` |
-| `mecha-overdrive.pck` | 44 094 764 | `eff4f014bfa350d1d4802332bb6c316d41d7bdc7f59ffa4172fe0d820d424d65` |
+| `mecha-overdrive.pck` | 44 120 612 | `593fa08bdebdab6761a1157725021111cc55f81c32c348127fb64d663c2c8b99` |
 | `mecha-overdrive.audio.worklet.js` | 7 298 | `5b476a9c9ce642c0ee4256436d1bc31d9c38f868aca0f9a8e2a57c18d2dec2a3` |
 | `mecha-overdrive.audio.position.worklet.js` | 2 973 | `be33985bc7160d6bf9646f259cd86b259cd67b02ccb297ee5c44f8ac84327bc8` |
 | `mecha-overdrive.png` | 21 443 | `3cb4495c0b98dfbe4b663cbf2b6836473572339beb66d902367893162a70be0e` |
@@ -117,7 +142,9 @@ Le fichier `godot3d/build.json` atteste le candidat post-revue exporté et stamp
 
 `tools/stamp-godot-web.mjs` a attesté l’alignement de version, l’empreinte source et les neuf SHA-256.
 
-**QA navigateur FPS finale 2.5.1 : PASS** sur l’empreinte e227 ci-dessus.
+La QA navigateur publique 2.7.0 est à qualifier après déploiement. Les preuves FPS 2.5.1 ci-dessous restent un historique distinct et ne sont pas réattribuées au nouveau candidat.
+
+**QA navigateur FPS finale 2.5.1 : PASS** sur l’empreinte e227 historique.
 
 - [`desktop-biped-cockpit-final.png`](audits/assets/2.5.1-after/desktop-biped-cockpit-final.png) : cockpit Raptor physique visible et stable à 105 km/h ;
 - [`desktop-mantis-sensorium-final.png`](audits/assets/2.5.1-after/desktop-mantis-sensorium-final.png) : sensorium Mantis bureau ;
@@ -130,19 +157,17 @@ Les captures de [`audits/2026-08-25-gameplay-ux-audit.md`](audits/2026-08-25-gam
 
 ## P2 restants
 
-1. Vraies collisions 3D et validation de leurs interactions avec les caméras TPS/FPS.
-2. Hazards lane-aware.
-3. Confirmation avant écrasement d’un championnat actif.
-4. Remapping complet clavier, manette et tactile.
-5. Déblocages progressifs de châssis, modules, peintures et difficultés ; la qualification du Grand Open est déjà active.
-6. Coupes personnalisées avec validation de règlement et rotation de pistes.
-7. Audit des caméras TPS/FPS sur les 500 configurations.
+1. Confirmation avant écrasement d’un championnat actif.
+2. Remapping complet clavier, manette et tactile.
+3. Déblocages progressifs de châssis, modules, peintures et difficultés ; la qualification du Grand Open est déjà active.
+4. Coupes personnalisées avec validation de règlement et rotation de pistes.
+5. Audit des caméras TPS/FPS sur les 500 configurations.
 
 ## Qualification de release
 
-- **Sources 2.5.1 : GO local sur `e2279876…` — 10/10 suites Godot, `npm run qa` et export/stamp 9/9 PASS.**
-- **QA Chrome FPS finale 2.5.1 : PASS sur les preuves e227 bureau/mobile et console.**
-- **Publication distante 2.5.1 : PASS — commit, CI, release GitHub, Vercel production et artefacts publics vérifiés.**
+- **Sources 2.7.0 : GO local sur `c16d4751…` — 12/12 suites Godot, `npm run qa` et export/stamp 9/9 PASS.**
+- **Publication distante 2.7.0 : à qualifier après commit, CI, release GitHub, Vercel et smoke navigateur public.**
+- **Publication distante 2.5.1 : historique PASS conservé ci-dessous.**
 
 ### Publication distante 2.5.1
 

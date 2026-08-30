@@ -115,6 +115,8 @@ func _start_mode(mode: StringName) -> void:
 	var track := GameDatabase.get_track(track_id)
 	var profile := _profile()
 	var selected_chassis := GameDatabase.get_chassis(_string_value(profile, ["selected_chassis", "selectedChassis"], "biped"))
+	var selected_chassis_id := String(selected_chassis.get("id", "biped"))
+	var active_category := GameDatabase.get_race_category_for_chassis(selected_chassis_id)
 	var active_division := String(selected_chassis.get("division_id", "command"))
 	var grid_policy := _selected_grid_policy()
 	var config := {
@@ -123,6 +125,8 @@ func _start_mode(mode: StringName) -> void:
 		"difficulty": _selected_difficulty_id(),
 		"laps": int(track.get("default_laps", 3)),
 		"division_id": active_division,
+		"race_category_id": String(active_category.get("id", selected_chassis_id)),
+		"category_chassis_id": selected_chassis_id,
 		"grid_policy": grid_policy,
 		"ruleset_id": "open_mixed" if grid_policy == "mixed" else "division_locked",
 		"new_championship": false,
@@ -135,17 +139,20 @@ func _start_mode(mode: StringName) -> void:
 			_show_championship_locked(access)
 			return
 		var cup_division := String(cup.get("division_id", ""))
+		var cup_chassis_id := String(cup.get("category_chassis_id", ""))
 		var active_championship := _active_championship()
 		var resume_active := not active_championship.is_empty() and String(active_championship.get("championship_id", "")) == cup_id
-		if not resume_active and not bool(cup.get("mixed_divisions", false)) and cup_division != active_division:
-			var division := GameDatabase.get_division(cup_division)
+		if not resume_active and not bool(cup.get("mixed_divisions", false)) and cup_chassis_id != selected_chassis_id:
+			var required_category := GameDatabase.get_race_category_for_chassis(cup_chassis_id)
 			status_message.theme_type_variation = &"WarningLabel"
-			status_message.text = "CHÂSSIS INCOMPATIBLE // ÉQUIPEZ UNE UNITÉ %s AU GARAGE" % String(division.get("name", cup_division)).to_upper()
+			status_message.text = "CATÉGORIE INCOMPATIBLE // ÉQUIPEZ UN %s AU GARAGE" % String(required_category.get("name", cup_chassis_id)).to_upper()
 			return
 		config["new_championship"] = not resume_active
 		config["championship_id"] = cup_id
 		config["cup_id"] = cup_id
 		config["division_id"] = cup_division if not cup_division.is_empty() else active_division
+		config["category_chassis_id"] = cup_chassis_id if not cup_chassis_id.is_empty() else selected_chassis_id
+		config["race_category_id"] = String(GameDatabase.get_race_category_for_chassis(String(config["category_chassis_id"])).get("id", config["category_chassis_id"]))
 		config["grid_policy"] = "mixed" if bool(cup.get("mixed_divisions", false)) else "division"
 	var session := _game_session()
 	if session != null and session.has_method(&"configure"):
@@ -219,7 +226,7 @@ func _refresh_profile() -> void:
 	var active_championship := _active_championship()
 	_refresh_championship_items()
 	if active_championship.is_empty():
-		_select_championship_for_division(String(chassis.get("division_id", "command")))
+		_select_championship_for_chassis(String(chassis.get("id", "biped")))
 	else:
 		_select_championship_by_id(String(active_championship.get("championship_id", "command_cup")))
 		_select_difficulty_by_id(String(active_championship.get("difficulty", "pilot")))
@@ -351,15 +358,16 @@ func _setup_race_options() -> void:
 		if String(difficulty.get("id", "")) == "pilot":
 			difficulty_select.select(difficulty_index)
 	grid_policy_select.clear()
-	grid_policy_select.add_item("DIVISION ACTIVE  //  GRILLE FERMÉE")
+	grid_policy_select.add_item("CATÉGORIE ACTIVE  //  GRILLE FERMÉE")
 	grid_policy_select.set_item_metadata(0, "division")
-	grid_policy_select.add_item("OPEN / INTERDIVISION  //  MIXTE")
+	grid_policy_select.add_item("OPEN / TOUTES CATÉGORIES  //  MIXTE")
 	grid_policy_select.set_item_metadata(1, "mixed")
 	grid_policy_select.select(0)
 	championship_select.clear()
 	for championship: Dictionary in GameDatabase.get_all_championships():
 		var index := championship_select.item_count
-		var open_badge := "OPEN" if bool(championship.get("mixed_divisions", false)) else String(GameDatabase.get_division(String(championship.get("division_id", ""))).get("short", "DIV"))
+		var category := GameDatabase.get_race_category_for_chassis(String(championship.get("category_chassis_id", "")))
+		var open_badge := "OPEN" if bool(championship.get("mixed_divisions", false)) else String(category.get("short", "CAT"))
 		championship_select.add_item("%s  //  %s" % [String(championship.get("name", "COUPE")).to_upper(), open_badge])
 		championship_select.set_item_metadata(index, String(championship.get("id", "command_cup")))
 
@@ -378,13 +386,13 @@ func _selected_championship_id() -> String:
 	return "command_cup"
 
 
-func _select_championship_for_division(division_id: String) -> void:
+func _select_championship_for_chassis(chassis_id: String) -> void:
 	var current := GameDatabase.get_championship(_selected_championship_id())
-	if bool(current.get("mixed_divisions", false)) or String(current.get("division_id", "")) == division_id:
+	if bool(current.get("mixed_divisions", false)) or String(current.get("category_chassis_id", "")) == chassis_id:
 		return
 	for index in range(championship_select.item_count):
 		var candidate := GameDatabase.get_championship(String(championship_select.get_item_metadata(index)))
-		if not bool(candidate.get("mixed_divisions", false)) and String(candidate.get("division_id", "")) == division_id:
+		if not bool(candidate.get("mixed_divisions", false)) and String(candidate.get("category_chassis_id", "")) == chassis_id:
 			championship_select.select(index)
 			return
 
@@ -425,8 +433,8 @@ func _championship_badge(cup: Dictionary, access: Dictionary) -> String:
 		return String(access.get("resume_badge", "REPRISE"))
 	if bool(cup.get("mixed_divisions", false)):
 		return "OPEN"
-	var division := GameDatabase.get_division(String(cup.get("division_id", "")))
-	return String(division.get("short", "DIV"))
+	var category := GameDatabase.get_race_category_for_chassis(String(cup.get("category_chassis_id", "")))
+	return String(category.get("short", "CAT"))
 
 
 func _championship_item_label(cup: Dictionary, access: Dictionary) -> String:
@@ -489,11 +497,11 @@ func _refresh_rule_summary() -> void:
 		return
 	var profile := _profile()
 	var chassis := GameDatabase.get_chassis(_string_value(profile, ["selected_chassis", "selectedChassis"], "biped"))
-	var division := GameDatabase.get_division(String(chassis.get("division_id", "command")))
-	var race_grid_label := "OPEN / INTERDIVISION" if _selected_grid_policy() == "mixed" else "DIVISION %s" % String(division.get("name", "ACTIVE")).to_upper()
+	var category := GameDatabase.get_race_category_for_chassis(String(chassis.get("id", "biped")))
+	var race_grid_label := "OPEN / TOUTES CATÉGORIES" if _selected_grid_policy() == "mixed" else "CATÉGORIE %s" % String(category.get("name", "ACTIVE")).to_upper()
 	var cup := GameDatabase.get_championship(_selected_championship_id())
-	var cup_division := GameDatabase.get_division(String(cup.get("division_id", "")))
-	var cup_grid_label := "OPEN / INTERDIVISION" if bool(cup.get("mixed_divisions", false)) else "DIVISION %s" % String(cup_division.get("name", "ACTIVE")).to_upper()
+	var cup_category := GameDatabase.get_race_category_for_chassis(String(cup.get("category_chassis_id", "")))
+	var cup_grid_label := "OPEN / TOUTES CATÉGORIES" if bool(cup.get("mixed_divisions", false)) else "CATÉGORIE %s" % String(cup_category.get("name", "ACTIVE")).to_upper()
 	var race_difficulty := difficulty_select.get_item_text(difficulty_select.selected).to_upper()
 	var cup_difficulty := race_difficulty
 	var active_championship := _active_championship()

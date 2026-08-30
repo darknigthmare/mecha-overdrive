@@ -1,14 +1,14 @@
 MECHA OVERDRIVE — CIRCUIT ZERO
-Version source : 2.5.1
-Build source local : 25 août 2026
+Version source : 2.7.0
+Build source local : 30 août 2026
 Propriétaire du projet : Darknigthmare
 
 ÉDITION PRINCIPALE
 - Godot 4.7.2, renderer GL Compatibility
-- 10 architectures de mécha et 50 locomotions modulaires par architecture
+- 10 catégories de course et 50 locomotions modulaires par catégorie
 - 500 configurations totales : jambes, roues, chenilles, multi-appuis, sphères,
   gyroscopes, patins hover, bi-propulseur Aether, rails et turbines carénées
-- 18 modules, 5 divisions, 8 circuits et 6 championnats dédiés ou mixtes
+- 18 modules, 8 circuits, 10 championnats mono-catégorie et un Grand Open
 - Nexus Grand League, Saison 03 « La Couronne Libre » : Grand Tour de huit
   mondes, 10 pilotes, introduction en trois chapitres et 8 archives Codex
 - garage 3D plein écran derrière le HUD, changements visibles immédiatement et
@@ -25,27 +25,28 @@ COMPAGNON WEB
 - Édition Canvas/PWA historique conservée à la racine
 - Serveurs Node et Python, progression locale et fonctionnement hors ligne
 
-VALIDATION LOCALE FINALE 2.5.1 — PASS
-- Empreinte source post-revue définitive :
-  e22798767175472d920ac522f766a667d793a4a84bcc338cacd8b8780871786c
-- Dix suites Godot 4.7.2 : PASS 10/10, code 0, exécutées séquentiellement
-- `npm run qa` : PASS — 68 JS, 115/115, moteur 12/12, intégration 21/21,
+VALIDATION LOCALE FINALE 2.7.0 — PASS
+- Empreinte source exportée :
+  c16d47513d47d5ae8c2a825cced5bcf179331ccd7475ccbde9866c90595358d9
+- Douze suites Godot 4.7.2 : PASS 12/12, code 0, exécutées séquentiellement
+- `race_category_test.gd` : PASS — 10 comportements, 10 coupes fermées,
+  un Grand Open explicite et 500 configurations modulaires
+- `npm run qa` : PASS — 22 JS, 115/115, moteur 12/12, intégration 21/21,
   validation statique Godot PASS
-- Correctifs P1 : caméra FPS verrouillée rigidement à l’ancre à 60 Hz ; caméra
-  extérieure maintenue pendant briefing, compte à rebours et pause pré-GO
-- Contrat runtime FPS renforcé : PASS
 - Quatre warnings rollback intentionnels d’ouverture temporaire, aucun échec
-- Passe complète sur l’empreinte finale : PASS
-- Nouvel export/stamp Web : PASS — version 2.5.1, source synchronisée, 9/9
-- HTML : 5 650 octets — SHA-256 `51504b6a2ae642971ff74d6135a9038384909c72cb3b307153a669d4ab359979`
-- PCK : 44 094 764 octets — SHA-256 `eff4f014bfa350d1d4802332bb6c316d41d7bdc7f59ffa4172fe0d820d424d65`
-- QA navigateur FPS finale : PASS — cockpit Raptor stable à 105 km/h et
-  sensorium Mantis validé sur bureau/mobile
-- Console finale e227 : PASS — zéro warning/erreur/échec réseau, six logs normaux
-- Preuves : `desktop-biped-cockpit-final.png`, `desktop-mantis-sensorium-final.png`,
-  `mobile-mantis-sensorium-final.png` et `console-final.json`
+- Migration v1-v5 : Coupes remappées vers la catégorie exacte et locomotions
+  des huit entrants conservées/homologuées à la reprise
+- Silhouettes procédurales Aether Lance et Skimmer validées sans vestiges de
+  char ou de myriapode, dans les budgets Web/mobile
+- Export/stamp Web : PASS — version 2.7.0, source synchronisée, 9/9
+- HTML : 5 650 octets — SHA-256 `47fe5447be8522e30a03f4cedf0c04ff5be36b3cb8f6d179fc643f580a6da856`
+- PCK : 44 120 612 octets — SHA-256 `593fa08bdebdab6761a1157725021111cc55f81c32c348127fb64d663c2c8b99`
 
-STATUT PUBLIÉ 2.5.1
+STATUT CANDIDAT 2.7.0
+- Validation locale et export Web : PASS
+- GitHub, CI, release et Vercel : à qualifier après publication
+
+HISTORIQUE PUBLIÉ 2.5.1
 - Validation locale finale : PASS
 - Commit public : 8ed5b72a55d5ed328a375b7d1c0d0bd2d987c21d
 - GitHub Actions Quality : PASS — run 32894483650
@@ -69,7 +70,6 @@ HISTORIQUE DE PUBLICATION 2.5.0
 - Empreintes et artefacts historiques détaillés dans `docs/QA_REPORT.md`
 
 P2 RESTANTS
-- vraies collisions 3D et interactions caméra ; hazards sensibles à la voie
 - confirmation avant écrasement d’un championnat
 - remapping complet ; déblocages progressifs de contenu ; coupes personnalisées
 - audit caméra des 500 configurations

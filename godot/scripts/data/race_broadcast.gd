@@ -87,9 +87,9 @@ static func _announcer_opener(mode: String, championship_id: String) -> String:
 		return String(ANNOUNCER_OPENERS.get(mode, ANNOUNCER_OPENERS["quick"]))
 	var championship := GameDatabase.get_championship(championship_id)
 	if championship_id == "nexus_open":
-		return "Transmission Grand Open : huit mondes, cinq divisions; chaque position comptera jusqu’à Circuit Zero."
+		return "Transmission Grand Open : huit mondes, dix catégories; chaque position comptera jusqu’à Circuit Zero."
 	if not championship.is_empty():
-		return "Transmission %s : chaque position compte pour le titre de division et l’invitation au Grand Open." % String(championship.get("name", "Coupe de division")).to_upper()
+		return "Transmission %s : chaque position compte pour le titre de catégorie et l’invitation au Grand Open." % String(championship.get("name", "Coupe de catégorie")).to_upper()
 	return String(ANNOUNCER_OPENERS["grand_prix"])
 static func _mode_name(mode: String) -> String:
 	match mode:

@@ -63,6 +63,11 @@ func configure(request: Dictionary) -> Dictionary:
 
 	var profile_data := _profile()
 	var selected_chassis := String(profile_data.get("selected_chassis", "biped"))
+	var category_chassis_id := String(request.get("category_chassis_id", selected_chassis))
+	if not GameDatabase.has_chassis(category_chassis_id):
+		category_chassis_id = selected_chassis
+	var race_category := GameDatabase.get_race_category_for_chassis(category_chassis_id)
+	var race_category_id := String(race_category.get("id", category_chassis_id))
 	var player_division := _chassis_division(selected_chassis)
 	var requested_division := String(request.get("division_id", player_division))
 	var division_id := requested_division if not GameDatabase.get_division(requested_division).is_empty() else player_division
@@ -88,6 +93,9 @@ func configure(request: Dictionary) -> Dictionary:
 		difficulty = String(championship.get("difficulty", difficulty))
 		track_id = String(gp_tracks[clampi(int(championship.get("round_index", 0)), 0, gp_tracks.size() - 1)])
 		division_id = String(championship.get("division_id", division_id))
+		category_chassis_id = String(championship.get("category_chassis_id", selected_chassis))
+		race_category = GameDatabase.get_race_category_for_chassis(category_chassis_id)
+		race_category_id = String(race_category.get("id", category_chassis_id))
 		grid_policy = _sanitize_grid_policy(String(championship.get("grid_policy", "division")))
 		ruleset_id = String(championship.get("ruleset_id", "division_locked"))
 		ruleset = GameDatabase.get_ruleset(ruleset_id)
@@ -100,7 +108,7 @@ func configure(request: Dictionary) -> Dictionary:
 	var racer_count := 1 if mode == "time_trial" else (MAX_RACERS if mode == "grand_prix" else clampi(int(request.get("racer_count", MAX_RACERS)), 2, MAX_RACERS))
 	_session_counter += 1
 	var session_seed := int(request.get("seed", int(track.get("seed", 1)) + _session_counter * 97))
-	var roster: Array = Array(championship.get("entrants", [])).duplicate(true) if mode == "grand_prix" else _build_roster(profile_data, racer_count, division_id, grid_policy, session_seed, performance_class_id)
+	var roster: Array = Array(championship.get("entrants", [])).duplicate(true) if mode == "grand_prix" else _build_roster(profile_data, racer_count, division_id, grid_policy, session_seed, performance_class_id, category_chassis_id)
 	if mode == "time_trial" and roster.size() > 1:
 		roster.resize(1)
 	config = {
@@ -112,6 +120,8 @@ func configure(request: Dictionary) -> Dictionary:
 		"racer_count": racer_count,
 		"items_enabled": mode != "time_trial" and bool(ruleset.get("items_enabled", true)),
 		"division_id": division_id,
+		"race_category_id": race_category_id,
+		"category_chassis_id": category_chassis_id,
 		"grid_policy": grid_policy,
 		"mixed_divisions": grid_policy == "mixed",
 		"ruleset_id": ruleset_id,
@@ -352,12 +362,15 @@ func _start_championship(request: Dictionary, difficulty: String, profile_data: 
 	var mixed_divisions := bool(definition.get("mixed_divisions", false))
 	var grid_policy := "mixed" if mixed_divisions else "division"
 	var division_id := String(definition.get("division_id", ""))
+	var category_chassis_id := String(definition.get("category_chassis_id", profile_data.get("selected_chassis", "biped")))
+	if not GameDatabase.has_chassis(category_chassis_id):
+		category_chassis_id = String(profile_data.get("selected_chassis", "biped"))
 	if division_id.is_empty():
 		division_id = _chassis_division(String(profile_data.get("selected_chassis", "biped")))
 	var ruleset_id := String(definition.get("ruleset_id", "open_mixed" if mixed_divisions else "division_locked"))
 	var performance_class_id := String(definition.get("performance_class_id", "tuned"))
 	var roster_seed := int(request.get("seed", championship_id.hash()))
-	var entrants := _build_roster(profile_data, MAX_RACERS, division_id, grid_policy, roster_seed, performance_class_id)
+	var entrants := _build_roster(profile_data, MAX_RACERS, division_id, grid_policy, roster_seed, performance_class_id, category_chassis_id)
 	for entrant_index in range(entrants.size()):
 		var entrant: Dictionary = entrants[entrant_index]
 		entrant["points"] = 0
@@ -371,6 +384,8 @@ func _start_championship(request: Dictionary, difficulty: String, profile_data: 
 		"name": String(definition.get("name", championship_id)),
 		"difficulty": difficulty,
 		"division_id": division_id,
+		"race_category_id": String(GameDatabase.get_race_category_for_chassis(category_chassis_id).get("id", category_chassis_id)),
+		"category_chassis_id": category_chassis_id,
 		"ruleset_id": ruleset_id,
 		"grid_policy": grid_policy,
 		"mixed_divisions": mixed_divisions,
@@ -527,14 +542,20 @@ func _chassis_division(chassis_id: String) -> String:
 	return division_id if not GameDatabase.get_division(division_id).is_empty() else "command"
 
 
-func _build_roster(profile_data: Dictionary, racer_count: int, division_id: String, grid_policy: String, seed_value: int, performance_class_id: String = "tuned") -> Array[Dictionary]:
+func _build_roster(profile_data: Dictionary, racer_count: int, division_id: String, grid_policy: String, seed_value: int, performance_class_id: String = "tuned", category_chassis_id: String = "") -> Array[Dictionary]:
 	var all_chassis := GameDatabase.get_all_chassis()
-	var pool := all_chassis if grid_policy == "mixed" else GameDatabase.get_chassis_for_division(division_id)
-	if pool.is_empty():
-		pool = GameDatabase.get_chassis_for_division("command")
 	var selected_id := String(profile_data.get("selected_chassis", "biped"))
-	if grid_policy == "division" and _chassis_division(selected_id) != division_id:
-		selected_id = String(pool[0].get("id", "biped"))
+	if category_chassis_id.is_empty() or not GameDatabase.has_chassis(category_chassis_id):
+		category_chassis_id = selected_id
+	var pool: Array[Dictionary] = []
+	if grid_policy == "mixed":
+		pool.assign(all_chassis)
+	else:
+		pool.append(GameDatabase.get_chassis(category_chassis_id))
+	if pool.is_empty():
+		pool = [GameDatabase.get_chassis("biped")]
+	if grid_policy == "division" and selected_id != category_chassis_id:
+		selected_id = category_chassis_id
 	var paints: Dictionary = profile_data.get("paints", {}) if profile_data.get("paints", {}) is Dictionary else {}
 	var loadouts: Dictionary = profile_data.get("loadouts", {}) if profile_data.get("loadouts", {}) is Dictionary else {}
 	var pilots := GameDatabase.get_all_pilots()
@@ -543,6 +564,8 @@ func _build_roster(profile_data: Dictionary, racer_count: int, division_id: Stri
 		var is_player := index == 0
 		var chassis: Dictionary = GameDatabase.get_chassis(selected_id) if is_player else pool[(index + abs(seed_value)) % pool.size()]
 		var chassis_id := String(chassis.get("id", "biped"))
+		var category := GameDatabase.get_race_category_for_chassis(chassis_id)
+		var locomotion_id := _roster_locomotion(profile_data, chassis, is_player, index + abs(seed_value), performance_class_id)
 		var pilot: Dictionary = pilots[(index - 1 + abs(seed_value)) % pilots.size()] if not is_player else {}
 		var racer_id := "player" if is_player else String(pilot.get("id", "rival_%02d" % index))
 		var loadout := _sanitize_loadout(loadouts.get(chassis_id, {}), chassis_id, performance_class_id) if is_player else _variant_loadout(index + abs(seed_value), chassis_id, performance_class_id)
@@ -555,12 +578,30 @@ func _build_roster(profile_data: Dictionary, racer_count: int, division_id: Stri
 			"pilot_id": "player" if is_player else String(pilot.get("id", racer_id)),
 			"chassis_id": chassis_id,
 			"division_id": _chassis_division(chassis_id),
+			"race_category_id": String(category.get("id", chassis_id)),
+			"locomotion_id": locomotion_id,
 			"paint": Color(paint).to_html(false).to_upper(),
 			"loadout": loadout,
 			"module_variant": String(loadout.get("core", "core_balanced")),
 			"points": 0,
 		})
 	return roster
+
+
+func _roster_locomotion(profile_data: Dictionary, chassis: Dictionary, is_player: bool, variant_seed: int, performance_class_id: String) -> String:
+	var chassis_id := String(chassis.get("id", "biped"))
+	if is_player:
+		var locomotions: Dictionary = profile_data.get("locomotions", {}) if profile_data.get("locomotions", {}) is Dictionary else {}
+		return String(locomotions.get(chassis_id, LocomotionCatalog.get_default_configuration_id(chassis_id)))
+	var configurations := LocomotionCatalog.get_configurations_for_chassis(chassis_id)
+	var performance_class := GameDatabase.get_performance_class(performance_class_id)
+	var allowed: Array[Dictionary] = []
+	for configuration: Dictionary in configurations:
+		if LocomotionCatalog.is_configuration_allowed_for_class(configuration, performance_class):
+			allowed.append(configuration)
+	if allowed.is_empty():
+		return LocomotionCatalog.get_default_configuration_id(chassis_id)
+	return String(allowed[posmod(variant_seed, allowed.size())].get("id", LocomotionCatalog.get_default_configuration_id(chassis_id)))
 
 
 func _default_loadout(chassis_id: String = "") -> Dictionary:

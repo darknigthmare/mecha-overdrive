@@ -133,13 +133,19 @@ static func _hover(root: Node3D, native_locomotion: Node3D, primary: Material, d
 	_reactor(root, Vector3(0, 1.25, 2.74), Vector3(3.4, 0.22, 0.18), glow)
 
 
-static func _tracked(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
-	_box(root, Vector3(3.5, 1.4, 4.4), Vector3(0, 1.55, -0.1), primary)
-	for x: float in [-1.72, 1.72]:
-		_box(native_locomotion, Vector3(1.0, 0.95, 5.2), Vector3(x, 0.68, 0), dark)
-		for z: float in [-1.65, -0.55, 0.55, 1.65]:
-			_cylinder(native_locomotion, 0.42, 0.95, Vector3(x, 0.65, z), joint, Vector3(0, 0, PI / 2.0))
-	_reactor(root, Vector3(0, 1.6, 2.2), Vector3(2.6, 0.3, 0.22), glow)
+static func _tracked(root: Node3D, _native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
+	# Aether Lance is a light central pilot cell carried between two external
+	# propulsion pods installed by LocomotionVisuals, never a tracked tank.
+	var pilot_cell := _box(root, Vector3(1.72, 0.72, 3.78), Vector3(0, 1.72, -0.02), primary)
+	pilot_cell.rotation.x = -0.035
+	_sphere(root, 0.72, Vector3(0, 2.02, -0.64), dark, Vector3(0.88, 0.56, 1.48))
+	var nose := _box(root, Vector3(1.26, 0.42, 1.62), Vector3(0, 1.58, -2.25), dark)
+	nose.rotation.x = -0.14
+	for side: float in [-1.0, 1.0]:
+		var pylon := _box(root, Vector3(1.42, 0.14, 0.22), Vector3(side * 1.02, 1.56, 0.22), joint)
+		pylon.rotation.z = side * 0.09
+		_cylinder(root, 0.18, 0.54, Vector3(side * 1.62, 1.56, 0.22), dark, Vector3(0, 0, PI / 2.0))
+	_reactor(root, Vector3(0, 1.68, 2.02), Vector3(1.24, 0.22, 0.20), glow)
 
 
 static func _monowheel(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
@@ -181,17 +187,19 @@ static func _orb(root: Node3D, native_locomotion: Node3D, primary: Material, dar
 	_reactor(root, Vector3(0, 1.8, 1.72), Vector3(1.5, 0.28, 0.18), glow)
 
 
-static func _centurion(root: Node3D, native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
-	for segment in range(6):
-		var z := (float(segment) - 2.5) * 0.95
-		_box(root, Vector3(2.0, 0.75, 1.05), Vector3(0, 1.45, z), primary if segment % 2 == 0 else dark)
-		for side: float in [-1.0, 1.0]:
-			var hip := Vector3(side * 0.82, 1.35, z)
-			var knee := Vector3(side * 1.55, 0.75, z + (0.2 if segment % 2 == 0 else -0.2))
-			var foot := Vector3(side * 2.05, 0.12, z)
-			_limb(native_locomotion, hip, knee, 0.12, dark, segment * 0.72 + (PI if side > 0 else 0.0))
-			_limb(native_locomotion, knee, foot, 0.15, joint, segment * 0.72)
-	_reactor(root, Vector3(0, 1.5, 3.0), Vector3(1.5, 0.25, 0.18), glow)
+static func _centurion(root: Node3D, _native_locomotion: Node3D, primary: Material, dark: Material, joint: Material, glow: Material) -> void:
+	# Skimmer LS9 uses one rigid, low-slung ground-effect hull. Its selected
+	# locomotion remains modular, but the canonical frame is not a myriapod.
+	var hull := _box(root, Vector3(3.34, 0.54, 5.56), Vector3(0, 1.28, 0.08), primary)
+	hull.rotation.x = -0.025
+	var nose := _box(root, Vector3(2.48, 0.36, 1.88), Vector3(0, 1.20, -2.78), dark)
+	nose.rotation.x = -0.16
+	_box(root, Vector3(2.18, 0.32, 3.18), Vector3(0, 1.64, -0.12), dark)
+	for side: float in [-1.0, 1.0]:
+		var side_blade := _box(root, Vector3(0.56, 0.28, 4.68), Vector3(side * 1.73, 1.12, 0.18), primary)
+		side_blade.rotation.z = side * 0.035
+		_cylinder(root, 0.16, 0.52, Vector3(side * 1.56, 1.02, 1.92), joint, Vector3(0, 0, PI / 2.0))
+	_reactor(root, Vector3(0, 1.30, 2.92), Vector3(2.34, 0.20, 0.18), glow)
 
 
 static func _detail_holder(root: Node3D, chassis_id: String, hero_detail: bool) -> Node3D:
@@ -318,15 +326,16 @@ static func _hover_detail(root: Node3D, panel: Material, dark: Material, joint: 
 
 
 static func _tracked_detail(root: Node3D, panel: Material, dark: Material, joint: Material, cockpit: Material, glow: Material, detail_tier: int) -> void:
+	_detail_box(root, Vector3(1.22, 0.16, 1.48), Vector3(0, 2.22, -0.82), panel, Vector3(-0.12, 0, 0), "AetherCockpitSpine")
+	_detail_box(root, Vector3(0.92, 0.13, 1.22), Vector3(0, 1.82, -2.42), dark, Vector3(-0.18, 0, 0), "AetherNoseBlade")
 	for side: float in [-1.0, 1.0]:
-		_detail_box(root, Vector3(0.48, 0.22, 4.7), Vector3(side * 1.66, 1.28, 0.04), panel, Vector3(0, 0, side * 0.04), "TrackFender")
-		for z: float in [-1.46, 0.0, 1.46]:
-			_detail_box(root, Vector3(0.62, 0.18, 0.86), Vector3(side * 1.65, 1.44, z), dark, Vector3(0, 0, side * 0.05), "FenderSegment")
-	_detail_box(root, Vector3(2.42, 0.22, 1.38), Vector3(0, 2.34, -1.45), panel, Vector3(-0.22, 0, 0), "GlacisPlate")
-	_detail_box(root, Vector3(1.46, 0.48, 1.52), Vector3(0, 2.4, -0.18), dark, Vector3.ZERO, "CommandCupola")
-	_detail_torus(root, 0.5, 0.64, Vector3(0, 2.66, -0.28), joint, Vector3.ZERO, "CupolaRing")
-	_detail_sensor_cluster(root, Vector3(0, 2.84, -0.72), cockpit, glow, 0.54)
-	_detail_vent_bank(root, Vector3(0, 2.04, 2.15), Vector3(0.4, 0, 0), Vector3(0.22, 0.12, 0.54), 5 if detail_tier > 1 else 3, dark)
+		_detail_box(root, Vector3(1.34, 0.18, 0.34), Vector3(side * 1.14, 1.82, 0.18), panel, Vector3(0, 0, side * 0.08), "AetherPylonFairing")
+		_detail_cylinder(root, 0.22, 0.42, Vector3(side * 1.64, 1.62, 0.18), joint, Vector3(0, 0, PI / 2.0), "AetherFieldGimbal")
+		_detail_torus(root, 0.23, 0.34, Vector3(side * 1.82, 1.62, 0.18), glow, Vector3(0, 0, PI / 2.0), "AetherVectorCollar")
+		if detail_tier > 1:
+			_detail_box(root, Vector3(0.16, 0.44, 0.82), Vector3(side * 1.42, 1.94, 0.74), dark, Vector3(0.04, 0, side * 0.16), "AetherTrimVane")
+	_detail_sensor_cluster(root, Vector3(0, 2.46, -1.42), cockpit, glow, 0.48)
+	_detail_vent_bank(root, Vector3(0, 1.98, 1.76), Vector3(0.26, 0, 0), Vector3(0.14, 0.10, 0.46), 5 if detail_tier > 1 else 3, dark)
 
 
 static func _monowheel_detail(root: Node3D, panel: Material, dark: Material, joint: Material, cockpit: Material, glow: Material, detail_tier: int) -> void:
@@ -358,16 +367,18 @@ static func _orb_detail(root: Node3D, panel: Material, dark: Material, joint: Ma
 
 
 static func _centurion_detail(root: Node3D, panel: Material, dark: Material, joint: Material, cockpit: Material, glow: Material, detail_tier: int) -> void:
-	for segment in range(6):
-		var z := (float(segment) - 2.5) * 0.95
-		_detail_box(root, Vector3(1.52, 0.16, 0.72), Vector3(0, 1.9, z), panel, Vector3(0.06, 0, 0), "DorsalScale")
-		if detail_tier > 1 or segment % 2 == 0:
-			for side: float in [-1.0, 1.0]:
-				_detail_box(root, Vector3(0.28, 0.38, 0.74), Vector3(side * 1.12, 1.56, z), dark, Vector3(0, 0, side * 0.11), "SegmentRib")
-	_detail_box(root, Vector3(1.3, 0.44, 1.1), Vector3(0, 1.86, -3.02), panel, Vector3(-0.15, 0, 0), "CenturionHead")
-	_detail_sensor_cluster(root, Vector3(0, 2.12, -3.62), cockpit, glow, 0.52)
-	_detail_piston(root, Vector3(-0.72, 1.48, 2.46), Vector3(0.72, 1.48, 2.9), 0.07, dark, joint)
-	_detail_vent_bank(root, Vector3(0, 1.72, 2.98), Vector3(0.28, 0, 0), Vector3(0.16, 0.1, 0.38), 3, dark)
+	_detail_box(root, Vector3(2.16, 0.14, 2.42), Vector3(0, 1.88, -0.32), panel, Vector3(-0.05, 0, 0), "SkimmerDorsalDeck")
+	_detail_box(root, Vector3(1.72, 0.11, 1.46), Vector3(0, 1.54, -2.72), dark, Vector3(-0.18, 0, 0), "SkimmerNoseBlade")
+	for side: float in [-1.0, 1.0]:
+		_detail_box(root, Vector3(0.42, 0.18, 3.82), Vector3(side * 1.66, 1.42, 0.12), panel, Vector3(0, 0, side * 0.06), "SkimmerSideFairing")
+		_detail_box(root, Vector3(0.12, 0.28, 2.72), Vector3(side * 1.94, 1.06, 0.32), dark, Vector3(0, 0, side * 0.12), "SkimmerGroundEffectVane")
+		for z: float in [-1.62, 1.62]:
+			_detail_torus(root, 0.18, 0.29, Vector3(side * 1.66, 0.96, z), glow, Vector3(PI / 2.0, 0, 0), "SkimmerFieldProjector")
+		if detail_tier > 1:
+			_detail_sphere(root, 0.09, Vector3(side * 1.72, 1.62, -1.74), glow, Vector3(1.0, 0.62, 1.0), "SkimmerRangeNode")
+	_detail_sensor_cluster(root, Vector3(0, 2.02, -2.42), cockpit, glow, 0.64)
+	_detail_piston(root, Vector3(-0.74, 1.48, 2.34), Vector3(0.74, 1.48, 2.78), 0.07, dark, joint)
+	_detail_vent_bank(root, Vector3(0, 1.70, 2.62), Vector3(0.32, 0, 0), Vector3(0.18, 0.10, 0.44), 5 if detail_tier > 1 else 3, dark)
 
 
 static func _common_surface_detail(

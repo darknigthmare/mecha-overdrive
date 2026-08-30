@@ -10,14 +10,14 @@ Le visuel de présentation est une création originale générée avec OpenAI po
 
 | Édition | Emplacement | Contenu | Exécution |
 |---|---|---|---|
-| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 châssis, 500 locomotions, 8 circuits, 6 championnats, garage 3D, mobile, TPS/cockpit/sensorium et sauvegarde v5 | Godot **4.7.2** ou navigateur WebGL2 |
+| **Godot 3D — principale** | `godot/` + `godot3d/` | 10 catégories, 500 locomotions, 8 circuits, 10 coupes dédiées + 1 Open, garage 3D, mobile, TPS/cockpit/sensorium et sauvegarde v6 | Godot **4.7.2** ou navigateur WebGL2 |
 | **Web — compagnon autonome** | racine du dépôt | 8 châssis, Course rapide, Grand Prix et Contre-la-montre, PWA hors ligne | Navigateur moderne, Node.js facultatif |
 
-La version déclarée dans le projet Godot est `2.6.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
+La version déclarée dans le projet Godot est `2.7.0`. Les résultats de validation réellement exécutés sont consignés dans [`docs/QA_REPORT.md`](docs/QA_REPORT.md) ; la présence d’un test dans le dépôt ne vaut pas, à elle seule, validation de release.
 
 ## Jouer en ligne
 
-- **Godot 3D 2.6.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
+- **Godot 3D 2.7.0** : [`mecha-overdrive.vercel.app/godot3d/mecha-overdrive`](https://mecha-overdrive.vercel.app/godot3d/mecha-overdrive)
 - **Édition web légère** : [`mecha-overdrive.vercel.app`](https://mecha-overdrive.vercel.app)
 
 L’export Godot est mono-thread et WebGL2. Il prend en charge clavier, manette et une surface tactile responsive à dix commandes sur mobile. Son premier chargement transfère le runtime WebAssembly et requiert une connexion ; l’édition web légère reste la variante PWA hors ligne.
@@ -60,26 +60,24 @@ L’introduction en trois chapitres, les huit archives et l’onglet Codex des d
 
 | Architecture | Mécha | Identité de pilotage |
 |---|---|---|
-| Bipède | **Raptor R2** | polyvalence et gyro-correction après impact |
-| Tripode | **Triarch T3** | stabilité et ancrage vectoriel |
+| Bipède lourd | **Raptor R2** | pas lents, masse élevée et changements de cap anticipés |
+| Tripode | **Triarch T3** | transferts d’appui méthodiques et ancrage vectoriel |
 | Quadrupède | **Fenrir Q4** | accélération et reprise prédatrice |
 | Hexapode | **Mantis H6** | précision technique et hors-piste |
 | Octopode | **Arachne O8** | masse, blindage et bélier |
-| Aéroglisseur | **Wraith V0** | vitesse, terrain meuble et mines au sol |
-| Chenilles | **Bastion C2** | couple, blindage et franchissement |
-| Monoroue | **Cyclops M1** | dérive gyroscopique et refroidissement |
-| Sphère | **Orb S7** | inertie omnidirectionnelle et rebond |
-| Myriapode | **Centurion S12** | douze appuis, adhérence et motricité |
+| Hover | **Wraith V0** | sustentation, dérive longue et terrain meuble |
+| Pod vectoriel | **Aether Lance P2** | bi-nacelles, pointe extrême et braquage exigeant à haute vitesse |
+| Cycle | **Valkyr C1** | inclinaison, lean-drift et relance gyroscopique |
+| Rouleur sphérique | **Orb S7** | inertie omnidirectionnelle, pivot et rebond |
+| Land Speeder | **Skimmer LS9** | effet de sol, grandes courbes et freinage glissé |
 
-### Cinq divisions et six championnats
+### Dix catégories et onze championnats
 
-- **Commandement** : Bipède et Myriapode ;
-- **Stabilisés** : Tripode et Quadrupède ;
-- **Essaim** : Hexapode et Octopode ;
-- **Sol** : Chenilles et Monoroue ;
-- **Expérimental** : Aéroglisseur et Sphère.
+Chaque architecture forme une catégorie de course : **Pod, Cycle, Rouleur, Bipède lourd, Tripode, Quadrupède, Hexapode, Octopode, Hover et Land Speeder**. Les cinq divisions historiques restent des affinités techniques pour les modules ; elles ne servent plus à mélanger deux architectures sur une grille dédiée.
 
-Course rapide et Élimination utilisent une grille de la division active par défaut. Le mélange n’est autorisé que lorsque le joueur choisit explicitement **Open / Interdivision**. Les cinq coupes dédiées disputent quatre manches avec un roster stable ; gagner l’une d’elles qualifie le joueur pour le **Grand Open des Huit Mondes**, qui réunit les cinq divisions sur huit circuits et réserve Circuit Zero à sa finale. Une saison Open active est reprise au lieu d’être écrasée.
+Course rapide et Élimination utilisent exclusivement la catégorie du châssis actif. Les dix Coupes de catégorie disputent quatre manches avec un roster stable et une seule architecture, mais plusieurs variantes modulaires. Le mélange des dix catégories n’est autorisé que lorsque le joueur choisit explicitement **Open / Toutes catégories** ou le **Grand Open des Huit Mondes**. Gagner une Coupe qualifie le joueur pour cet Open de huit circuits, dont Circuit Zero est la finale. Une saison Open active est reprise au lieu d’être écrasée.
+
+Les 50 locomotions modulaires de chaque châssis permettent roues, jambes, chenilles, appuis distribués, sphère, gyro-cycle, hover, pods, rail ou turbines selon le montage. Elles changent le visuel et les statistiques, mais pas la catégorie homologuée du cadre : un Raptor sur chenilles reste engagé en Bipède lourd.
 
 Les classes **Série**, **Préparé** et **Prototype** imposent réellement leurs politiques de modules et leurs plafonds d’amélioration.
 
@@ -88,7 +86,7 @@ Les classes **Série**, **Préparé** et **Prototype** imposent réellement leur
 - **Course rapide** (`quick`) : grille complète, objets et classement.
 - **Contre-la-montre** (`time_trial`) : un pilote, sans objets.
 - **Élimination** (`elimination`) : le dernier concurrent est éliminé à intervalle régulier.
-- **Grand Prix** (`grand_prix`) : cinq coupes dédiées de quatre manches et un Open de huit manches, avec points cumulés et roster persistant.
+- **Grand Prix** (`grand_prix`) : dix coupes de catégorie de quatre manches et un Open de huit manches, avec points cumulés et roster persistant.
 
 ### Huit circuits
 
@@ -123,7 +121,7 @@ La branche Godot contient huit objets : décharge ion, EMP, bouclier phase, cell
 
 Le menu et les écrans garage, codex et résultats acceptent aussi les actions d’interface standard de Godot.
 
-## Sauvegarde Godot v5
+## Sauvegarde Godot v6
 
 Le service autoloadé `SaveSystem` écrit un profil JSON versionné dans :
 
@@ -131,7 +129,7 @@ Le service autoloadé `SaveSystem` écrit un profil JSON versionné dans :
 user://mecha_overdrive_profile.json
 ```
 
-La sauvegarde v5 conserve notamment :
+La sauvegarde v6 conserve notamment :
 
 - nom du pilote, crédits et châssis actif ;
 - peintures et niveaux d’amélioration par châssis ;
@@ -140,7 +138,7 @@ La sauvegarde v5 conserve notamment :
 - locomotion choisie pour chacun des dix châssis, avec migration automatique vers le montage constructeur ;
 - vue caméra TPS/interne sélectionnée, le châssis choisissant cockpit ou sensorium ;
 - statistiques de carrière ;
-- identité de la coupe, règlement, division/Open, classe de performance, roster stable, points et manche suivante ;
+- identité de la coupe, catégorie exacte, règlement dédié/Open, classe de performance, locomotions du roster, points et manche suivante ;
 - accessibilité et volumes audio.
 
 Les données sont normalisées à la lecture. L’achat des pièces, la peinture et l’équipement du loadout sont appliqués par une seule transaction avec retour arrière en cas d’échec. L’écriture passe par un fichier temporaire puis une sauvegarde de secours ; un fichier illisible est archivé avant reconstruction d’un profil sain. Un abandon ou DNF compte comme course, mais ne peut accorder ni crédits ni record.
@@ -162,6 +160,7 @@ Cette commande exécute la QA web (`npm test`) puis le validateur structurel God
 ```bash
 godot --headless --path godot --editor --quit
 godot --headless --path godot --script res://tests/smoke_test.gd
+godot --headless --path godot --script res://tests/race_category_test.gd
 godot --headless --path godot --script res://tests/runtime_flow_test.gd
 godot --headless --path godot --script res://tests/mecha_detail_test.gd
 godot --headless --path godot --script res://tests/mecha_animation_test.gd
@@ -218,6 +217,7 @@ MECHA_OVERDRIVE/
 │   ├── assets/                    key art original intégré
 │   └── tests/
 │       ├── smoke_test.gd          contrat déterministe headless
+│       ├── race_category_test.gd   dix physiques, dix grilles fermées et Open
 │       ├── runtime_flow_test.gd   flux menu/course/résultats headless
 │       ├── mecha_detail_test.gd   densité et budgets des dix architectures
 │       ├── mecha_animation_test.gd locomotions et mouvement réduit

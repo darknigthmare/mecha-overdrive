@@ -24,6 +24,7 @@ const TRIPOD_CONTROL_FACTOR := 0.42
 var racer_id := "racer"
 var display_name := "RACER"
 var chassis_id := "biped"
+var race_category_id := "biped"
 var locomotion_id := "biped__mecha_legs__balanced"
 var drive_id := "mecha_legs"
 var mount_id := "balanced"
@@ -60,6 +61,11 @@ var heat := 0.0
 var heat_generation := 1.0
 var boost_energy := 0.55
 var boosting := false
+var throttle_response := 1.0
+var steer_response := 6.8
+var high_speed_steer := 1.0
+var drift_grip := 1.0
+var brake_factor := 1.0
 var item := ""
 var position := 1
 var lap := 1
@@ -81,6 +87,7 @@ var _was_drifting := false
 var _drift_exit_thrust_time := 0.0
 var _last_impact_thrust := 0.0
 var _ai_steer_memory := 0.0
+var _throttle_memory := 0.0
 
 
 func configure(spec: Dictionary) -> RacerState:
@@ -108,6 +115,14 @@ func configure(spec: Dictionary) -> RacerState:
 	grid_index = maxi(0, int(spec.get("grid_index", 0)))
 
 	var chassis := GameDatabase.get_chassis(chassis_id)
+	var race_category := GameDatabase.get_race_category_for_chassis(chassis_id)
+	race_category_id = String(race_category.get("id", chassis_id))
+	var motion: Dictionary = race_category.get("motion", {}) if race_category.get("motion", {}) is Dictionary else {}
+	throttle_response = clampf(float(motion.get("throttle_response", 1.0)), 0.35, 2.50)
+	steer_response = clampf(float(motion.get("steer_response", 6.8)), 2.5, 10.0)
+	high_speed_steer = clampf(float(motion.get("high_speed_steer", 1.0)), 0.45, 1.35)
+	drift_grip = clampf(float(motion.get("drift_grip", 1.0)), 0.55, 1.35)
+	brake_factor = clampf(float(motion.get("brake_factor", 1.0)), 0.70, 1.35)
 	var locomotion := LocomotionCatalog.resolve_configuration(chassis, {
 		"locomotion_id": String(spec.get("locomotion_id", "")),
 	})
@@ -170,6 +185,7 @@ func configure(spec: Dictionary) -> RacerState:
 	_drift_exit_thrust_time = 0.0
 	_last_impact_thrust = 0.0
 	_ai_steer_memory = 0.0
+	_throttle_memory = 0.0
 	return self
 
 
@@ -200,6 +216,8 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 	var hazard_intensity := clampf(float(context.get("hazard_intensity", 1.0 if not String(hazard_value).is_empty() else 0.0)), 0.0, 1.0)
 	var curvature := clampf(float(context.get("curvature", 0.0)), -1.0, 1.0)
 	var speed_multiplier := clampf(float(context.get("speed_multiplier", 1.0)), 0.25, 1.75)
+	_throttle_memory = move_toward(_throttle_memory, throttle, dt * throttle_response)
+	throttle = _throttle_memory
 	var hazard_drag := _hazard_drag(hazard_value) * hazard_intensity
 	if chassis_id == "centurion" and String(hazard_value) in ["debris", "gravity"]:
 		grip = maxf(grip, 0.98)
@@ -234,12 +252,13 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 			speed = minf(top_speed * 1.06, speed + acceleration * 0.16)
 		_was_drifting = drifting
 
-	var steering_power := handling * grip * (1.25 if drifting else 0.92)
+	var steering_power := handling * grip * (1.25 * drift_grip if drifting else 0.92)
 	var current_speed_ratio := speed / maxf(1.0, top_speed)
+	steering_power *= lerpf(1.0, high_speed_steer, clampf(current_speed_ratio, 0.0, 1.0))
 	if chassis_id == "hexapod" and current_speed_ratio < 0.45:
 		steering_power *= 1.30
 	var desired_lane_velocity := steer * steering_power * (1.2 + speed / maxf(1.0, top_speed))
-	lane_velocity = move_toward(lane_velocity, desired_lane_velocity, (4.4 if drifting else 6.8) * dt)
+	lane_velocity = move_toward(lane_velocity, desired_lane_velocity, (steer_response * 0.65 if drifting else steer_response) * dt)
 	lane_velocity += _impact_velocity * dt
 	_impact_velocity = move_toward(_impact_velocity, 0.0, 5.0 * dt)
 	lane = clampf(lane + lane_velocity * dt, -lane_limit, lane_limit)
@@ -249,7 +268,7 @@ func step(delta: float, controls: Dictionary, context: Dictionary) -> Dictionary
 		_recovery_time = maxf(_recovery_time, QUADRUPED_RECOVERY_DURATION)
 	var drive_force := acceleration * throttle
 	drive_force *= 1.22 if chassis_id == "quadruped" and _recovery_time > 0.0 else 1.0
-	var brake_force := acceleration * (1.5 + 0.25 / mass) * brake
+	var brake_force := acceleration * (1.5 + 0.25 / mass) * brake * brake_factor
 	var aerodynamic_drag := (0.012 + 0.010 * hazard_drag) * speed * speed / maxf(1.0, top_speed)
 	var rolling_drag := 1.2 + offroad_amount * (13.0 / offroad_efficiency) * offroad_drag_factor()
 	var corner_drag := absf(curvature) * speed * (0.055 if drifting else 0.085) / maxf(0.65, handling)
@@ -493,16 +512,16 @@ func offroad_drag_factor() -> float:
 
 func chassis_ability_id() -> String:
 	match chassis_id:
-		"biped": return "gyro_correction"
+		"biped": return "heavy_step"
 		"tripod": return "vector_anchor"
 		"quadruped": return "predator_stride"
 		"hexapod": return "adaptive_steps"
 		"octopod": return "distributed_ram"
 		"hover": return "magnetic_cushion"
-		"tracked": return "heavy_transmission"
-		"monowheel": return "gyro_drift"
+		"tracked": return "twin_pod_thrust"
+		"monowheel": return "lean_drift"
 		"orb": return "inertial_rebound"
-		"centurion": return "walking_wave"
+		"centurion": return "ground_effect"
 		_: return "standard"
 
 
@@ -510,7 +529,7 @@ func chassis_ability_snapshot() -> Dictionary:
 	var ability := {"id": chassis_ability_id(), "active": false}
 	match chassis_id:
 		"biped":
-			ability.merge({"control_loss_factor": BIPED_CONTROL_FACTOR, "control_disruption": absf(_impact_velocity)}, true)
+			ability.merge({"control_loss_factor": BIPED_CONTROL_FACTOR, "control_disruption": absf(_impact_velocity), "heavy_gait": true, "throttle_response": throttle_response}, true)
 		"tripod":
 			ability.merge({"control_loss_factor": TRIPOD_CONTROL_FACTOR, "control_disruption": absf(_impact_velocity)}, true)
 		"quadruped":
@@ -522,13 +541,13 @@ func chassis_ability_snapshot() -> Dictionary:
 		"hover":
 			ability.merge({"stabilized_frame": true}, true)
 		"tracked":
-			ability.merge({"armored_bed": true}, true)
+			ability.merge({"twin_pods": true, "high_speed_steer": high_speed_steer, "throttle_response": throttle_response}, true)
 		"monowheel":
-			ability.merge({"gyro_frame": true}, true)
+			ability.merge({"gyro_frame": true, "lean_steering": true, "drift_grip": drift_grip}, true)
 		"orb":
 			ability.merge({"active": _last_impact_thrust > 0.0, "impact_thrust": _last_impact_thrust, "control_loss_factor": 0.36}, true)
 		"centurion":
-			ability.merge({"debris_drag": _hazard_drag("debris"), "gravity_drag": _hazard_drag("gravity")}, true)
+			ability.merge({"ground_effect": true, "crosswind_drag": _hazard_drag("crosswind"), "high_speed_steer": high_speed_steer}, true)
 	return ability
 
 
@@ -640,6 +659,7 @@ func snapshot() -> Dictionary:
 		"racer_id": racer_id,
 		"display_name": display_name,
 		"chassis_id": chassis_id,
+		"race_category_id": race_category_id,
 		"locomotion_id": locomotion_id,
 		"drive_id": drive_id,
 		"mount_id": mount_id,

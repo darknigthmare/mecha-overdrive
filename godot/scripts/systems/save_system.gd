@@ -10,8 +10,12 @@ signal profile_loaded(profile_data: Dictionary)
 signal profile_changed(profile_data: Dictionary)
 signal save_failed(message: String)
 
-const SAVE_VERSION := 5
-const CHAMPIONSHIP_SCHEMA_VERSION := 3
+const SAVE_VERSION := 6
+const CHAMPIONSHIP_SCHEMA_VERSION := 4
+const CHAMPIONSHIP_CANONICAL_RULES_VERSION := 3
+const LEGACY_DIVISION_CHAMPIONSHIP_IDS: Array[String] = [
+	"command_cup", "stabilized_cup", "swarm_cup", "ground_cup", "experimental_cup",
+]
 const HISTORIC_MODULE_IDS: Array[String] = [
 	"core_balanced", "core_overdrive", "core_bastion",
 	"mobility_vector", "mobility_sprint", "mobility_adaptive",
@@ -659,19 +663,27 @@ func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, so
 	if not GameDatabase.has_chassis(selected_chassis):
 		selected_chassis = "biped"
 	var selected_division := String(GameDatabase.get_chassis(selected_chassis).get("division_id", "command"))
-	var legacy_cup_id := "%s_cup" % selected_division
+	var selected_category := GameDatabase.get_race_category_for_chassis(selected_chassis)
+	var selected_category_id := String(selected_category.get("id", selected_chassis))
+	var selected_cup := GameDatabase.get_championship_for_chassis(selected_chassis)
+	var legacy_cup_id := String(selected_cup.get("id", "%s_cup" % selected_division))
 	if GameDatabase.get_championship(legacy_cup_id).is_empty():
 		legacy_cup_id = "command_cup"
 	# v2 only knew one anonymous GP. Migrate it to the dedicated cup matching
 	# the selected chassis so an existing championship is never silently lost.
 	var default_cup_id := legacy_cup_id if source_version < CHAMPIONSHIP_SCHEMA_VERSION else "command_cup"
 	var championship_id := String(source.get("championship_id", source.get("cup_id", default_cup_id)))
+	# Until v5, the five dedicated IDs represented whole technical divisions.
+	# In v6 they identify exact categories, so every legacy dedicated cup must
+	# follow the selected chassis -- including the second chassis of a division.
+	if source_version < SAVE_VERSION and championship_id in LEGACY_DIVISION_CHAMPIONSHIP_IDS:
+		championship_id = legacy_cup_id
 	var definition := GameDatabase.get_championship(championship_id)
 	if definition.is_empty():
 		return {}
 	# From v3 onward, a saved cup references immutable catalogue rules. This
 	# closes tampering and prevents stale fields from rewriting its homologation.
-	var track_source: Variant = source.get("tracks", definition.get("track_ids", CHAMPIONSHIP_TRACKS)) if source_version < CHAMPIONSHIP_SCHEMA_VERSION else definition.get("track_ids", CHAMPIONSHIP_TRACKS)
+	var track_source: Variant = source.get("tracks", definition.get("track_ids", CHAMPIONSHIP_TRACKS)) if source_version < CHAMPIONSHIP_CANONICAL_RULES_VERSION else definition.get("track_ids", CHAMPIONSHIP_TRACKS)
 	var tracks := _sanitize_track_list(track_source)
 	if tracks.is_empty():
 		return {}
@@ -680,6 +692,10 @@ func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, so
 		return {}
 	var authored_division := String(definition.get("division_id", ""))
 	var division_id := _sanitize_division(selected_division if authored_division.is_empty() else authored_division)
+	var category_chassis_id := String(definition.get("category_chassis_id", selected_chassis))
+	if not GameDatabase.has_chassis(category_chassis_id):
+		category_chassis_id = selected_chassis
+	var race_category_id := String(GameDatabase.get_race_category_for_chassis(category_chassis_id).get("id", selected_category_id))
 	var ruleset_id := String(definition.get("ruleset_id", "division_locked"))
 	var ruleset := GameDatabase.get_ruleset(ruleset_id)
 	if ruleset.is_empty():
@@ -690,6 +706,7 @@ func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, so
 	var performance_class_id := String(definition.get("performance_class_id", ruleset.get("performance_class_id", "tuned")))
 	if GameDatabase.get_performance_class(performance_class_id).is_empty():
 		performance_class_id = "tuned"
+	var performance_class := GameDatabase.get_performance_class(performance_class_id)
 	var profile_loadouts: Dictionary = profile_context.get("loadouts", profile.get("loadouts", {}))
 
 	var entrants: Array[Dictionary] = []
@@ -713,11 +730,23 @@ func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, so
 		var chassis_id := String(entrant.get("chassis_id", selected_chassis if entrant_id == "player" else _fallback_chassis_id(entrants.size(), division_id, grid_policy)))
 		if not GameDatabase.has_chassis(chassis_id):
 			return {}
+		if grid_policy == "division" and chassis_id != category_chassis_id:
+			if source_version < SAVE_VERSION:
+				chassis_id = category_chassis_id
+			else:
+				return {}
 		if grid_policy == "division" and String(GameDatabase.get_chassis(chassis_id).get("division_id", "")) != division_id:
 			return {}
-		var paint := String(entrant.get("paint", GameDatabase.get_chassis(chassis_id).get("paint", "#5EE7FF")))
+		var entrant_chassis := GameDatabase.get_chassis(chassis_id)
+		var constructor_locomotion_id := LocomotionCatalog.get_default_configuration_id(chassis_id)
+		var requested_locomotion_id := String(entrant.get("locomotion_id", constructor_locomotion_id))
+		var homologated_locomotion := LocomotionCatalog.homologate_configuration(entrant_chassis, requested_locomotion_id, performance_class)
+		if homologated_locomotion.is_empty() or String(homologated_locomotion.get("family_id", "")) != chassis_id:
+			homologated_locomotion = LocomotionCatalog.get_configuration(constructor_locomotion_id)
+		var locomotion_id := String(homologated_locomotion.get("id", constructor_locomotion_id))
+		var paint := String(entrant.get("paint", entrant_chassis.get("paint", "#5EE7FF")))
 		if not Color.html_is_valid(paint):
-			paint = String(GameDatabase.get_chassis(chassis_id).get("paint", "#5EE7FF"))
+			paint = String(entrant_chassis.get("paint", "#5EE7FF"))
 		var loadout_source: Variant = entrant.get("loadout", profile_loadouts.get(chassis_id, {}))
 		entrants.append({
 			"id": entrant_id,
@@ -725,7 +754,9 @@ func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, so
 			"name": entrant_name,
 			"pilot_id": String(entrant.get("pilot_id", "player" if entrant_id == "player" else entrant_id)),
 			"chassis_id": chassis_id,
-			"division_id": String(GameDatabase.get_chassis(chassis_id).get("division_id", division_id)),
+			"division_id": String(entrant_chassis.get("division_id", division_id)),
+			"race_category_id": String(GameDatabase.get_race_category_for_chassis(chassis_id).get("id", chassis_id)),
+			"locomotion_id": locomotion_id,
 			"paint": Color(paint).to_html(false).to_upper(),
 			"loadout": _sanitize_loadout(loadout_source, chassis_id),
 			"module_variant": String(entrant.get("module_variant", "standard")),
@@ -745,6 +776,8 @@ func _sanitize_championship(value: Variant, profile_context: Dictionary = {}, so
 		"name": String(definition.get("name", championship_id)),
 		"difficulty": difficulty,
 		"division_id": division_id,
+		"race_category_id": race_category_id,
+		"category_chassis_id": category_chassis_id,
 		"ruleset_id": ruleset_id,
 		"grid_policy": grid_policy,
 		"mixed_divisions": mixed_divisions,

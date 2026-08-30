@@ -47,6 +47,8 @@ jobs:
         run: .godot-bin/godot --headless --path godot --script res://tests/smoke_test.gd
       - name: Run Godot locomotion catalogue test
         run: .godot-bin/godot --headless --path godot --script res://tests/locomotion_catalog_test.gd
+      - name: Run distinct race categories and locked-grid test
+        run: .godot-bin/godot --headless --path godot --script res://tests/race_category_test.gd
       - name: Run Godot runtime flow
         run: .godot-bin/godot --headless --path godot --script res://tests/runtime_flow_test.gd
       - name: Run narrative progression test

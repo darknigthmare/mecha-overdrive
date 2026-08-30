@@ -3,16 +3,29 @@ extends RefCounted
 ## Immutable canonical catalogue. Public getters always return deep copies.
 
 static var CHASSIS: Array[Dictionary] = [
-	_chassis("biped", "BIPÈDE", "command", Vector3(0.0, 2.65, 0.10), "Raptor R2", "Polyvalence tactique", "Gyro-correction", "Réduit de 40 % les pertes de contrôle causées par les impacts.", "#5EE7FF", "#D9FBFF", [74, 75, 78, 64, 72, 74], [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00]),
+	_chassis("biped", "BIPÈDE LOURD", "command", Vector3(0.0, 2.65, 0.10), "Raptor R2", "Marcheur blindé", "Pas inertiel", "Une foulée lente et massive qui résiste aux contacts mais exige d'anticiper chaque changement de cap.", "#5EE7FF", "#D9FBFF", [67, 58, 61, 82, 88, 74], [0.92, 0.82, 0.78, 1.28, 1.08, 0.96, 1.38]),
 	_chassis("tripod", "TRIPODE", "stabilized", Vector3(0.0, 2.45, 0.20), "Triarch T3", "Stabilité absolue", "Ancrage vectoriel", "Résiste aux impacts et conserve son cap dans les courbes rapides.", "#9B8CFF", "#EFEAFF", [68, 66, 80, 80, 97, 65], [0.94, 0.91, 1.05, 1.18, 1.04, 0.98, 1.25]),
 	_chassis("quadruped", "QUADRUPÈDE", "stabilized", Vector3(0.0, 2.05, 0.25), "Fenrir Q4", "Sprint prédateur", "Foulée prédatrice", "Déclenche une reprise temporaire après freinage, impact ou retour en piste.", "#FF765E", "#FFE2D9", [81, 91, 84, 58, 84, 70], [1.05, 1.20, 1.08, 0.91, 1.13, 1.04, 0.90]),
 	_chassis("hexapod", "HEXAPODE", "swarm", Vector3(0.0, 1.85, 0.20), "Mantis H6", "Précision arachnéenne", "Pas adaptatifs", "Réduit fortement la pénalité hors-piste et améliore le braquage à basse vitesse.", "#68F29C", "#E2FFEC", [71, 74, 96, 65, 92, 69], [0.97, 1.01, 1.23, 1.01, 1.42, 0.99, 1.05]),
 	_chassis("octopod", "OCTOPODE", "swarm", Vector3(0.0, 1.95, 0.15), "Arachne O8", "Forteresse mobile", "Bélier réparti", "Inflige davantage de dégâts de contact et conserve mieux son élan.", "#F253AD", "#FFE1F3", [66, 61, 72, 97, 99, 62], [0.91, 0.84, 0.92, 1.45, 1.16, 0.95, 1.55]),
 	_chassis("hover", "AÉROGLISSEUR", "experimental", Vector3(0.0, 1.65, 0.35), "Wraith V0", "Vitesse sans contact", "Coussin magnétique", "Ignore les mines au sol et conserve sa vitesse sur les terrains meubles.", "#4FA9FF", "#DCEEFF", [98, 78, 59, 48, 51, 94], [1.19, 1.04, 0.83, 0.73, 1.30, 1.20, 0.72]),
-	_chassis("tracked", "CHENILLES", "ground", Vector3(0.0, 1.85, 0.05), "Bastion C2", "Couple de siège", "Transmission lourde", "Ignore le sable et les débris légers, avec une poussée de contact supérieure.", "#F4B84A", "#FFF1CF", [63, 58, 54, 100, 91, 59], [0.88, 0.80, 0.76, 1.55, 1.55, 0.90, 1.75]),
-	_chassis("monowheel", "MONOROUE", "ground", Vector3(0.0, 2.25, 0.00), "Cyclops M1", "Dérive gyroscopique", "Gyro-drift", "La dérive refroidit le réacteur et déclenche une micro-poussée à sa sortie.", "#FFE15B", "#FFF8CF", [91, 86, 90, 45, 47, 84], [1.13, 1.12, 1.14, 0.68, 0.83, 1.12, 0.76]),
-	_chassis("orb", "SPHÈRE", "experimental", Vector3(0.0, 1.90, 0.15), "Orb S7", "Inertie omnidirectionnelle", "Rebond inertiel", "Convertit une partie des impacts latéraux en poussée et résiste aux renversements.", "#FF9F43", "#FFF0D8", [86, 80, 76, 82, 94, 73], [1.08, 1.05, 0.98, 1.22, 1.15, 1.02, 1.18]),
-	_chassis("centurion", "MYRIAPODE", "command", Vector3(0.0, 2.10, 0.30), "Centurion S12", "Douze appuis synchronisés", "Onde de marche", "Conserve adhérence et motricité sur les débris et sous gravité variable.", "#B8FF5E", "#F0FFD9", [77, 73, 92, 74, 96, 78], [1.01, 0.99, 1.18, 1.10, 1.35, 0.96, 1.16]),
+	_chassis("tracked", "POD VECTORIEL", "ground", Vector3(0.0, 1.70, 0.34), "Aether Lance P2", "Bi-nacelles de course", "Poussée jumelée", "Deux nacelles indépendantes tirent une cellule centrale légère : accélération féroce, grande vitesse et braquage exigeant.", "#F4B84A", "#FFF1CF", [100, 94, 55, 42, 48, 92], [1.26, 1.18, 0.72, 0.64, 1.18, 1.28, 0.68]),
+	_chassis("monowheel", "CYCLE", "ground", Vector3(0.0, 2.15, 0.00), "Valkyr C1", "Cycle gyroscopique", "Lean-drift", "Un cycle de course étroit qui s'incline dans la courbe et transforme la dérive maîtrisée en relance.", "#FFE15B", "#FFF8CF", [94, 91, 96, 40, 51, 86], [1.17, 1.15, 1.22, 0.62, 0.86, 1.14, 0.70]),
+	_chassis("orb", "ROULEUR SPHÉRIQUE", "experimental", Vector3(0.0, 1.90, 0.15), "Orb S7", "Inertie omnidirectionnelle", "Rebond inertiel", "Une coque roulante autour d'un noyau stabilisé, capable de pivoter sur place et de restituer les impacts latéraux.", "#FF9F43", "#FFF0D8", [86, 80, 92, 82, 98, 73], [1.08, 1.05, 1.18, 1.22, 1.15, 1.02, 1.18]),
+	_chassis("centurion", "LAND SPEEDER", "command", Vector3(0.0, 1.55, 0.42), "Skimmer LS9", "Glisseur de surface", "Effet de sol", "Une plateforme basse qui rase la piste, conserve sa vitesse dans les grandes courbes et glisse sous freinage tardif.", "#B8FF5E", "#F0FFD9", [96, 88, 83, 55, 76, 88], [1.20, 1.12, 1.04, 0.78, 1.24, 1.18, 0.82]),
+]
+
+const RACE_CATEGORIES: Array[Dictionary] = [
+	{"id": "pod", "chassis_id": "tracked", "name": "Pod vectoriel", "short": "POD", "feel": "Nacelles jumelées, poussée brutale et direction lourde à haute vitesse.", "motion": {"throttle_response": 1.85, "steer_response": 5.0, "high_speed_steer": 0.55, "drift_grip": 0.82, "brake_factor": 0.92}},
+	{"id": "cycle", "chassis_id": "monowheel", "name": "Cycle", "short": "CYC", "feel": "Inclinaison vive, faible masse et relance de sortie de dérive.", "motion": {"throttle_response": 1.55, "steer_response": 8.8, "high_speed_steer": 1.16, "drift_grip": 1.18, "brake_factor": 1.08}},
+	{"id": "roll", "chassis_id": "orb", "name": "Rouleur", "short": "ROL", "feel": "Roulage omnidirectionnel, forte inertie et pivot court.", "motion": {"throttle_response": 1.20, "steer_response": 8.2, "high_speed_steer": 1.02, "drift_grip": 1.06, "brake_factor": 0.96}},
+	{"id": "biped", "chassis_id": "biped", "name": "Bipède lourd", "short": "BIP", "feel": "Pas mécaniques lents, masse élevée et changements de cap anticipés.", "motion": {"throttle_response": 0.72, "steer_response": 4.0, "high_speed_steer": 0.72, "drift_grip": 0.74, "brake_factor": 1.18}},
+	{"id": "tripod", "chassis_id": "tripod", "name": "Tripode", "short": "TRI", "feel": "Transfert d'appui méthodique, ancrage puissant et rotation délibérée.", "motion": {"throttle_response": 0.82, "steer_response": 4.5, "high_speed_steer": 0.78, "drift_grip": 0.70, "brake_factor": 1.22}},
+	{"id": "quadruped", "chassis_id": "quadruped", "name": "Quadrupède", "short": "4PD", "feel": "Foulée prédatrice, sprint de relance et appui avant agressif.", "motion": {"throttle_response": 1.62, "steer_response": 7.4, "high_speed_steer": 1.02, "drift_grip": 1.04, "brake_factor": 1.12}},
+	{"id": "hexapod", "chassis_id": "hexapod", "name": "Hexapode", "short": "6PD", "feel": "Six appuis adaptatifs, lecture du terrain et précision à basse vitesse.", "motion": {"throttle_response": 1.18, "steer_response": 8.0, "high_speed_steer": 0.96, "drift_grip": 1.00, "brake_factor": 1.08}},
+	{"id": "octopod", "chassis_id": "octopod", "name": "Octopode", "short": "8PD", "feel": "Huit appuis, énorme stabilité et conservation de l'élan au contact.", "motion": {"throttle_response": 0.92, "steer_response": 5.6, "high_speed_steer": 0.86, "drift_grip": 0.80, "brake_factor": 1.25}},
+	{"id": "hover", "chassis_id": "hover", "name": "Hover", "short": "HOV", "feel": "Sustentation libre, dérive longue et faible sensibilité au terrain.", "motion": {"throttle_response": 1.38, "steer_response": 6.2, "high_speed_steer": 0.88, "drift_grip": 0.68, "brake_factor": 0.84}},
+	{"id": "land_speeder", "chassis_id": "centurion", "name": "Land Speeder", "short": "LSP", "feel": "Effet de sol bas, vitesse stable et glisse contrôlée au freinage.", "motion": {"throttle_response": 1.42, "steer_response": 7.0, "high_speed_steer": 0.96, "drift_grip": 0.86, "brake_factor": 1.00}},
 ]
 
 const TRACKS: Array[Dictionary] = [
@@ -289,17 +302,22 @@ const PERFORMANCE_CLASSES: Array[Dictionary] = [
 ]
 
 const RACE_RULESETS: Array[Dictionary] = [
-	{"id": "division_locked", "name": "Division dédiée", "description": "La grille reste dans la division du joueur.", "mixed_divisions": false, "division_policy": "selected", "items_enabled": true, "performance_class_id": "tuned"},
-	{"id": "open_mixed", "name": "Open mixte", "description": "Toutes les divisions peuvent partager la grille.", "mixed_divisions": true, "division_policy": "open", "items_enabled": true, "performance_class_id": "tuned"},
+	{"id": "division_locked", "name": "Catégorie dédiée", "description": "La grille utilise exclusivement l'architecture sélectionnée.", "mixed_divisions": false, "division_policy": "selected", "category_policy": "selected", "items_enabled": true, "performance_class_id": "tuned"},
+	{"id": "open_mixed", "name": "Open toutes catégories", "description": "Les dix architectures peuvent partager la grille.", "mixed_divisions": true, "division_policy": "open", "category_policy": "open", "items_enabled": true, "performance_class_id": "tuned"},
 	{"id": "elite_open", "name": "Open Prototype", "description": "Grille mixte, puissance illimitée et pression maximale.", "mixed_divisions": true, "division_policy": "open", "items_enabled": true, "performance_class_id": "unlimited"},
 ]
 
 const CHAMPIONSHIPS: Array[Dictionary] = [
-	{"id": "command_cup", "name": "Coupe Commandement", "description": "Série tactique réservée aux unités Commandement.", "division_id": "command", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["foundry", "tempest", "glacier", "orbital"], "mixed_divisions": false},
-	{"id": "stabilized_cup", "name": "Coupe Stabilisée", "description": "Quatre manches de précision pour les plateformes Stabilisé.", "division_id": "stabilized", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "canopy", "foundry", "abyss"], "mixed_divisions": false},
-	{"id": "swarm_cup", "name": "Coupe Essaim", "description": "Terrains complexes réservés aux architectures Essaim.", "division_id": "swarm", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["canopy", "glacier", "abyss", "orbital"], "mixed_divisions": false},
-	{"id": "ground_cup", "name": "Coupe Sol", "description": "Couple, impact et dérive pour les spécialistes mécaniques.", "division_id": "ground", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "foundry", "tempest", "abyss"], "mixed_divisions": false},
-	{"id": "experimental_cup", "name": "Coupe Expérimentale", "description": "Une série à haute énergie pour les prototypes.", "division_id": "experimental", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["orbital", "tempest", "abyss", "glacier"], "mixed_divisions": false},
+	{"id": "command_cup", "name": "Coupe Bipède", "description": "Marcheurs lourds uniquement : inertie, freinage et anticipation.", "category_chassis_id": "biped", "division_id": "command", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["foundry", "tempest", "glacier", "orbital"], "mixed_divisions": false},
+	{"id": "stabilized_cup", "name": "Coupe Tripode", "description": "Tripodes uniquement : transferts d'appui méthodiques et cap verrouillé.", "category_chassis_id": "tripod", "division_id": "stabilized", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "canopy", "foundry", "abyss"], "mixed_divisions": false},
+	{"id": "quadruped_cup", "name": "Coupe Quadrupède", "description": "Quadrupèdes uniquement : sprint prédateur et reprises franches.", "category_chassis_id": "quadruped", "division_id": "stabilized", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["foundry", "canopy", "dunes", "tempest"], "mixed_divisions": false},
+	{"id": "swarm_cup", "name": "Coupe Hexapode", "description": "Hexapodes uniquement : précision et lecture des terrains complexes.", "category_chassis_id": "hexapod", "division_id": "swarm", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["canopy", "glacier", "abyss", "orbital"], "mixed_divisions": false},
+	{"id": "octopod_cup", "name": "Coupe Octopode", "description": "Octopodes uniquement : stabilité, blindage et contacts distribués.", "category_chassis_id": "octopod", "division_id": "swarm", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["abyss", "foundry", "glacier", "orbital"], "mixed_divisions": false},
+	{"id": "ground_cup", "name": "Coupe Pod Vectoriel", "description": "Pods à nacelles jumelées uniquement : vitesse extrême et trajectoires tendues.", "category_chassis_id": "tracked", "division_id": "ground", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "foundry", "tempest", "abyss"], "mixed_divisions": false},
+	{"id": "cycle_cup", "name": "Coupe Cycle", "description": "Cycles uniquement : inclinaison, dérive et relance gyroscopique.", "category_chassis_id": "monowheel", "division_id": "ground", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["tempest", "dunes", "foundry", "orbital"], "mixed_divisions": false},
+	{"id": "experimental_cup", "name": "Coupe Hover", "description": "Hover uniquement : glisse longue et trajectoires sans contact.", "category_chassis_id": "hover", "division_id": "experimental", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["orbital", "tempest", "abyss", "glacier"], "mixed_divisions": false},
+	{"id": "roll_cup", "name": "Coupe Rouleur", "description": "Rouleurs sphériques uniquement : inertie, pivot et rebond.", "category_chassis_id": "orb", "division_id": "experimental", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["glacier", "canopy", "orbital", "tempest"], "mixed_divisions": false},
+	{"id": "land_speeder_cup", "name": "Coupe Land Speeder", "description": "Glisseurs de surface uniquement : effet de sol et grandes courbes.", "category_chassis_id": "centurion", "division_id": "command", "ruleset_id": "division_locked", "performance_class_id": "tuned", "track_ids": ["dunes", "tempest", "orbital", "abyss"], "mixed_divisions": false},
 	{
 		"id": "nexus_open",
 		"name": "Grand Open des Huit Mondes",
@@ -315,8 +333,8 @@ const CHAMPIONSHIPS: Array[Dictionary] = [
 			"locked_badge": "VERROUILLÉ",
 			"resume_badge": "REPRISE",
 			"locked_label": "GRAND OPEN VERROUILLÉ",
-			"locked_tooltip": "Remportez au moins une Coupe de division pour obtenir l’invitation au Grand Open.",
-			"locked_status": "SAISON 03 // GRAND OPEN VERROUILLÉ • REMPORTEZ UNE COUPE DE DIVISION",
+			"locked_tooltip": "Remportez au moins une Coupe de catégorie pour obtenir l’invitation au Grand Open.",
+			"locked_status": "SAISON 03 // GRAND OPEN VERROUILLÉ • REMPORTEZ UNE COUPE DE CATÉGORIE",
 			"unlocked_tooltip": "Invitation obtenue : démarrez le Grand Open mixte sur huit mondes.",
 			"unlocked_status": "SAISON 03 // INVITATION ACQUISE • LE GRAND OPEN VOUS ATTEND",
 		},
@@ -326,6 +344,25 @@ const CHAMPIONSHIPS: Array[Dictionary] = [
 
 static func get_division(division_id: String) -> Dictionary:
 	return _find_by_id(DIVISIONS, division_id)
+
+
+static func get_all_race_categories() -> Array[Dictionary]:
+	return RACE_CATEGORIES.duplicate(true)
+
+
+static func get_race_category(category_id: String) -> Dictionary:
+	return _find_by_id(RACE_CATEGORIES, category_id)
+
+
+static func get_race_category_for_chassis(chassis_id: String) -> Dictionary:
+	for category: Dictionary in RACE_CATEGORIES:
+		if String(category.get("chassis_id", "")) == chassis_id:
+			return category.duplicate(true)
+	return {}
+
+
+static func get_category_chassis_id(category_id: String) -> String:
+	return String(get_race_category(category_id).get("chassis_id", ""))
 
 
 static func get_module_slot(slot_id: String) -> Dictionary:
@@ -350,6 +387,14 @@ static func get_ruleset(ruleset_id: String) -> Dictionary:
 
 static func get_championship(championship_id: String) -> Dictionary:
 	return _find_by_id(CHAMPIONSHIPS, championship_id)
+
+
+static func get_championship_for_chassis(chassis_id: String) -> Dictionary:
+	for championship: Dictionary in CHAMPIONSHIPS:
+		if not bool(championship.get("mixed_divisions", false)) and String(championship.get("category_chassis_id", "")) == chassis_id:
+			return championship.duplicate(true)
+	return {}
+
 
 static func championship_access(championship_id: String, stats: Dictionary = {}, active_championship: Dictionary = {}) -> Dictionary:
 	var definition := get_championship(championship_id)
@@ -378,7 +423,7 @@ static func championship_access(championship_id: String, stats: Dictionary = {},
 		"locked_badge": String(requirement.get("locked_badge", "VERROUILLÉ")),
 		"resume_badge": String(requirement.get("resume_badge", "REPRISE")),
 		"locked_label": String(requirement.get("locked_label", "CHAMPIONNAT VERROUILLÉ")),
-		"locked_tooltip": String(requirement.get("locked_tooltip", "Remportez une Coupe de division pour déverrouiller ce championnat.")),
+		"locked_tooltip": String(requirement.get("locked_tooltip", "Remportez une Coupe de catégorie pour déverrouiller ce championnat.")),
 		"locked_status": String(requirement.get("locked_status", "CHAMPIONNAT VERROUILLÉ")),
 		"unlocked_tooltip": String(requirement.get("unlocked_tooltip", definition.get("description", "Championnat disponible."))),
 		"unlocked_status": String(requirement.get("unlocked_status", "CHAMPIONNAT DISPONIBLE")),
@@ -563,7 +608,7 @@ static func _first_person_spec(chassis_id: String) -> Dictionary:
 		"hover":
 			return {"mode": "cockpit", "profile": "aether_flightdeck", "label": "POSTE AETHER", "operator_presence": "onboard", "fov": 84.0, "eye_offset": Vector3(0.0, 0.03, -1.28)}
 		"tracked":
-			return {"mode": "cockpit", "profile": "siege_cab", "label": "CABINE DE SIÈGE", "operator_presence": "onboard", "fov": 75.0, "eye_offset": Vector3(0.0, 0.08, -0.92)}
+			return {"mode": "cockpit", "profile": "siege_cab", "label": "CELLULE AETHER", "operator_presence": "onboard", "fov": 75.0, "eye_offset": Vector3(0.0, 0.08, -0.92)}
 		"monowheel":
 			return {"mode": "cockpit", "profile": "gyro_capsule", "label": "CAPSULE GYRO", "operator_presence": "onboard", "fov": 82.0, "eye_offset": Vector3(0.0, 0.00, -0.72)}
 		"orb":
@@ -577,10 +622,12 @@ static func _first_person_spec(chassis_id: String) -> Dictionary:
 
 static func _manufacturer(chassis_id: String) -> String:
 	match chassis_id:
-		"biped", "centurion": return "Aster Command Systems"
+		"biped": return "Aster Command Systems"
+		"centurion": return "Valkyr Transit Lab"
 		"tripod", "quadruped": return "Valkyr Stabilisation"
 		"hexapod", "octopod": return "Mantis Collective"
-		"tracked", "monowheel": return "Calder Groundworks"
+		"tracked": return "Aether Independent Racing"
+		"monowheel": return "Aster Gyrodynamics"
 		_: return "Nexus Experimental Lab"
 
 
@@ -592,10 +639,10 @@ static func _lore(chassis_id: String) -> String:
 		"hexapod": return "Le Mantis est un corps de course sans pilote embarqué : ses six jambes négocient indépendamment boue, glace et débris sous le sensorium distant de son opérateur."
 		"octopod": return "Arachne protège son pilote dans un noyau central entouré de huit vecteurs d’impact capables d’ouvrir une trajectoire."
 		"hover": return "Wraith est un prototype sans contact dont le coussin magnétique transforme les sols hostiles en lignes de vitesse."
-		"tracked": return "Bastion descend des engins de siège telluriques; son couple maintient la poussée lorsque le reste de la grille décroche."
-		"monowheel": return "Cyclops enferme son pilote dans un gyroscope actif et fait de chaque dérive une réserve d’énergie."
+		"tracked": return "Aether Lance P2 place son pilote dans une cellule légère entre deux nacelles antigravité indépendantes; leur poussée différentielle ouvre des trajectoires impossibles aux cadres conventionnels."
+		"monowheel": return "Valkyr C1 enferme son pilote dans une capsule gyroscopique étroite et restitue en relance l’énergie accumulée pendant chaque lean-drift."
 		"orb": return "Orb S7 est un robot de course sans habitacle. Son opérateur rejoint à distance un cœur mobile qui absorbe les chocs latéraux pour les restituer en accélération."
-		"centurion": return "Le Centurion est un corps myriapode télépiloté : son noyau distribue les ordres de l’opérateur entre douze appuis et reconfigure sa foulée à chaque secteur."
+		"centurion": return "Skimmer LS9 est un Land Speeder télépiloté sans habitacle : son sensorium commande une coque basse et des patins d’effet de sol conçus pour conserver la vitesse dans les grandes courbes."
 		_: return "Architecture de compétition homologuée par la Nexus Grand League."
 
 

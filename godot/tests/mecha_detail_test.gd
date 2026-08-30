@@ -17,6 +17,7 @@ func _run_tests() -> void:
 	var race_counts: Dictionary = {}
 	for chassis: Dictionary in DatabaseScript.CHASSIS:
 		var chassis_id := String(chassis.get("id", "unknown"))
+		_validate_current_identity(chassis)
 		for hero_detail: bool in [false, true]:
 			var visual: RacerVisual = MechaFactoryScript.build(
 				chassis,
@@ -50,6 +51,12 @@ func _run_tests() -> void:
 			print("MECHA DETAIL METRIC: %s tier=%d meshes=%d/%d triangles=%d/%d chassis_detail=%d/%d" % [chassis_id, expected_tier, visual_count, web_budget, triangle_count, triangle_budget, detail_triangle_count, detail_triangle_budget])
 			_expect(_all_detail_meshes_tagged(detail_holder, "mecha_chassis_detail_part"), "%s : groupe de détail architectural incomplet" % chassis_id)
 			_expect(_has_panel_texture(detail_holder), "%s : la texture mecha_detail_panels.png n'habille aucun panneau secondaire" % chassis_id)
+			if chassis_id == "tracked":
+				_expect(_has_named_node(detail_holder, "AetherPylonFairing"), "tracked : pylônes de Pod Aether absents")
+				_expect(not _has_named_node(detail_holder, "TrackFender") and not _has_named_node(detail_holder, "CommandCupola"), "tracked : ancienne silhouette de char encore présente")
+			elif chassis_id == "centurion":
+				_expect(_has_named_node(detail_holder, "SkimmerFieldProjector"), "centurion : projecteurs d'effet de sol Skimmer absents")
+				_expect(not _has_named_node(detail_holder, "DorsalScale") and not _has_named_node(detail_holder, "CenturionHead"), "centurion : ancienne silhouette myriapode encore présente")
 			var module_detail_count := int(visual.get_meta("module_detail_mesh_count", -1))
 			var module_detail_triangles := _group_triangle_count(visual, "mecha_module_detail_part")
 			_expect(module_detail_count == _group_mesh_count(visual, "mecha_module_detail_part"), "%s : métrique de micro-détails modulaires incorrecte" % chassis_id)
@@ -150,6 +157,29 @@ func _find_child_prefix(node: Node, prefix: String) -> Node:
 		if child.name.begins_with(prefix):
 			return child
 	return null
+
+
+func _has_named_node(node: Node, prefix: String) -> bool:
+	if node == null:
+		return false
+	if String(node.name).begins_with(prefix):
+		return true
+	for child: Node in node.get_children():
+		if _has_named_node(child, prefix):
+			return true
+	return false
+
+
+func _validate_current_identity(chassis: Dictionary) -> void:
+	var chassis_id := String(chassis.get("id", ""))
+	var lore := String(chassis.get("lore", ""))
+	match chassis_id:
+		"tracked":
+			_expect(lore.contains("Aether Lance P2") and not lore.contains("Bastion"), "tracked : lore Pod Aether désynchronisé")
+		"monowheel":
+			_expect(lore.contains("Valkyr C1") and not lore.contains("Cyclops"), "monowheel : lore Cycle Valkyr désynchronisé")
+		"centurion":
+			_expect(lore.contains("Skimmer LS9") and not lore.contains("myriapode"), "centurion : lore Land Speeder Skimmer désynchronisé")
 
 
 func _expect(condition: bool, message: String) -> void:

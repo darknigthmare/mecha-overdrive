@@ -166,7 +166,7 @@ func _test_save_migration_and_garage_selector() -> void:
 		get_root().remove_child(existing_save)
 	get_root().add_child(service)
 	var migrated: Dictionary = service.call("_sanitize_profile", {"version": 4, "pilot_name": "MIGRATION"})
-	_expect(int(migrated.get("version", 0)) == 5, "la migration locomotion doit produire une sauvegarde v5")
+	_expect(int(migrated.get("version", 0)) == SaveScript.SAVE_VERSION, "la migration locomotion doit produire la sauvegarde courante")
 	var migrated_locomotions: Dictionary = migrated.get("locomotions", {}) if migrated.get("locomotions", {}) is Dictionary else {}
 	_expect(migrated_locomotions.size() == 10, "la migration doit créer une locomotion par châssis")
 	for family_id: String in CatalogScript.get_family_ids():
